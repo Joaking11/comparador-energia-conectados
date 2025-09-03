@@ -154,6 +154,11 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
     }
   };
 
+  const handleExportPDF = () => {
+    // Funcionalidad de exportar PDF usando window.print()
+    window.print();
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -174,7 +179,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
             <Share2 className="h-4 w-4 mr-2" />
             Compartir
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleExportPDF}>
             <Download className="h-4 w-4 mr-2" />
             Exportar PDF
           </Button>
