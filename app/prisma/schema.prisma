@@ -1,0 +1,104 @@
+generator client {
+    provider = "prisma-client-js"
+    binaryTargets = ["native", "linux-musl-arm64-openssl-3.0.x"]
+    output = "/home/ubuntu/comparativas_energia_mvp/app/node_modules/.prisma/client"
+}
+
+datasource db {
+    provider = "postgresql"
+    url      = env("DATABASE_URL")
+}
+
+model Comercializadora {
+  id          String   @id @default(cuid())
+  nombre      String   @unique
+  activa      Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  ofertas     Oferta[]
+  
+  @@map("comercializadoras")
+}
+
+model Oferta {
+  id                String   @id @default(cuid())
+  comercializadoraId String
+  nombre            String
+  tarifa            String
+  tipo              String // "Fija", "Indexada", etc.
+  precioEnergia     Float   // €/kWh
+  precioTermino     Float   // €/kW mes
+  descripcion       String?
+  activa            Boolean @default(true)
+  
+  // Reglas de comisión
+  comisionTipo      String  // "P" para potencia, "E" para energía
+  comisionMinimo    Float   // Valor mínimo para aplicar comisión
+  comisionMaximo    Float?  // Valor máximo (opcional)
+  comisionValor     Float   // Valor de la comisión
+  
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  comercializadora  Comercializadora @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
+  comparativaOfertas ComparativaOferta[]
+  
+  @@map("ofertas")
+}
+
+model Cliente {
+  id          String   @id @default(cuid())
+  nombre      String
+  cif         String?
+  direccion   String?
+  telefono    String?
+  email       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  comparativas Comparativa[]
+  
+  @@map("clientes")
+}
+
+model Comparativa {
+  id                String   @id @default(cuid())
+  clienteId         String
+  
+  // Datos de entrada
+  consumoAnual      Float    // kWh/año
+  potenciaContratada Float   // kW
+  tarifaActual      String
+  importeActual     Float    // € factura actual mensual/anual
+  
+  // Metadatos
+  titulo            String?
+  notas             String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  cliente           Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  ofertas           ComparativaOferta[]
+  
+  @@map("comparativas")
+}
+
+model ComparativaOferta {
+  id              String   @id @default(cuid())
+  comparativaId   String
+  ofertaId        String
+  
+  // Resultados calculados
+  importeCalculado Float   // € calculado para esta oferta
+  ahorroAnual     Float   // € ahorro vs factura actual
+  comisionGanada  Float   // € comisión para el consultor
+  
+  createdAt       DateTime @default(now())
+  
+  comparativa     Comparativa @relation(fields: [comparativaId], references: [id], onDelete: Cascade)
+  oferta          Oferta @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  
+  @@unique([comparativaId, ofertaId])
+  @@map("comparativa_ofertas")
+}
