@@ -67,6 +67,9 @@ export default function AdminComercializadoras() {
   const [editingOfertaId, setEditingOfertaId] = useState<string | null>(null);
   
   const { toast } = useToast();
+
+  // Estado inicial para debugging
+  console.log('AdminComercializadoras renderizando, loading:', loading);
   
   // Estado para nueva comercializadora
   const [nuevaComercializadora, setNuevaComercializadora] = useState({
