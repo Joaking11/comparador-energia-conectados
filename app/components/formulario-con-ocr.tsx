@@ -79,7 +79,7 @@ export function FormularioConOCR() {
             </div>
             
             {/* Descripción del método seleccionado */}
-            <div className="mt-6 p-4 rounded-lg border border-gray-200 bg-gray-50">
+            <div className="mt-6 p-4 rounded-lg border border-primary/20 bg-primary/5">
               {metodoSeleccionado === 'ocr' ? (
                 <div className="text-center space-y-2">
                   <h4 className="font-medium text-gray-900">Procesamiento Automático con IA</h4>

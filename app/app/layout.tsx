@@ -7,8 +7,8 @@ import { Providers } from '@/components/providers';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
-  title: 'Comparativas de Energía - MVP',
-  description: 'Herramienta profesional para comparar ofertas energéticas y calcular comisiones',
+  title: 'CONECTADOS - Comparativas de Energía',
+  description: 'Herramienta profesional de CONECTADOS para consultores energéticos. Compare ofertas, calcule ahorros y comisiones de forma automática.',
 };
 
 export default function RootLayout({

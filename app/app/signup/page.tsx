@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Zap } from 'lucide-react';
 import Link from 'next/link';
+import Image from 'next/image';
 
 export default function SignupPage() {
   const [formData, setFormData] = useState({
@@ -71,13 +72,17 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/10 flex items-center justify-center p-4">
       <Card className="w-full max-w-md">
         <CardHeader className="text-center">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <div className="flex items-center justify-center w-10 h-10 bg-blue-600 rounded-lg">
-              <Zap className="h-6 w-6 text-white" />
-            </div>
+          <div className="flex items-center justify-center mb-4">
+            <Image
+              src="/conectados-logo.png"
+              alt="CONECTADOS"
+              width={150}
+              height={50}
+              className="h-12 w-auto object-contain"
+            />
           </div>
           <CardTitle className="text-2xl">Crear Cuenta</CardTitle>
           <CardDescription>
@@ -147,7 +152,7 @@ export default function SignupPage() {
 
           <div className="mt-4 text-center">
             <span className="text-sm text-gray-600">¿Ya tienes cuenta? </span>
-            <Link href="/login" className="text-blue-600 hover:underline text-sm">
+            <Link href="/login" className="text-primary hover:underline text-sm">
               Iniciar sesión
             </Link>
           </div>

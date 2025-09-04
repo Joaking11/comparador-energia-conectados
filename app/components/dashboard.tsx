@@ -56,21 +56,21 @@ export function Dashboard() {
       description: 'Crear una nueva comparativa de ofertas energéticas',
       icon: Calculator,
       href: '/nueva-comparativa',
-      color: 'bg-blue-500'
+      color: 'bg-primary' // Azul teal corporativo
     },
     {
       title: 'Historial',
       description: 'Ver comparativas anteriores y resultados',
       icon: FileText,
       href: '/historial',
-      color: 'bg-green-500'
+      color: 'bg-secondary' // Verde corporativo
     },
     {
       title: 'Comercializadoras',
       description: 'Gestionar ofertas y comercializadoras',
       icon: Building,
       href: '/comercializadoras',
-      color: 'bg-purple-500'
+      color: 'bg-accent' // Naranja corporativo
     }
   ];
 
@@ -79,7 +79,7 @@ export function Dashboard() {
       {/* Hero Section */}
       <div className="text-center space-y-4">
         <h1 className="text-4xl font-bold text-gray-900">
-          Comparativas de <span className="text-blue-600">Energía</span>
+          <span className="text-primary">CONECTADOS</span> - Comparativas de <span className="text-accent">Energía</span>
         </h1>
         <p className="text-xl text-gray-600 max-w-2xl mx-auto">
           Herramienta profesional para consultores energéticos. 
@@ -94,7 +94,7 @@ export function Dashboard() {
             <CardTitle className="text-sm font-medium text-gray-600">
               Comparativas
             </CardTitle>
-            <Target className="h-4 w-4 text-blue-600" />
+            <Target className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
@@ -109,7 +109,7 @@ export function Dashboard() {
             <CardTitle className="text-sm font-medium text-gray-600">
               Comercializadoras
             </CardTitle>
-            <Building className="h-4 w-4 text-green-600" />
+            <Building className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
@@ -124,7 +124,7 @@ export function Dashboard() {
             <CardTitle className="text-sm font-medium text-gray-600">
               Ofertas
             </CardTitle>
-            <Zap className="h-4 w-4 text-orange-600" />
+            <Zap className="h-4 w-4 text-accent" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
@@ -139,7 +139,7 @@ export function Dashboard() {
             <CardTitle className="text-sm font-medium text-gray-600">
               Ahorro Promedio
             </CardTitle>
-            <TrendingUp className="h-4 w-4 text-purple-600" />
+            <TrendingUp className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
@@ -177,41 +177,41 @@ export function Dashboard() {
       </div>
 
       {/* Quick Start */}
-      <Card className="bg-gradient-to-r from-blue-50 to-indigo-50 border-blue-200">
+      <Card className="bg-gradient-to-r from-primary/10 to-accent/10 border-primary/20">
         <CardHeader>
-          <CardTitle className="flex items-center text-blue-900">
+          <CardTitle className="flex items-center text-primary">
             <Zap className="h-5 w-5 mr-2" />
             Inicio Rápido
           </CardTitle>
-          <CardDescription className="text-blue-700">
+          <CardDescription className="text-primary/80">
             ¿Nuevo en la plataforma? Sigue estos pasos para realizar tu primera comparativa
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div className="flex items-center space-x-3 p-3 bg-white rounded-lg shadow-sm">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center text-sm font-bold">
                 1
               </div>
               <span className="text-sm text-gray-700">Crear nueva comparativa</span>
             </div>
             <div className="flex items-center space-x-3 p-3 bg-white rounded-lg shadow-sm">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 bg-secondary text-white rounded-full flex items-center justify-center text-sm font-bold">
                 2
               </div>
               <span className="text-sm text-gray-700">Introducir datos del cliente</span>
             </div>
             <div className="flex items-center space-x-3 p-3 bg-white rounded-lg shadow-sm">
-              <div className="w-8 h-8 bg-blue-600 text-white rounded-full flex items-center justify-center text-sm font-bold">
+              <div className="w-8 h-8 bg-accent text-white rounded-full flex items-center justify-center text-sm font-bold">
                 3
               </div>
               <span className="text-sm text-gray-700">Ver resultados y comisiones</span>
             </div>
           </div>
           
-          <div className="pt-4 border-t border-blue-200">
+          <div className="pt-4 border-t border-primary/20">
             <Link href="/nueva-comparativa">
-              <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+              <Button className="bg-primary hover:bg-primary/90 text-white">
                 <Calculator className="h-4 w-4 mr-2" />
                 Comenzar Primera Comparativa
               </Button>

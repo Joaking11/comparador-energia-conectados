@@ -4,7 +4,7 @@ import { ListadoComercializadoras } from '@/components/listado-comercializadoras
 
 export default function ComercializadorasPage() {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="min-h-screen bg-gradient-to-br from-primary/5 to-accent/10">
       <Header />
       <div className="container max-w-6xl mx-auto py-8 px-4">
         <div className="text-center mb-8">
