@@ -162,7 +162,8 @@ export async function POST(request: Request) {
     
     } catch (error) {
       console.error('Error específico creando comparativa:', error);
-      throw new Error(`Error creando comparativa: ${error.message}`);
+      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
+      throw new Error(`Error creando comparativa: ${errorMessage}`);
     }
 
     // Obtener todas las ofertas activas

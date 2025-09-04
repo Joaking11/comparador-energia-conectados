@@ -1,17 +1,21 @@
 
-import { withAuth } from 'next-auth/middleware';
+// Middleware deshabilitado temporalmente para debugging
+// import { withAuth } from "next-auth/middleware";
 
-export default withAuth({
-  pages: {
-    signIn: '/login',
-  },
-});
+// export default withAuth(
+//   function middleware(req) {
+//     // Middleware logic here if needed
+//   },
+//   {
+//     callbacks: {
+//       authorized: ({ token, req }) => {
+//         // Allow all for now during development
+//         return true;
+//       },
+//     },
+//   }
+// );
 
-// Configurar qué rutas requieren autenticación
 export const config = {
-  matcher: [
-    // Proteger solo rutas administrativas, no las principales
-    '/admin/:path*',
-    '/configuracion/:path*',
-  ]
+  matcher: [],
 };

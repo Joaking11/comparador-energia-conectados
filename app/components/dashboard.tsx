@@ -143,7 +143,7 @@ export function Dashboard() {
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              {loading ? '--' : `${stats.ahorroPromedio.toFixed(0)}€`}
+              {loading ? '--' : `${Math.round(stats.ahorroPromedio || 0)}€`}
             </div>
             <p className="text-xs text-gray-500">Por comparativa</p>
           </CardContent>
