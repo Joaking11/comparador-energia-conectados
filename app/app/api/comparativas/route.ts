@@ -41,14 +41,15 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { cliente, consumo, titulo, notas } = body;
+    const { cliente, comparativa: datosComparativa } = body;
 
     // Crear o encontrar cliente
     let clienteRecord = await prisma.cliente.findFirst({
       where: { 
         OR: [
-          { nombre: cliente.nombre },
-          { email: cliente.email }
+          { razonSocial: cliente.razonSocial },
+          { email: cliente.email },
+          { cif: cliente.cif }
         ]
       }
     });
@@ -56,25 +57,87 @@ export async function POST(request: Request) {
     if (!clienteRecord) {
       clienteRecord = await prisma.cliente.create({
         data: {
-          nombre: cliente.nombre,
-          cif: cliente.cif,
-          direccion: cliente.direccion,
-          telefono: cliente.telefono,
-          email: cliente.email,
+          razonSocial: cliente.razonSocial,
+          cif: cliente.cif || undefined,
+          direccion: cliente.direccion || undefined,
+          localidad: cliente.localidad || undefined,
+          provincia: cliente.provincia || undefined,
+          codigoPostal: cliente.codigoPostal || undefined,
+          nombreFirmante: cliente.nombreFirmante || undefined,
+          nifFirmante: cliente.nifFirmante || undefined,
+          telefono: cliente.telefono || undefined,
+          email: cliente.email || undefined,
         }
       });
     }
 
-    // Crear comparativa
+    // Crear comparativa con todos los campos
     const comparativa = await prisma.comparativa.create({
       data: {
         clienteId: clienteRecord.id,
-        consumoAnual: consumo.consumoAnual,
-        potenciaContratada: consumo.potenciaContratada,
-        tarifaActual: consumo.tarifaActual,
-        importeActual: consumo.importeActual,
-        titulo,
-        notas,
+        titulo: datosComparativa.titulo || undefined,
+        
+        // Electricidad
+        contrataElectricidad: datosComparativa.contrataElectricidad,
+        multipuntoElectricidad: datosComparativa.multipuntoElectricidad,
+        tarifaAccesoElectricidad: datosComparativa.tarifaAccesoElectricidad,
+        cupsElectricidad: datosComparativa.cupsElectricidad || undefined,
+        consumoAnualElectricidad: datosComparativa.consumoAnualElectricidad,
+        duracionContratoElectricidad: datosComparativa.duracionContratoElectricidad,
+        comercializadoraActual: datosComparativa.comercializadoraActual,
+        ahorroMinimo: datosComparativa.ahorroMinimo,
+        distribuidoraElectrica: datosComparativa.distribuidoraElectrica || undefined,
+        
+        // Gas
+        contrataGas: datosComparativa.contrataGas,
+        multipuntoGas: datosComparativa.multipuntoGas,
+        tarifaAccesoGas: datosComparativa.tarifaAccesoGas || undefined,
+        cupsGas: datosComparativa.cupsGas || undefined,
+        consumoAnualGas: datosComparativa.consumoAnualGas || undefined,
+        duracionContratoGas: datosComparativa.duracionContratoGas || undefined,
+        
+        // FEE
+        feeEnergia: datosComparativa.feeEnergia || 0,
+        feeEnergiaMinimo: datosComparativa.feeEnergiaMinimo || undefined,
+        feeEnergiaMaximo: datosComparativa.feeEnergiaMaximo || undefined,
+        feePotencia: datosComparativa.feePotencia || 0,
+        feePotenciaMinimo: datosComparativa.feePotenciaMinimo || undefined,
+        feePotenciaMaximo: datosComparativa.feePotenciaMaximo || undefined,
+        energiaFijo: datosComparativa.energiaFijo,
+        potenciaFijo: datosComparativa.potenciaFijo,
+        
+        // Potencias
+        potenciaP1: datosComparativa.potenciaP1,
+        potenciaP2: datosComparativa.potenciaP2 || undefined,
+        potenciaP3: datosComparativa.potenciaP3 || undefined,
+        potenciaP4: datosComparativa.potenciaP4 || undefined,
+        potenciaP5: datosComparativa.potenciaP5 || undefined,
+        potenciaP6: datosComparativa.potenciaP6 || undefined,
+        
+        // Consumos
+        consumoP1: datosComparativa.consumoP1,
+        consumoP2: datosComparativa.consumoP2 || undefined,
+        consumoP3: datosComparativa.consumoP3 || undefined,
+        consumoP4: datosComparativa.consumoP4 || undefined,
+        consumoP5: datosComparativa.consumoP5 || undefined,
+        consumoP6: datosComparativa.consumoP6 || undefined,
+        
+        // Factura Electricidad
+        terminoFijoElectricidad: datosComparativa.terminoFijoElectricidad,
+        terminoVariableElectricidad: datosComparativa.terminoVariableElectricidad,
+        excesoPotencia: datosComparativa.excesoPotencia || 0,
+        impuestoElectricidad: datosComparativa.impuestoElectricidad,
+        ivaElectricidad: datosComparativa.ivaElectricidad,
+        totalFacturaElectricidad: datosComparativa.totalFacturaElectricidad,
+        
+        // Factura Gas
+        terminoFijoGas: datosComparativa.terminoFijoGas || undefined,
+        terminoVariableGas: datosComparativa.terminoVariableGas || undefined,
+        impuestoGas: datosComparativa.impuestoGas || undefined,
+        ivaGas: datosComparativa.ivaGas || undefined,
+        totalFacturaGas: datosComparativa.totalFacturaGas || undefined,
+        
+        notas: datosComparativa.notas || undefined,
       }
     });
 
@@ -92,12 +155,12 @@ export async function POST(request: Request) {
     for (const oferta of ofertas) {
       const importeCalculado = calcularImporteAnual(
         oferta, 
-        consumo.consumoAnual, 
-        consumo.potenciaContratada
+        datosComparativa.consumoAnualElectricidad, 
+        datosComparativa.potenciaP1 // Usar potencia P1 como principal
       );
       
-      const ahorroAnual = calcularAhorro(importeCalculado, consumo.importeActual);
-      const comisionGanada = calcularComision(oferta, consumo.consumoAnual, consumo.potenciaContratada);
+      const ahorroAnual = calcularAhorro(importeCalculado, datosComparativa.totalFacturaElectricidad);
+      const comisionGanada = calcularComision(oferta, datosComparativa.consumoAnualElectricidad, datosComparativa.potenciaP1);
 
       // Solo incluir si hay ahorro o comisión
       if (ahorroAnual >= 0 || comisionGanada > 0) {
@@ -133,7 +196,7 @@ export async function POST(request: Request) {
       }
     });
 
-    return NextResponse.json(comparativaCompleta);
+    return NextResponse.json({ comparativa: comparativaCompleta });
 
   } catch (error) {
     console.error('Error creating comparativa:', error);

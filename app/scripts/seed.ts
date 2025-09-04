@@ -280,9 +280,12 @@ async function main() {
   // Crear cliente de ejemplo
   const clienteEjemplo = await prisma.cliente.create({
     data: {
-      nombre: 'Juan Pérez García',
+      razonSocial: 'Juan Pérez García',
       cif: '12345678Z',
-      direccion: 'Calle Ejemplo 123, Madrid',
+      direccion: 'Calle Ejemplo 123',
+      localidad: 'Madrid',
+      provincia: 'Madrid',
+      codigoPostal: '28001',
       telefono: '666123456',
       email: 'juan.perez@email.com'
     }

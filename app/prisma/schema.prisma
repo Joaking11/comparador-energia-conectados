@@ -102,14 +102,19 @@ model Oferta {
 }
 
 model Cliente {
-  id          String   @id @default(cuid())
-  nombre      String
-  cif         String?
-  direccion   String?
-  telefono    String?
-  email       String?
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  id              String   @id @default(cuid())
+  razonSocial     String
+  cif             String?
+  direccion       String?
+  localidad       String?
+  provincia       String?
+  codigoPostal    String?
+  nombreFirmante  String?
+  nifFirmante     String?
+  telefono        String?
+  email           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
   
   comparativas Comparativa[]
   
@@ -117,23 +122,78 @@ model Cliente {
 }
 
 model Comparativa {
-  id                String   @id @default(cuid())
-  clienteId         String
+  id                    String   @id @default(cuid())
+  clienteId             String
+  titulo                String?
+  fechaOferta           DateTime @default(now())
   
-  // Datos de entrada
-  consumoAnual      Float    // kWh/año
-  potenciaContratada Float   // kW
-  tarifaActual      String
-  importeActual     Float    // € factura actual mensual/anual
+  // ELECTRICIDAD
+  contrataElectricidad      Boolean @default(true)
+  multipuntoElectricidad    Boolean @default(false)
+  tarifaAccesoElectricidad  String  // "2.0TD", "3.0TD", "6.1TD", "6.2TD"
+  cupsElectricidad          String?
+  consumoAnualElectricidad  Float   // kWh/año
+  duracionContratoElectricidad Int  @default(12)
+  comercializadoraActual    String
+  ahorroMinimo              Float   @default(0.1)
+  distribuidoraElectrica    String?
+  
+  // GAS
+  contrataGas           Boolean @default(false)
+  multipuntoGas         Boolean @default(false)
+  tarifaAccesoGas       String?
+  cupsGas               String?
+  consumoAnualGas       Float?
+  duracionContratoGas   Int?
+  
+  // CONFIGURACIÓN FEE
+  feeEnergia            Float   @default(0.0)
+  feeEnergiaMinimo      Float?
+  feeEnergiaMaximo      Float?
+  feePotencia           Float   @default(0.0)
+  feePotenciaMinimo     Float?
+  feePotenciaMaximo     Float?
+  energiaFijo           Boolean @default(false)
+  potenciaFijo          Boolean @default(false)
+  
+  // POTENCIAS CONTRATADAS por período (kW)
+  potenciaP1            Float
+  potenciaP2            Float?
+  potenciaP3            Float?
+  potenciaP4            Float?
+  potenciaP5            Float?
+  potenciaP6            Float?
+  
+  // CONSUMOS FACTURADOS por período (kWh)
+  consumoP1             Float
+  consumoP2             Float?
+  consumoP3             Float?
+  consumoP4             Float?
+  consumoP5             Float?
+  consumoP6             Float?
+  
+  // FACTURA ACTUAL - ELECTRICIDAD
+  terminoFijoElectricidad     Float
+  terminoVariableElectricidad Float
+  excesoPotencia              Float   @default(0.0)
+  impuestoElectricidad        Float
+  ivaElectricidad            Float
+  totalFacturaElectricidad   Float
+  
+  // FACTURA ACTUAL - GAS
+  terminoFijoGas      Float?
+  terminoVariableGas  Float?
+  impuestoGas         Float?
+  ivaGas              Float?
+  totalFacturaGas     Float?
   
   // Metadatos
-  titulo            String?
-  notas             String?
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  notas               String?
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
   
-  cliente           Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  ofertas           ComparativaOferta[]
+  cliente             Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  ofertas             ComparativaOferta[]
   
   @@map("comparativas")
 }
