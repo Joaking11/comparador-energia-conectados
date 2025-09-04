@@ -1,5 +1,5 @@
 
-import { Calculator, Zap } from 'lucide-react';
+import { Calculator, Zap, Settings, Building } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 
@@ -36,6 +36,19 @@ export function Header() {
             className="text-gray-600 hover:text-primary transition-colors"
           >
             Historial
+          </Link>
+          <Link 
+            href="/comercializadoras"
+            className="text-gray-600 hover:text-primary transition-colors"
+          >
+            Comercializadoras
+          </Link>
+          <Link 
+            href="/admin/comercializadoras"
+            className="flex items-center space-x-2 px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm"
+          >
+            <Settings className="h-4 w-4" />
+            <span>Admin</span>
           </Link>
         </nav>
       </div>
