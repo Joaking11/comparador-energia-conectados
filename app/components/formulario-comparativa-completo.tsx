@@ -111,11 +111,98 @@ const TARIFAS_ACCESO_GAS = ['RL.1', 'RL.2', 'RL.3', 'RL.4'];
 const COMERCIALIZADORAS = ['Iberdrola', 'Endesa', 'Naturgy', 'EDP', 'Repsol', 'Audax', 'Acciona', 'Holaluz'];
 const DISTRIBUIDORAS = ['Iberdrola', 'Endesa', 'Naturgy', 'EDP', 'UFD', 'Viesgo'];
 
-export function FormularioComparativaCompleto() {
+export function FormularioComparativaCompleto({ datosIniciales }: { datosIniciales?: any }) {
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
-  const [formData, setFormData] = useState<FormDataCompleto>({
+
+  // Función para mapear datos de OCR al formato del formulario
+  const mapearDatosOCR = (datosOCR: any): FormDataCompleto => {
+    if (!datosOCR) {
+      return formDataVacio;
+    }
+
+    return {
+      cliente: {
+        razonSocial: datosOCR.cliente?.razonSocial || '',
+        cif: datosOCR.cliente?.cif || '',
+        direccion: datosOCR.cliente?.direccion || '',
+        localidad: datosOCR.cliente?.localidad || '',
+        provincia: datosOCR.cliente?.provincia || '',
+        codigoPostal: datosOCR.cliente?.codigoPostal || '',
+        nombreFirmante: datosOCR.cliente?.nombreFirmante || '',
+        nifFirmante: datosOCR.cliente?.nifFirmante || '',
+        telefono: datosOCR.cliente?.telefono || '',
+        email: datosOCR.cliente?.email || ''
+      },
+      electricidad: {
+        contrataElectricidad: datosOCR.electricidad?.contrataElectricidad ?? true,
+        multipuntoElectricidad: false,
+        tarifaAccesoElectricidad: datosOCR.electricidad?.tarifaAccesoElectricidad || '2.0TD',
+        cupsElectricidad: datosOCR.electricidad?.cupsElectricidad || '',
+        consumoAnualElectricidad: datosOCR.electricidad?.consumoAnualElectricidad || '',
+        duracionContratoElectricidad: 12,
+        comercializadoraActual: datosOCR.electricidad?.comercializadoraActual || '',
+        ahorroMinimo: 0.1,
+        distribuidoraElectrica: datosOCR.electricidad?.distribuidoraElectrica || ''
+      },
+      gas: {
+        contrataGas: datosOCR.gas?.contrataGas || false,
+        multipuntoGas: false,
+        tarifaAccesoGas: '',
+        cupsGas: datosOCR.gas?.cupsGas || '',
+        consumoAnualGas: datosOCR.gas?.consumoAnualGas || '',
+        duracionContratoGas: 12
+      },
+      fee: {
+        feeEnergia: 0,
+        feeEnergiaMinimo: '',
+        feeEnergiaMaximo: '',
+        feePotencia: 0,
+        feePotenciaMinimo: '',
+        feePotenciaMaximo: '',
+        energiaFijo: false,
+        potenciaFijo: false
+      },
+      potencias: {
+        potenciaP1: datosOCR.potencias?.potenciaP1 || '',
+        potenciaP2: datosOCR.potencias?.potenciaP2 || '',
+        potenciaP3: datosOCR.potencias?.potenciaP3 || '',
+        potenciaP4: datosOCR.potencias?.potenciaP4 || '',
+        potenciaP5: datosOCR.potencias?.potenciaP5 || '',
+        potenciaP6: datosOCR.potencias?.potenciaP6 || ''
+      },
+      consumos: {
+        consumoP1: datosOCR.consumos?.consumoP1 || '',
+        consumoP2: datosOCR.consumos?.consumoP2 || '',
+        consumoP3: datosOCR.consumos?.consumoP3 || '',
+        consumoP4: datosOCR.consumos?.consumoP4 || '',
+        consumoP5: datosOCR.consumos?.consumoP5 || '',
+        consumoP6: datosOCR.consumos?.consumoP6 || ''
+      },
+      facturaElectricidad: {
+        terminoFijo: datosOCR.facturaElectricidad?.terminoFijo || '',
+        terminoVariable: datosOCR.facturaElectricidad?.terminoVariable || '',
+        excesoPotencia: datosOCR.facturaElectricidad?.excesoPotencia || 0,
+        impuesto: datosOCR.facturaElectricidad?.impuesto || '',
+        iva: datosOCR.facturaElectricidad?.iva || '',
+        total: datosOCR.facturaElectricidad?.total || ''
+      },
+      facturaGas: {
+        terminoFijo: datosOCR.facturaGas?.terminoFijo || '',
+        terminoVariable: datosOCR.facturaGas?.terminoVariable || '',
+        impuesto: datosOCR.facturaGas?.impuesto || '',
+        iva: datosOCR.facturaGas?.iva || '',
+        total: datosOCR.facturaGas?.total || ''
+      },
+      metadatos: {
+        titulo: '',
+        notas: ''
+      }
+    };
+  };
+
+  const formDataVacio: FormDataCompleto = {
     cliente: {
       razonSocial: '',
       cif: '',
@@ -192,7 +279,12 @@ export function FormularioComparativaCompleto() {
       titulo: '',
       notas: ''
     }
-  });
+  };
+
+  // Inicializar formData con datos OCR si están disponibles
+  const [formData, setFormData] = useState<FormDataCompleto>(
+    datosIniciales ? mapearDatosOCR(datosIniciales) : formDataVacio
+  );
 
   const updateFormData = (section: keyof FormDataCompleto, field: string, value: any) => {
     setFormData(prev => ({

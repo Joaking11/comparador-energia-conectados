@@ -1,6 +1,6 @@
 
 import { Header } from '@/components/header';
-import { FormularioComparativaCompleto } from '@/components/formulario-comparativa-completo';
+import { FormularioConOCR } from '@/components/formulario-con-ocr';
 
 export default function NuevaComparativaPage() {
   return (
@@ -16,7 +16,7 @@ export default function NuevaComparativaPage() {
           </p>
         </div>
         
-        <FormularioComparativaCompleto />
+        <FormularioConOCR />
       </div>
     </div>
   );
