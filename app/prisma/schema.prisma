@@ -127,6 +127,11 @@ model Comparativa {
   titulo                String?
   fechaOferta           DateTime @default(now())
   
+  // PERIODO DE FACTURACIÓN
+  fechaInicialFactura   DateTime?
+  fechaFinalFactura     DateTime?
+  diasPeriodoFactura    Int      @default(30)
+  
   // ELECTRICIDAD
   contrataElectricidad      Boolean @default(true)
   multipuntoElectricidad    Boolean @default(false)

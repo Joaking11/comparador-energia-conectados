@@ -24,7 +24,8 @@ import {
   Loader2,
   Flame,
   Settings,
-  TrendingUp
+  TrendingUp,
+  Calendar
 } from 'lucide-react';
 
 interface FormDataCompleto {
@@ -86,6 +87,9 @@ interface FormDataCompleto {
     consumoP6: number | string;
   };
   facturaElectricidad: {
+    fechaInicial: string;
+    fechaFinal: string;
+    diasPeriodo: number;
     terminoFijo: number | string;
     terminoVariable: number | string;
     excesoPotencia: number | string;
@@ -181,6 +185,9 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
         consumoP6: datosOCR.consumos?.consumoP6 || ''
       },
       facturaElectricidad: {
+        fechaInicial: datosOCR.facturaElectricidad?.fechaInicial || '',
+        fechaFinal: datosOCR.facturaElectricidad?.fechaFinal || '',
+        diasPeriodo: datosOCR.facturaElectricidad?.diasPeriodo || 30,
         terminoFijo: datosOCR.facturaElectricidad?.terminoFijo || '',
         terminoVariable: datosOCR.facturaElectricidad?.terminoVariable || '',
         excesoPotencia: datosOCR.facturaElectricidad?.excesoPotencia || 0,
@@ -261,6 +268,9 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
       consumoP6: ''
     },
     facturaElectricidad: {
+      fechaInicial: '',
+      fechaFinal: '',
+      diasPeriodo: 30,
       terminoFijo: '',
       terminoVariable: '',
       excesoPotencia: 0,
@@ -309,6 +319,44 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
     }));
   };
 
+  // Función para calcular días del periodo automáticamente
+  const calcularDiasPeriodo = (fechaInicial: string, fechaFinal: string): number => {
+    if (!fechaInicial || !fechaFinal) return 30;
+    
+    try {
+      const inicio = new Date(fechaInicial);
+      const fin = new Date(fechaFinal);
+      const diferencia = fin.getTime() - inicio.getTime();
+      const dias = Math.ceil(diferencia / (1000 * 3600 * 24)) + 1; // +1 para incluir ambos días
+      
+      return dias > 0 ? dias : 30;
+    } catch (error) {
+      return 30;
+    }
+  };
+
+  // Función específica para actualizar fechas de facturación
+  const updateFechaFacturacion = (campo: 'fechaInicial' | 'fechaFinal', valor: string) => {
+    setFormData(prev => {
+      const nuevaFactura = {
+        ...prev.facturaElectricidad,
+        [campo]: valor
+      };
+      
+      // Calcular días automáticamente si tenemos ambas fechas
+      if (campo === 'fechaInicial' && prev.facturaElectricidad.fechaFinal) {
+        nuevaFactura.diasPeriodo = calcularDiasPeriodo(valor, prev.facturaElectricidad.fechaFinal);
+      } else if (campo === 'fechaFinal' && prev.facturaElectricidad.fechaInicial) {
+        nuevaFactura.diasPeriodo = calcularDiasPeriodo(prev.facturaElectricidad.fechaInicial, valor);
+      }
+      
+      return {
+        ...prev,
+        facturaElectricidad: nuevaFactura
+      };
+    });
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
@@ -325,6 +373,12 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
         }
         if (!formData.potencias.potenciaP1 || parseFloatSafe(formData.potencias.potenciaP1) <= 0) {
           throw new Error('Potencia P1 debe ser mayor que 0');
+        }
+        if (!formData.facturaElectricidad.fechaInicial?.trim()) {
+          throw new Error('Fecha inicial del periodo de facturación es requerida');
+        }
+        if (!formData.facturaElectricidad.fechaFinal?.trim()) {
+          throw new Error('Fecha final del periodo de facturación es requerida');
         }
         if (!formData.facturaElectricidad.total || parseFloatSafe(formData.facturaElectricidad.total) <= 0) {
           throw new Error('Total de factura de electricidad debe ser mayor que 0');
@@ -383,6 +437,9 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
           consumoP6: formData.consumos.consumoP6 ? parseFloatSafe(formData.consumos.consumoP6) : undefined,
           
           // Factura Electricidad
+          fechaInicialFactura: formData.facturaElectricidad.fechaInicial,
+          fechaFinalFactura: formData.facturaElectricidad.fechaFinal,
+          diasPeriodoFactura: formData.facturaElectricidad.diasPeriodo,
           terminoFijoElectricidad: parseFloatSafe(formData.facturaElectricidad.terminoFijo),
           terminoVariableElectricidad: parseFloatSafe(formData.facturaElectricidad.terminoVariable),
           excesoPotencia: parseFloatSafe(formData.facturaElectricidad.excesoPotencia),
@@ -1039,6 +1096,52 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
                   </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
+                  
+                  {/* Periodo de Facturación */}
+                  <div className="bg-primary/5 border border-primary/20 rounded-lg p-4 space-y-4">
+                    <h5 className="font-medium text-primary flex items-center gap-2">
+                      <Calendar className="h-4 w-4" />
+                      Periodo de Facturación *
+                    </h5>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                      <div>
+                        <Label htmlFor="fechaInicial">Fecha Inicial *</Label>
+                        <Input
+                          id="fechaInicial"
+                          type="date"
+                          required={formData.electricidad.contrataElectricidad}
+                          value={formData.facturaElectricidad.fechaInicial}
+                          onChange={(e) => updateFechaFacturacion('fechaInicial', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="fechaFinal">Fecha Final *</Label>
+                        <Input
+                          id="fechaFinal"
+                          type="date"
+                          required={formData.electricidad.contrataElectricidad}
+                          value={formData.facturaElectricidad.fechaFinal}
+                          onChange={(e) => updateFechaFacturacion('fechaFinal', e.target.value)}
+                        />
+                      </div>
+                      
+                      <div>
+                        <Label htmlFor="diasPeriodo">Días del Periodo</Label>
+                        <Input
+                          id="diasPeriodo"
+                          type="number"
+                          value={formData.facturaElectricidad.diasPeriodo}
+                          readOnly
+                          className="bg-gray-50 text-gray-700"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          Se calcula automáticamente
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                  
                   <div>
                     <Label htmlFor="terminoFijoElectricidad">Término Fijo (€) *</Label>
                     <Input

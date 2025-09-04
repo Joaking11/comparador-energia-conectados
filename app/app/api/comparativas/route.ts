@@ -95,6 +95,11 @@ export async function POST(request: Request) {
         clienteId: clienteRecord.id,
         titulo: datosComparativa.titulo || undefined,
         
+        // Periodo de Facturación
+        fechaInicialFactura: datosComparativa.fechaInicialFactura ? new Date(datosComparativa.fechaInicialFactura) : undefined,
+        fechaFinalFactura: datosComparativa.fechaFinalFactura ? new Date(datosComparativa.fechaFinalFactura) : undefined,
+        diasPeriodoFactura: datosComparativa.diasPeriodoFactura || 30,
+        
         // Electricidad
         contrataElectricidad: datosComparativa.contrataElectricidad,
         multipuntoElectricidad: datosComparativa.multipuntoElectricidad,
