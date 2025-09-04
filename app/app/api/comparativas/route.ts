@@ -41,6 +41,7 @@ export async function GET() {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
+    console.log('Datos recibidos en API:', JSON.stringify(body, null, 2));
     const { cliente, comparativa: datosComparativa } = body;
 
     // Crear o encontrar cliente
@@ -71,8 +72,25 @@ export async function POST(request: Request) {
       });
     }
 
+    console.log('Cliente encontrado/creado:', clienteRecord);
+
+    // Validar campos requeridos
+    if (!datosComparativa.consumoAnualElectricidad || datosComparativa.consumoAnualElectricidad <= 0) {
+      throw new Error('Consumo anual de electricidad es requerido');
+    }
+    if (!datosComparativa.potenciaP1 || datosComparativa.potenciaP1 <= 0) {
+      throw new Error('Potencia P1 es requerida');
+    }
+    if (!datosComparativa.totalFacturaElectricidad || datosComparativa.totalFacturaElectricidad <= 0) {
+      throw new Error('Total de factura de electricidad es requerido');
+    }
+
     // Crear comparativa con todos los campos
-    const comparativa = await prisma.comparativa.create({
+    console.log('Creando comparativa con datos:', datosComparativa);
+    
+    let comparativa;
+    try {
+      comparativa = await prisma.comparativa.create({
       data: {
         clienteId: clienteRecord.id,
         titulo: datosComparativa.titulo || undefined,
@@ -84,7 +102,7 @@ export async function POST(request: Request) {
         cupsElectricidad: datosComparativa.cupsElectricidad || undefined,
         consumoAnualElectricidad: datosComparativa.consumoAnualElectricidad,
         duracionContratoElectricidad: datosComparativa.duracionContratoElectricidad,
-        comercializadoraActual: datosComparativa.comercializadoraActual,
+        comercializadoraActual: datosComparativa.comercializadoraActual || 'No especificada',
         ahorroMinimo: datosComparativa.ahorroMinimo,
         distribuidoraElectrica: datosComparativa.distribuidoraElectrica || undefined,
         
@@ -107,7 +125,7 @@ export async function POST(request: Request) {
         potenciaFijo: datosComparativa.potenciaFijo,
         
         // Potencias
-        potenciaP1: datosComparativa.potenciaP1,
+        potenciaP1: datosComparativa.potenciaP1 || 1.0, // Default mínimo si no se especifica
         potenciaP2: datosComparativa.potenciaP2 || undefined,
         potenciaP3: datosComparativa.potenciaP3 || undefined,
         potenciaP4: datosComparativa.potenciaP4 || undefined,
@@ -115,7 +133,7 @@ export async function POST(request: Request) {
         potenciaP6: datosComparativa.potenciaP6 || undefined,
         
         // Consumos
-        consumoP1: datosComparativa.consumoP1,
+        consumoP1: datosComparativa.consumoP1 || datosComparativa.consumoAnualElectricidad || 1000, // Default o total
         consumoP2: datosComparativa.consumoP2 || undefined,
         consumoP3: datosComparativa.consumoP3 || undefined,
         consumoP4: datosComparativa.consumoP4 || undefined,
@@ -140,6 +158,12 @@ export async function POST(request: Request) {
         notas: datosComparativa.notas || undefined,
       }
     });
+    console.log('Comparativa creada exitosamente:', comparativa);
+    
+    } catch (error) {
+      console.error('Error específico creando comparativa:', error);
+      throw new Error(`Error creando comparativa: ${error.message}`);
+    }
 
     // Obtener todas las ofertas activas
     const ofertas = await prisma.oferta.findMany({

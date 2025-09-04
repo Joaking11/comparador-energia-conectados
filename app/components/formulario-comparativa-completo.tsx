@@ -286,6 +286,19 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
     datosIniciales ? mapearDatosOCR(datosIniciales) : formDataVacio
   );
 
+  // Función de parsing seguro para números
+  const parseFloatSafe = (value: any): number => {
+    if (value === '' || value === null || value === undefined) return 0;
+    const parsed = parseFloat(value.toString());
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
+  const parseIntSafe = (value: any): number => {
+    if (value === '' || value === null || value === undefined) return 0;
+    const parsed = parseInt(value.toString());
+    return isNaN(parsed) ? 0 : parsed;
+  };
+
   const updateFormData = (section: keyof FormDataCompleto, field: string, value: any) => {
     setFormData(prev => ({
       ...prev,
@@ -301,6 +314,23 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
     setLoading(true);
 
     try {
+      // Validar campos requeridos antes del envío
+      if (!formData.cliente.razonSocial?.trim()) {
+        throw new Error('Razón Social del cliente es requerida');
+      }
+      
+      if (formData.electricidad.contrataElectricidad) {
+        if (!formData.electricidad.consumoAnualElectricidad || parseFloatSafe(formData.electricidad.consumoAnualElectricidad) <= 0) {
+          throw new Error('Consumo anual de electricidad debe ser mayor que 0');
+        }
+        if (!formData.potencias.potenciaP1 || parseFloatSafe(formData.potencias.potenciaP1) <= 0) {
+          throw new Error('Potencia P1 debe ser mayor que 0');
+        }
+        if (!formData.facturaElectricidad.total || parseFloatSafe(formData.facturaElectricidad.total) <= 0) {
+          throw new Error('Total de factura de electricidad debe ser mayor que 0');
+        }
+      }
+
       // Preparar datos para envío
       const datos = {
         cliente: formData.cliente,
@@ -312,10 +342,10 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
           multipuntoElectricidad: formData.electricidad.multipuntoElectricidad,
           tarifaAccesoElectricidad: formData.electricidad.tarifaAccesoElectricidad,
           cupsElectricidad: formData.electricidad.cupsElectricidad || undefined,
-          consumoAnualElectricidad: parseFloat(formData.electricidad.consumoAnualElectricidad.toString()),
-          duracionContratoElectricidad: parseInt(formData.electricidad.duracionContratoElectricidad.toString()),
+          consumoAnualElectricidad: parseFloatSafe(formData.electricidad.consumoAnualElectricidad),
+          duracionContratoElectricidad: parseIntSafe(formData.electricidad.duracionContratoElectricidad),
           comercializadoraActual: formData.electricidad.comercializadoraActual,
-          ahorroMinimo: parseFloat(formData.electricidad.ahorroMinimo.toString()),
+          ahorroMinimo: parseFloatSafe(formData.electricidad.ahorroMinimo),
           distribuidoraElectrica: formData.electricidad.distribuidoraElectrica || undefined,
           
           // Gas
@@ -323,53 +353,55 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
           multipuntoGas: formData.gas.multipuntoGas,
           tarifaAccesoGas: formData.gas.tarifaAccesoGas || undefined,
           cupsGas: formData.gas.cupsGas || undefined,
-          consumoAnualGas: formData.gas.consumoAnualGas ? parseFloat(formData.gas.consumoAnualGas.toString()) : undefined,
-          duracionContratoGas: formData.gas.duracionContratoGas ? parseInt(formData.gas.duracionContratoGas.toString()) : undefined,
+          consumoAnualGas: formData.gas.consumoAnualGas ? parseFloatSafe(formData.gas.consumoAnualGas) : undefined,
+          duracionContratoGas: formData.gas.duracionContratoGas ? parseIntSafe(formData.gas.duracionContratoGas) : undefined,
           
           // FEE
-          feeEnergia: parseFloat(formData.fee.feeEnergia.toString()) || 0,
-          feeEnergiaMinimo: formData.fee.feeEnergiaMinimo ? parseFloat(formData.fee.feeEnergiaMinimo.toString()) : undefined,
-          feeEnergiaMaximo: formData.fee.feeEnergiaMaximo ? parseFloat(formData.fee.feeEnergiaMaximo.toString()) : undefined,
-          feePotencia: parseFloat(formData.fee.feePotencia.toString()) || 0,
-          feePotenciaMinimo: formData.fee.feePotenciaMinimo ? parseFloat(formData.fee.feePotenciaMinimo.toString()) : undefined,
-          feePotenciaMaximo: formData.fee.feePotenciaMaximo ? parseFloat(formData.fee.feePotenciaMaximo.toString()) : undefined,
+          feeEnergia: parseFloatSafe(formData.fee.feeEnergia),
+          feeEnergiaMinimo: formData.fee.feeEnergiaMinimo ? parseFloatSafe(formData.fee.feeEnergiaMinimo) : undefined,
+          feeEnergiaMaximo: formData.fee.feeEnergiaMaximo ? parseFloatSafe(formData.fee.feeEnergiaMaximo) : undefined,
+          feePotencia: parseFloatSafe(formData.fee.feePotencia),
+          feePotenciaMinimo: formData.fee.feePotenciaMinimo ? parseFloatSafe(formData.fee.feePotenciaMinimo) : undefined,
+          feePotenciaMaximo: formData.fee.feePotenciaMaximo ? parseFloatSafe(formData.fee.feePotenciaMaximo) : undefined,
           energiaFijo: formData.fee.energiaFijo,
           potenciaFijo: formData.fee.potenciaFijo,
           
           // Potencias
-          potenciaP1: parseFloat(formData.potencias.potenciaP1.toString()),
-          potenciaP2: formData.potencias.potenciaP2 ? parseFloat(formData.potencias.potenciaP2.toString()) : undefined,
-          potenciaP3: formData.potencias.potenciaP3 ? parseFloat(formData.potencias.potenciaP3.toString()) : undefined,
-          potenciaP4: formData.potencias.potenciaP4 ? parseFloat(formData.potencias.potenciaP4.toString()) : undefined,
-          potenciaP5: formData.potencias.potenciaP5 ? parseFloat(formData.potencias.potenciaP5.toString()) : undefined,
-          potenciaP6: formData.potencias.potenciaP6 ? parseFloat(formData.potencias.potenciaP6.toString()) : undefined,
+          potenciaP1: parseFloatSafe(formData.potencias.potenciaP1),
+          potenciaP2: formData.potencias.potenciaP2 ? parseFloatSafe(formData.potencias.potenciaP2) : undefined,
+          potenciaP3: formData.potencias.potenciaP3 ? parseFloatSafe(formData.potencias.potenciaP3) : undefined,
+          potenciaP4: formData.potencias.potenciaP4 ? parseFloatSafe(formData.potencias.potenciaP4) : undefined,
+          potenciaP5: formData.potencias.potenciaP5 ? parseFloatSafe(formData.potencias.potenciaP5) : undefined,
+          potenciaP6: formData.potencias.potenciaP6 ? parseFloatSafe(formData.potencias.potenciaP6) : undefined,
           
           // Consumos
-          consumoP1: parseFloat(formData.consumos.consumoP1.toString()),
-          consumoP2: formData.consumos.consumoP2 ? parseFloat(formData.consumos.consumoP2.toString()) : undefined,
-          consumoP3: formData.consumos.consumoP3 ? parseFloat(formData.consumos.consumoP3.toString()) : undefined,
-          consumoP4: formData.consumos.consumoP4 ? parseFloat(formData.consumos.consumoP4.toString()) : undefined,
-          consumoP5: formData.consumos.consumoP5 ? parseFloat(formData.consumos.consumoP5.toString()) : undefined,
-          consumoP6: formData.consumos.consumoP6 ? parseFloat(formData.consumos.consumoP6.toString()) : undefined,
+          consumoP1: parseFloatSafe(formData.consumos.consumoP1),
+          consumoP2: formData.consumos.consumoP2 ? parseFloatSafe(formData.consumos.consumoP2) : undefined,
+          consumoP3: formData.consumos.consumoP3 ? parseFloatSafe(formData.consumos.consumoP3) : undefined,
+          consumoP4: formData.consumos.consumoP4 ? parseFloatSafe(formData.consumos.consumoP4) : undefined,
+          consumoP5: formData.consumos.consumoP5 ? parseFloatSafe(formData.consumos.consumoP5) : undefined,
+          consumoP6: formData.consumos.consumoP6 ? parseFloatSafe(formData.consumos.consumoP6) : undefined,
           
           // Factura Electricidad
-          terminoFijoElectricidad: parseFloat(formData.facturaElectricidad.terminoFijo.toString()),
-          terminoVariableElectricidad: parseFloat(formData.facturaElectricidad.terminoVariable.toString()),
-          excesoPotencia: formData.facturaElectricidad.excesoPotencia ? parseFloat(formData.facturaElectricidad.excesoPotencia.toString()) : 0,
-          impuestoElectricidad: parseFloat(formData.facturaElectricidad.impuesto.toString()),
-          ivaElectricidad: parseFloat(formData.facturaElectricidad.iva.toString()),
-          totalFacturaElectricidad: parseFloat(formData.facturaElectricidad.total.toString()),
+          terminoFijoElectricidad: parseFloatSafe(formData.facturaElectricidad.terminoFijo),
+          terminoVariableElectricidad: parseFloatSafe(formData.facturaElectricidad.terminoVariable),
+          excesoPotencia: parseFloatSafe(formData.facturaElectricidad.excesoPotencia),
+          impuestoElectricidad: parseFloatSafe(formData.facturaElectricidad.impuesto),
+          ivaElectricidad: parseFloatSafe(formData.facturaElectricidad.iva),
+          totalFacturaElectricidad: parseFloatSafe(formData.facturaElectricidad.total),
           
           // Factura Gas (opcional)
-          terminoFijoGas: formData.gas.contrataGas && formData.facturaGas.terminoFijo ? parseFloat(formData.facturaGas.terminoFijo.toString()) : undefined,
-          terminoVariableGas: formData.gas.contrataGas && formData.facturaGas.terminoVariable ? parseFloat(formData.facturaGas.terminoVariable.toString()) : undefined,
-          impuestoGas: formData.gas.contrataGas && formData.facturaGas.impuesto ? parseFloat(formData.facturaGas.impuesto.toString()) : undefined,
-          ivaGas: formData.gas.contrataGas && formData.facturaGas.iva ? parseFloat(formData.facturaGas.iva.toString()) : undefined,
-          totalFacturaGas: formData.gas.contrataGas && formData.facturaGas.total ? parseFloat(formData.facturaGas.total.toString()) : undefined,
+          terminoFijoGas: formData.gas.contrataGas && formData.facturaGas.terminoFijo ? parseFloatSafe(formData.facturaGas.terminoFijo) : undefined,
+          terminoVariableGas: formData.gas.contrataGas && formData.facturaGas.terminoVariable ? parseFloatSafe(formData.facturaGas.terminoVariable) : undefined,
+          impuestoGas: formData.gas.contrataGas && formData.facturaGas.impuesto ? parseFloatSafe(formData.facturaGas.impuesto) : undefined,
+          ivaGas: formData.gas.contrataGas && formData.facturaGas.iva ? parseFloatSafe(formData.facturaGas.iva) : undefined,
+          totalFacturaGas: formData.gas.contrataGas && formData.facturaGas.total ? parseFloatSafe(formData.facturaGas.total) : undefined,
           
           notas: formData.metadatos.notas || undefined
         }
       };
+
+      console.log('Datos a enviar:', datos);
 
       const response = await fetch('/api/comparativas', {
         method: 'POST',
@@ -380,7 +412,9 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
       });
 
       if (!response.ok) {
-        throw new Error('Error al crear la comparativa');
+        const errorData = await response.text();
+        console.error('Error response:', errorData);
+        throw new Error(`Error al crear la comparativa: ${response.status} - ${errorData}`);
       }
 
       const result = await response.json();
