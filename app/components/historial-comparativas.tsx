@@ -24,12 +24,12 @@ import { useToast } from '@/hooks/use-toast';
 interface ComparativaHistorial {
   id: string;
   titulo?: string;
-  consumoAnual: number;
-  potenciaContratada: number;
-  importeActual: number;
+  consumoAnualElectricidad: number;
+  potenciaP1: number;
+  totalFacturaElectricidad: number;
   createdAt: string;
   cliente: {
-    nombre: string;
+    razonSocial: string;
     cif?: string;
   };
   ofertas: Array<{
@@ -102,7 +102,7 @@ export function HistorialComparativas() {
   const comparativasFiltradas = comparativas.filter(comp => {
     const searchTerm = busqueda.toLowerCase();
     return (
-      comp.cliente.nombre.toLowerCase().includes(searchTerm) ||
+      comp.cliente.razonSocial?.toLowerCase().includes(searchTerm) ||
       comp.titulo?.toLowerCase().includes(searchTerm) ||
       comp.cliente.cif?.toLowerCase().includes(searchTerm)
     );
@@ -187,11 +187,11 @@ export function HistorialComparativas() {
                       <div className="flex items-start justify-between">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {comparativa.titulo || `Comparativa ${comparativa.cliente.nombre}`}
+                            {comparativa.titulo || `Comparativa ${comparativa.cliente.razonSocial}`}
                           </h3>
                           <div className="flex items-center text-gray-600 text-sm mt-1">
                             <User className="h-4 w-4 mr-1" />
-                            {comparativa.cliente.nombre}
+                            {comparativa.cliente.razonSocial}
                             {comparativa.cliente.cif && (
                               <>
                                 <span className="mx-2">•</span>
@@ -210,13 +210,13 @@ export function HistorialComparativas() {
                       {/* Datos técnicos */}
                       <div className="flex flex-wrap gap-4 text-sm text-gray-600">
                         <span>
-                          <strong>Consumo:</strong> {comparativa.consumoAnual.toLocaleString()} kWh
+                          <strong>Consumo:</strong> {comparativa.consumoAnualElectricidad.toLocaleString()} kWh
                         </span>
                         <span>
-                          <strong>Potencia:</strong> {comparativa.potenciaContratada} kW
+                          <strong>Potencia:</strong> {comparativa.potenciaP1} kW
                         </span>
                         <span>
-                          <strong>Factura actual:</strong> {comparativa.importeActual.toFixed(0)}€
+                          <strong>Factura actual:</strong> {comparativa.totalFacturaElectricidad.toFixed(0)}€
                         </span>
                         <span>
                           <strong>Ofertas analizadas:</strong> {comparativa.ofertas.length}
@@ -261,7 +261,7 @@ export function HistorialComparativas() {
                         variant="outline"
                         onClick={() => handleDelete(
                           comparativa.id, 
-                          comparativa.titulo || comparativa.cliente.nombre
+                          comparativa.titulo || comparativa.cliente.razonSocial
                         )}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >

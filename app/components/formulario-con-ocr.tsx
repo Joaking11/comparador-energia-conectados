@@ -2,7 +2,6 @@
 'use client';
 
 import { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
@@ -53,62 +52,60 @@ export function FormularioConOCR() {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={metodoSeleccionado} onValueChange={(value) => setMetodoSeleccionado(value as 'manual' | 'ocr')}>
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="ocr" className="flex items-center gap-2">
-                  <Upload className="h-4 w-4" />
-                  OCR/IA Automático
-                </TabsTrigger>
-                <TabsTrigger value="manual" className="flex items-center gap-2">
-                  <FileText className="h-4 w-4" />
-                  Entrada Manual
-                </TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="ocr" className="mt-6">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto">
-                    <Upload className="h-8 w-8 text-blue-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Procesamiento Automático con IA
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-2">
-                      Sube una factura y extraemos automáticamente todos los datos necesarios
-                    </p>
-                  </div>
-                  <ul className="text-sm text-gray-500 space-y-1">
-                    <li>✅ Extracción automática de más de 40 campos</li>
-                    <li>✅ Soporte para PDF e imágenes</li>
-                    <li>✅ Validación inteligente de datos</li>
-                    <li>✅ Pre-llenado automático del formulario</li>
-                  </ul>
+            <div className="grid grid-cols-2 gap-4">
+              <Button 
+                variant={metodoSeleccionado === 'ocr' ? 'default' : 'outline'}
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                onClick={() => setMetodoSeleccionado('ocr')}
+              >
+                <Upload className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-medium">OCR/IA Automático</div>
+                  <div className="text-xs opacity-80">Sube factura y extrae datos</div>
                 </div>
-              </TabsContent>
-
-              <TabsContent value="manual" className="mt-6">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto">
-                    <FileText className="h-8 w-8 text-green-600" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Entrada Manual de Datos
-                    </h3>
-                    <p className="text-sm text-gray-600 mt-2">
-                      Completa el formulario paso a paso con los datos del cliente
-                    </p>
-                  </div>
-                  <ul className="text-sm text-gray-500 space-y-1">
-                    <li>✅ Control total sobre los datos</li>
-                    <li>✅ Validación en tiempo real</li>
-                    <li>✅ Formulario organizado por pestañas</li>
-                    <li>✅ Ideal para casos complejos</li>
-                  </ul>
+              </Button>
+              
+              <Button 
+                variant={metodoSeleccionado === 'manual' ? 'default' : 'outline'}
+                className="h-auto p-4 flex flex-col items-center gap-2"
+                onClick={() => setMetodoSeleccionado('manual')}
+              >
+                <FileText className="h-6 w-6" />
+                <div className="text-center">
+                  <div className="font-medium">Entrada Manual</div>
+                  <div className="text-xs opacity-80">Completa formulario paso a paso</div>
                 </div>
-              </TabsContent>
-            </Tabs>
+              </Button>
+            </div>
+            
+            {/* Descripción del método seleccionado */}
+            <div className="mt-6 p-4 rounded-lg border border-gray-200 bg-gray-50">
+              {metodoSeleccionado === 'ocr' ? (
+                <div className="text-center space-y-2">
+                  <h4 className="font-medium text-gray-900">Procesamiento Automático con IA</h4>
+                  <p className="text-sm text-gray-600">
+                    Sube una factura y extraemos automáticamente todos los datos necesarios
+                  </p>
+                  <div className="flex justify-center gap-4 text-xs text-gray-500 mt-3">
+                    <span>✅ Extracción de 40+ campos</span>
+                    <span>✅ PDF e imágenes</span>
+                    <span>✅ Pre-llenado automático</span>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center space-y-2">
+                  <h4 className="font-medium text-gray-900">Entrada Manual de Datos</h4>
+                  <p className="text-sm text-gray-600">
+                    Completa el formulario paso a paso con los datos del cliente
+                  </p>
+                  <div className="flex justify-center gap-4 text-xs text-gray-500 mt-3">
+                    <span>✅ Control total</span>
+                    <span>✅ Validación en tiempo real</span>
+                    <span>✅ Formulario organizado</span>
+                  </div>
+                </div>
+              )}
+            </div>
           </CardContent>
         </Card>
       )}

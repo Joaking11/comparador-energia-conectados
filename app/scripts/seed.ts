@@ -293,10 +293,24 @@ async function main() {
 
   console.log('✅ Cliente de ejemplo creado');
 
+  // Crear usuario demo para autenticación
+  const bcryptjs = require('bcryptjs');
+  const hashedPassword = await bcryptjs.hash('demo123', 12);
+  
+  const userDemo = await prisma.user.create({
+    data: {
+      email: 'demo@energia.com',
+      name: 'Usuario Demo',
+      password: hashedPassword
+    }
+  });
+
+  console.log('✅ Usuario demo creado');
   console.log('🎉 Seed completado exitosamente!');
   console.log(`📊 Comercializadoras: ${comercializadoras.length}`);
   console.log(`📋 Ofertas: ${ofertas.length}`);
   console.log(`👤 Clientes: 1`);
+  console.log(`🔐 Usuario demo: demo@energia.com / demo123`);
 }
 
 main()
