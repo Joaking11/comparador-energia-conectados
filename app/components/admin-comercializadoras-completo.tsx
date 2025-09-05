@@ -326,29 +326,49 @@ export default function AdminComercializadorasCompleto() {
 
   const descargarPlantilla = async () => {
     try {
-      const response = await fetch('/api/plantilla-excel');
+      console.log('Descargando plantilla...');
+      const response = await fetch('/api/plantilla-excel', {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+        }
+      });
+      
+      console.log('Respuesta:', response.status, response.statusText);
+      
       if (response.ok) {
         const blob = await response.blob();
+        console.log('Blob size:', blob.size);
+        
+        // Crear enlace de descarga
         const url = window.URL.createObjectURL(blob);
         const link = document.createElement('a');
         link.href = url;
         link.download = 'plantilla_comercializadoras.xlsx';
+        link.style.display = 'none';
         document.body.appendChild(link);
         link.click();
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
+        
+        // Limpiar
+        setTimeout(() => {
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(url);
+        }, 100);
 
         toast({
-          title: "Éxito",
+          title: "✅ Éxito",
           description: "Plantilla descargada correctamente",
         });
       } else {
-        throw new Error('Error descargando plantilla');
+        const errorText = await response.text();
+        console.log('Error en respuesta:', errorText);
+        throw new Error(`Error ${response.status}: ${errorText}`);
       }
     } catch (error) {
+      console.error('Error descargando plantilla:', error);
       toast({
-        title: "Error",
-        description: "No se pudo descargar la plantilla",
+        title: "❌ Error",
+        description: `No se pudo descargar la plantilla: ${error.message}`,
         variant: "destructive",
       });
     }
