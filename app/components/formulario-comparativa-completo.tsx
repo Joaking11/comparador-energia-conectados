@@ -185,9 +185,9 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
         consumoP6: datosOCR.consumos?.consumoP6 || ''
       },
       facturaElectricidad: {
-        fechaInicial: datosOCR.facturaElectricidad?.fechaInicial || '',
-        fechaFinal: datosOCR.facturaElectricidad?.fechaFinal || '',
-        diasPeriodo: datosOCR.facturaElectricidad?.diasPeriodo || 30,
+        fechaInicial: datosOCR.periodofactura?.fechaInicial || '',
+        fechaFinal: datosOCR.periodofactura?.fechaFinal || '',
+        diasPeriodo: datosOCR.periodofactura?.diasPeriodo || 30,
         terminoFijo: datosOCR.facturaElectricidad?.terminoFijo || '',
         terminoVariable: datosOCR.facturaElectricidad?.terminoVariable || '',
         excesoPotencia: datosOCR.facturaElectricidad?.excesoPotencia || 0,

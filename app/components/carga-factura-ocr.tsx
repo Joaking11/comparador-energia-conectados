@@ -27,6 +27,11 @@ interface DatosExtraidos {
     telefono?: string;
     email?: string;
   };
+  periodofactura: {
+    fechaInicial: string; // YYYY-MM-DD
+    fechaFinal: string;   // YYYY-MM-DD
+    diasPeriodo: number;
+  };
   electricidad: {
     contrataElectricidad: boolean;
     tarifaAccesoElectricidad: string;
@@ -355,6 +360,12 @@ export function CargaFacturaOCR({ onDatosExtraidos, onError }: CargaFacturaOCRPr
                   </div>
                   <div>
                     <strong>CIF:</strong> {datosExtraidos.cliente.cif}
+                  </div>
+                  <div>
+                    <strong>Período:</strong> {datosExtraidos.periodofactura.fechaInicial} al {datosExtraidos.periodofactura.fechaFinal}
+                  </div>
+                  <div>
+                    <strong>Días:</strong> {datosExtraidos.periodofactura.diasPeriodo} días
                   </div>
                   <div>
                     <strong>Tarifa:</strong> {datosExtraidos.electricidad.tarifaAccesoElectricidad}

@@ -65,6 +65,11 @@ ESTRUCTURA JSON REQUERIDA:
     "consumoP5": "Consumo período 5 en kWh o null", 
     "consumoP6": "Consumo período 6 en kWh o null"
   },
+  "periodofactura": {
+    "fechaInicial": "Fecha inicial del periodo de facturación (formato YYYY-MM-DD)",
+    "fechaFinal": "Fecha final del periodo de facturación (formato YYYY-MM-DD)", 
+    "diasPeriodo": "Número de días del periodo de facturación (número)"
+  },
   "facturaElectricidad": {
     "terminoFijo": "Término fijo en € (número)",
     "terminoVariable": "Término variable en € (número)",
@@ -90,12 +95,15 @@ ESTRUCTURA JSON REQUERIDA:
 
 INSTRUCCIONES ESPECÍFICAS:
 1. Busca TODOS los períodos de potencia y consumo (P1, P2, P3, P4, P5, P6)
-2. Extrae términos fijo y variable por separado
-3. Identifica correctamente impuestos de electricidad vs IVA
-4. Si es factura dual (luz+gas), extrae ambos
-5. Si hay datos que no encuentras, usa null
-6. Sé muy preciso con los números, incluye decimales
-7. La confianza debe ser realista basada en calidad del texto
+2. OBLIGATORIO: Extrae las fechas del período de facturación (desde/hasta) y calcula los días
+3. Extrae términos fijo y variable por separado
+4. Identifica correctamente impuestos de electricidad vs IVA
+5. Si es factura dual (luz+gas), extrae ambos
+6. Si hay datos que no encuentras, usa null
+7. Las fechas deben estar en formato YYYY-MM-DD
+8. Calcula los días del período (fecha final - fecha inicial + 1)
+9. Sé muy preciso con los números, incluye decimales
+10. La confianza debe ser realista basada en calidad del texto
 
 Responde únicamente con JSON limpio, sin markdown ni explicaciones.
 `;
@@ -191,7 +199,7 @@ Responde únicamente con JSON limpio, sin markdown ni explicaciones.
                     const finalResult = JSON.parse(buffer);
                     
                     // Validaciones básicas
-                    if (!finalResult.cliente || !finalResult.electricidad) {
+                    if (!finalResult.cliente || !finalResult.electricidad || !finalResult.periodofactura) {
                       throw new Error('Datos incompletos extraídos');
                     }
 
