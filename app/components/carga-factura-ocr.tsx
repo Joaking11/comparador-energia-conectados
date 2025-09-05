@@ -137,6 +137,7 @@ export function CargaFacturaOCR({ onDatosExtraidos, onError }: CargaFacturaOCRPr
   const procesarFactura = async () => {
     if (!archivo) return;
 
+    console.log('🚀 Iniciando procesamiento de factura:', archivo.name);
     setEstado('subiendo');
     setProgreso(10);
 
@@ -144,6 +145,7 @@ export function CargaFacturaOCR({ onDatosExtraidos, onError }: CargaFacturaOCRPr
       // Preparar archivo para subida
       const formData = new FormData();
       formData.append('file', archivo);
+      console.log('📤 FormData preparado, enviando a API...');
 
       setProgreso(30);
       setEstado('procesando');
@@ -153,9 +155,13 @@ export function CargaFacturaOCR({ onDatosExtraidos, onError }: CargaFacturaOCRPr
         method: 'POST',
         body: formData,
       });
+      
+      console.log('📡 Respuesta recibida:', response.status, response.statusText);
 
       if (!response.ok) {
-        throw new Error(`Error ${response.status}: ${response.statusText}`);
+        const errorText = await response.text();
+        console.log('❌ Error en respuesta:', errorText);
+        throw new Error(`Error ${response.status}: ${response.statusText} - ${errorText}`);
       }
 
       // Procesar respuesta streaming
@@ -184,9 +190,13 @@ export function CargaFacturaOCR({ onDatosExtraidos, onError }: CargaFacturaOCRPr
             }
             try {
               const parsed = JSON.parse(data);
+              console.log('📨 Mensaje recibido:', parsed);
+              
               if (parsed.status === 'processing') {
                 setProgreso(prev => Math.min(prev + 5, 90));
+                console.log('⏳ Procesando...');
               } else if (parsed.status === 'completed') {
+                console.log('🎉 Completado exitosamente:', parsed.result);
                 setDatosExtraidos(parsed.result);
                 setEstado('completado');
                 setProgreso(100);
@@ -198,10 +208,11 @@ export function CargaFacturaOCR({ onDatosExtraidos, onError }: CargaFacturaOCRPr
                 });
                 return;
               } else if (parsed.status === 'error') {
+                console.log('❌ Error reportado por API:', parsed.message);
                 throw new Error(parsed.message || 'Error en el procesamiento');
               }
             } catch (e) {
-              // Skip invalid JSON
+              console.log('⚠️ JSON inválido ignorado:', data);
             }
           }
         }

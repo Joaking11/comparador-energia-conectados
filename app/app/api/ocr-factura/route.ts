@@ -1,19 +1,24 @@
 
 import { NextRequest, NextResponse } from 'next/server';
-import { uploadFile } from '@/lib/s3';
 
 export async function POST(request: NextRequest) {
+  console.log('🔍 OCR API: Inicio de procesamiento');
   try {
     const formData = await request.formData();
     const file = formData.get('file') as File;
     
+    console.log('📄 Archivo recibido:', file?.name, file?.type, file?.size);
+    
     if (!file) {
+      console.log('❌ Error: No se proporcionó archivo');
       return NextResponse.json({ error: 'No file provided' }, { status: 400 });
     }
 
-    // Subir archivo a S3
+    console.log('📋 Preparando archivo para procesamiento...');
+    // Procesar archivo directamente sin subir a S3
     const buffer = Buffer.from(await file.arrayBuffer());
-    const cloud_storage_path = await uploadFile(buffer, file.name);
+    const cloud_storage_path = `temp/${Date.now()}-${file.name}`;
+    console.log('✅ Archivo preparado para procesamiento:', cloud_storage_path);
 
     // Preparar archivo para procesamiento IA
     const base64String = buffer.toString('base64');
@@ -146,6 +151,15 @@ Responde únicamente con JSON limpio, sin markdown ni explicaciones.
       });
     }
 
+    console.log('🤖 Enviando a API de IA...');
+    console.log('📋 Configuración IA:', {
+      model: 'gpt-4.1-mini',
+      mensajes: messages.length,
+      stream: true,
+      max_tokens: 2000,
+      apiKeyExists: !!process.env.ABACUSAI_API_KEY
+    });
+    
     // Llamar a la API de LLM con streaming
     const response = await fetch('https://apps.abacus.ai/v1/chat/completions', {
       method: 'POST',
@@ -163,8 +177,12 @@ Responde únicamente con JSON limpio, sin markdown ni explicaciones.
       }),
     });
 
+    console.log('📡 Respuesta API IA:', response.status, response.statusText);
+    
     if (!response.ok) {
-      throw new Error(`Error LLM API: ${response.status}`);
+      const errorText = await response.text();
+      console.log('❌ Error API IA:', errorText);
+      throw new Error(`Error LLM API: ${response.status} - ${errorText}`);
     }
 
     // Stream de respuesta al cliente
@@ -196,12 +214,23 @@ Responde únicamente con JSON limpio, sin markdown ni explicaciones.
                 if (data === '[DONE]') {
                   // Procesar buffer final y enviar resultado
                   try {
+                    console.log('📝 Buffer completo recibido:', buffer.substring(0, 200) + '...');
                     const finalResult = JSON.parse(buffer);
+                    console.log('✅ JSON parseado exitosamente');
+                    console.log('🔍 Datos extraídos:', {
+                      tieneCliente: !!finalResult.cliente,
+                      tieneElectricidad: !!finalResult.electricidad,
+                      tienePeriodo: !!finalResult.periodofactura,
+                      confianza: finalResult.confianza
+                    });
                     
                     // Validaciones básicas
                     if (!finalResult.cliente || !finalResult.electricidad || !finalResult.periodofactura) {
+                      console.log('❌ Validación fallida - campos faltantes');
                       throw new Error('Datos incompletos extraídos');
                     }
+                    
+                    console.log('✅ Validaciones pasadas correctamente');
 
                     const finalData = JSON.stringify({
                       status: 'completed',
