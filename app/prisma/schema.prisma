@@ -70,35 +70,95 @@ model Comercializadora {
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
   
-  ofertas     Oferta[]
+  tarifas     Tarifa[]
+  comisiones  Comision[]
   
   @@map("comercializadoras")
 }
 
-model Oferta {
-  id                String   @id @default(cuid())
-  comercializadoraId String
-  nombre            String
-  tarifa            String
-  tipo              String // "Fija", "Indexada", etc.
-  precioEnergia     Float   // €/kWh
-  precioTermino     Float   // €/kW mes
-  descripcion       String?
-  activa            Boolean @default(true)
+// Nueva tabla para las TARIFAS2
+model Tarifa {
+  id                    String   @id @default(cuid())
+  comercializadoraId    String
+  nombreOferta          String   // Nombre de la oferta
+  energiaVerde          Boolean  @default(false)
+  tarifa                String   // "2.0TD", "3.0TD", etc.
+  zona                  String   // "PENINSULA", etc.
+  tipoOferta            String   // "Fijo", "Indexada", etc.
+  rango                 String   // "E" para energía, "P" para potencia
+  rangoDesde            Float    // Valor mínimo del rango
+  rangoHasta            Float?   // Valor máximo del rango (null = infinito)
+  tieneFee              Boolean  @default(false)
   
-  // Reglas de comisión
-  comisionTipo      String  // "P" para potencia, "E" para energía
-  comisionMinimo    Float   // Valor mínimo para aplicar comisión
-  comisionMaximo    Float?  // Valor máximo (opcional)
-  comisionValor     Float   // Valor de la comisión
+  // Precios de energía por período (€/kWh)
+  energiaP1             Float    
+  energiaP2             Float?   
+  energiaP3             Float?   
+  energiaP4             Float?   
+  energiaP5             Float?   
+  energiaP6             Float?   
+  energiaDescuento      Float?   // Descuento en energía
   
-  createdAt         DateTime @default(now())
-  updatedAt         DateTime @updatedAt
+  // Precios de potencia por período (€/kW mes)
+  potenciaP1            Float?   
+  potenciaP2            Float?   
+  potenciaP3            Float?   
+  potenciaP4            Float?   
+  potenciaP5            Float?   
+  potenciaP6            Float?   
+  potenciaDescuento     Float?   // Descuento en potencia
   
-  comercializadora  Comercializadora @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
-  comparativaOfertas ComparativaOferta[]
+  // Configuración FEE
+  feeEnergia            Float?   // FEE energía
+  feeEnergiaMinimo      Float?   // FEE energía mínimo
+  feeEnergiaMaximo      Float?   // FEE energía máximo
+  feePotencia           Float?   // FEE potencia  
+  feePotenciaMinimo     Float?   // FEE potencia mínimo
+  feePotenciaMaximo     Float?   // FEE potencia máximo
   
-  @@map("ofertas")
+  validaHasta           DateTime? // Fecha límite de la oferta
+  tipoCliente           String?   // "PAC", etc.
+  costeGestion          Float    @default(0)
+  costeTotal            Float    @default(0)
+  activa                Boolean  @default(true)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  comercializadora      Comercializadora @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
+  comparativaOfertas    ComparativaOferta[]
+  
+  @@map("tarifas")
+}
+
+// Nueva tabla para las COMISIONES  
+model Comision {
+  id                    String   @id @default(cuid())
+  comercializadoraId    String
+  nombreOferta          String   // Debe coincidir con Tarifa.nombreOferta
+  energiaVerde          Boolean  @default(false)
+  tarifa                String   // Debe coincidir con Tarifa.tarifa
+  zona                  String?  // "PENINSULA", etc.
+  tipoOferta            String   // Debe coincidir con Tarifa.tipoOferta
+  rango                 String   // "E" para energía, "P" para potencia
+  rangoDesde            Float    // Valor mínimo del rango
+  rangoHasta            Float?   // Valor máximo del rango (null = infinito)
+  tieneFee              Boolean  @default(false)
+  
+  // Porcentajes FEE
+  porcentajeFeeEnergia  Float?   // % FEE energía
+  porcentajeFeePotencia Float?   // % FEE potencia
+  
+  // Valor de la comisión en euros
+  comision              Float    // Valor de la comisión en €
+  activa                Boolean  @default(true)
+  
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  comercializadora      Comercializadora @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
+  
+  @@map("comisiones")
 }
 
 model Cliente {
@@ -206,18 +266,18 @@ model Comparativa {
 model ComparativaOferta {
   id              String   @id @default(cuid())
   comparativaId   String
-  ofertaId        String
+  tarifaId        String   // Ahora referencia a Tarifa en lugar de Oferta
   
   // Resultados calculados
-  importeCalculado Float   // € calculado para esta oferta
+  importeCalculado Float   // € calculado para esta tarifa
   ahorroAnual     Float   // € ahorro vs factura actual
   comisionGanada  Float   // € comisión para el consultor
   
   createdAt       DateTime @default(now())
   
   comparativa     Comparativa @relation(fields: [comparativaId], references: [id], onDelete: Cascade)
-  oferta          Oferta @relation(fields: [ofertaId], references: [id], onDelete: Cascade)
+  tarifa          Tarifa @relation(fields: [tarifaId], references: [id], onDelete: Cascade)
   
-  @@unique([comparativaId, ofertaId])
+  @@unique([comparativaId, tarifaId])
   @@map("comparativa_ofertas")
 }
