@@ -8,6 +8,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
+import { Switch } from '@/components/ui/switch';
+import { Label } from '@/components/ui/label';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -25,10 +27,12 @@ import {
   CheckCircle,
   AlertCircle,
   Eye,
-  FileText
+  FileText,
+  Grid3X3
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import InformeDetalladoComparativa from './informe-detallado-comparativa';
+import MatrizInteractivaResultados from './matriz-interactiva-resultados';
 
 interface ComparativaData {
   id: string;
@@ -79,6 +83,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   const [recalculando, setRecalculando] = useState(false);
   const [mostrarInformeDetallado, setMostrarInformeDetallado] = useState(false);
   const [resultadoSeleccionado, setResultadoSeleccionado] = useState<any>(null);
+  const [vistaActiva, setVistaActiva] = useState<'lista' | 'matriz'>('lista');
   const { toast } = useToast();
 
   useEffect(() => {
@@ -345,13 +350,39 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
       {/* Filtros y búsqueda */}
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Filter className="h-5 w-5" />
-            Filtros y Búsqueda
-          </CardTitle>
-          <CardDescription>
-            Filtra las ofertas por comercializadora, tipo o busca por nombre
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="flex items-center gap-2">
+                <Filter className="h-5 w-5" />
+                Filtros y Búsqueda
+              </CardTitle>
+              <CardDescription>
+                Filtra las ofertas por comercializadora, tipo o busca por nombre
+              </CardDescription>
+            </div>
+            
+            {/* Selector de Vista */}
+            <div className="flex items-center gap-2">
+              <Button
+                variant={vistaActiva === 'lista' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setVistaActiva('lista')}
+                className="flex items-center gap-1"
+              >
+                <FileText className="h-4 w-4" />
+                Lista
+              </Button>
+              <Button
+                variant={vistaActiva === 'matriz' ? 'default' : 'outline'}
+                size="sm"
+                onClick={() => setVistaActiva('matriz')}
+                className="flex items-center gap-1"
+              >
+                <Grid3X3 className="h-4 w-4" />
+                Matriz
+              </Button>
+            </div>
+          </div>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
@@ -402,20 +433,50 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
         </CardContent>
       </Card>
 
-      {/* Tabla de resultados */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calculator className="h-5 w-5" />
-            Resultados de Comparativa
-          </CardTitle>
-          <CardDescription>
-            {ofertasFiltradas.length} ofertas encontradas
-            {busqueda && ` para "${busqueda}"`}
-            {filtroComercializadora !== 'todas' && ` de ${filtroComercializadora}`}
-            {filtroTipo !== 'todos' && ` del tipo ${filtroTipo}`}
-          </CardDescription>
-        </CardHeader>
+      {/* Resultados - Vista condicional */}
+      {vistaActiva === 'matriz' ? (
+        <MatrizInteractivaResultados
+          resultados={ofertasFiltradas.map(resultado => ({
+            id: resultado.id,
+            tarifa: {
+              id: resultado.tarifa.id,
+              nombre: resultado.tarifa.nombreOferta,
+              comercializadora: {
+                id: resultado.tarifa.comercializadora.id,
+                nombre: resultado.tarifa.comercializadora.nombre,
+                activa: true // Default value, adjust if needed
+              }
+            },
+            precioEnergia: resultado.tarifa.energiaP1,
+            precioPotencia: resultado.tarifa.potenciaP1 || 0,
+            costoMensual: resultado.importeCalculado,
+            ahorroMensual: data.totalFacturaElectricidad - resultado.importeCalculado,
+            comisionEnergia: 0, // Will be calculated by matriz component
+            comisionPotencia: 0, // Will be calculated by matriz component
+            comisionTotal: resultado.comisionGanada
+          }))}
+          onSeleccionarOferta={(resultado) => {
+            const ofertaOriginal = ofertasFiltradas.find(o => o.id === resultado.id);
+            if (ofertaOriginal) {
+              setResultadoSeleccionado(ofertaOriginal);
+              setMostrarInformeDetallado(true);
+            }
+          }}
+        />
+      ) : (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Calculator className="h-5 w-5" />
+              Resultados de Comparativa
+            </CardTitle>
+            <CardDescription>
+              {ofertasFiltradas.length} ofertas encontradas
+              {busqueda && ` para "${busqueda}"`}
+              {filtroComercializadora !== 'todas' && ` de ${filtroComercializadora}`}
+              {filtroTipo !== 'todos' && ` del tipo ${filtroTipo}`}
+            </CardDescription>
+          </CardHeader>
         <CardContent>
           <div className="space-y-4">
             {ofertasFiltradas.length === 0 ? (
@@ -515,6 +576,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
           </div>
         </CardContent>
       </Card>
+      )}
 
       {/* Información del cliente */}
       <Card>
