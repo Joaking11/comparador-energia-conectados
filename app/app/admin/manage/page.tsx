@@ -136,6 +136,39 @@ export default function ManagePage() {
     }
   };
 
+  const descargarPlantilla = async (tipo: 'tarifas' | 'comisiones') => {
+    try {
+      const endpoint = activeTab === 'comisiones' 
+        ? '/api/plantilla-comisiones' 
+        : '/api/plantilla-excel';
+      
+      // Crear enlace temporal para descarga
+      const link = document.createElement('a');
+      link.href = endpoint;
+      link.download = activeTab === 'comisiones' 
+        ? 'plantilla_comisiones.xlsx' 
+        : 'plantilla_tarifas.xlsx';
+      
+      // Añadir al DOM temporalmente y hacer clic
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      toast({
+        title: 'Descarga iniciada',
+        description: `Plantilla de ${activeTab} descargándose...`
+      });
+      
+    } catch (error) {
+      console.error('Error descargando plantilla:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo descargar la plantilla',
+        variant: 'destructive'
+      });
+    }
+  };
+
   const eliminar = async (id: string) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este elemento?')) return;
 
@@ -275,10 +308,10 @@ export default function ManagePage() {
               <div className="flex gap-2">
                 <Button 
                   variant="outline" 
-                  onClick={() => window.open('/api/plantilla-excel', '_blank')}
+                  onClick={() => descargarPlantilla(activeTab === 'comisiones' ? 'comisiones' : 'tarifas')}
                   className="bg-green-50 border-green-200 text-green-800 hover:bg-green-100"
                 >
-                  📥 Plantilla Excel
+                  📥 Plantilla {activeTab === 'comisiones' ? 'Comisiones' : 'Tarifas'}
                 </Button>
                 <Button 
                   variant="outline"

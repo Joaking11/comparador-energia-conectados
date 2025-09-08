@@ -104,10 +104,18 @@ export async function GET() {
     // Generar buffer del Excel
     const excelBuffer = XLSX.write(wb, { type: 'buffer', bookType: 'xlsx' });
 
-    // Crear respuesta con headers para descarga
-    const response = new NextResponse(excelBuffer);
-    response.headers.set('Content-Disposition', 'attachment; filename="plantilla_comercializadoras.xlsx"');
-    response.headers.set('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    // Crear respuesta con headers para descarga forzada
+    const response = new NextResponse(excelBuffer, {
+      status: 200,
+      headers: {
+        'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+        'Content-Disposition': 'attachment; filename="plantilla_tarifas.xlsx"',
+        'Cache-Control': 'no-cache, no-store, must-revalidate',
+        'Pragma': 'no-cache',
+        'Expires': '0',
+        'Content-Length': excelBuffer.length.toString()
+      }
+    });
 
     return response;
 
