@@ -191,7 +191,7 @@ export default function AdminComercializadorasCompleto() {
           description: "Oferta actualizada correctamente",
         });
         setEditDialogOpen(false);
-        setEditingOferta(null);
+        setEditingTarifa(null);
         cargarDatos();
       } else {
         throw new Error('Error al actualizar');
