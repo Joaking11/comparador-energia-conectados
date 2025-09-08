@@ -1,7 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
-import { calcularImporteAnual, calcularAhorro, calcularComision } from '@/lib/calculations';
+import { CalculationEngine } from '@/lib/calculation-engine';
 
 export const dynamic = 'force-dynamic';
 
@@ -14,7 +14,7 @@ export async function GET() {
         cliente: true,
         ofertas: {
           include: {
-            oferta: {
+            tarifa: {
               include: {
                 comercializadora: true
               }
@@ -171,42 +171,10 @@ export async function POST(request: Request) {
       throw new Error(`Error creando comparativa: ${errorMessage}`);
     }
 
-    // Obtener todas las ofertas activas
-    const ofertas = await prisma.oferta.findMany({
-      where: { activa: true },
-      include: {
-        comercializadora: true
-      }
-    });
-
-    // Procesar cada oferta y calcular resultados
-    const comparativaOfertas = [];
-    
-    for (const oferta of ofertas) {
-      const importeCalculado = calcularImporteAnual(
-        oferta, 
-        datosComparativa.consumoAnualElectricidad, 
-        datosComparativa.potenciaP1 // Usar potencia P1 como principal
-      );
-      
-      const ahorroAnual = calcularAhorro(importeCalculado, datosComparativa.totalFacturaElectricidad);
-      const comisionGanada = calcularComision(oferta, datosComparativa.consumoAnualElectricidad, datosComparativa.potenciaP1);
-
-      // Solo incluir si hay ahorro o comisión
-      if (ahorroAnual >= 0 || comisionGanada > 0) {
-        const comparativaOferta = await prisma.comparativaOferta.create({
-          data: {
-            comparativaId: comparativa.id,
-            ofertaId: oferta.id,
-            importeCalculado,
-            ahorroAnual,
-            comisionGanada,
-          }
-        });
-        
-        comparativaOfertas.push(comparativaOferta);
-      }
-    }
+    // Usar el nuevo motor de cálculo real
+    console.log('🔢 Ejecutando motor de cálculo real...');
+    const resultados = await CalculationEngine.calculateAndSave(comparativa.id);
+    console.log(`✅ Motor de cálculo completado: ${resultados.length} ofertas procesadas`);
 
     // Devolver la comparativa completa con resultados
     const comparativaCompleta = await prisma.comparativa.findUnique({
@@ -215,13 +183,13 @@ export async function POST(request: Request) {
         cliente: true,
         ofertas: {
           include: {
-            oferta: {
+            tarifa: {
               include: {
                 comercializadora: true
               }
             }
           },
-          orderBy: { ahorroAnual: 'desc' }
+          orderBy: { importeCalculado: 'asc' } // Ordenar por menor coste = mejor oferta
         }
       }
     });

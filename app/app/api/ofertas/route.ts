@@ -28,7 +28,7 @@ export async function GET(request: Request) {
       whereClause.tipo = tipo;
     }
 
-    const ofertas = await prisma.oferta.findMany({
+    const ofertas = await prisma.tarifa.findMany({
       where: whereClause,
       include: {
         comercializadora: true
@@ -76,7 +76,7 @@ export async function POST(request: Request) {
       );
     }
 
-    const oferta = await prisma.oferta.create({
+    const oferta = await prisma.tarifa.create({
       data: {
         comercializadoraId,
         nombre: nombre.trim(),
@@ -148,7 +148,7 @@ export async function PUT(request: Request) {
     if (comisionMaximo !== undefined) updateData.comisionMaximo = comisionMaximo ? parseFloat(comisionMaximo) : null;
     if (comisionValor !== undefined) updateData.comisionValor = parseFloat(comisionValor);
 
-    const oferta = await prisma.oferta.update({
+    const oferta = await prisma.tarifa.update({
       where: { id },
       data: updateData,
       include: {

@@ -2,6 +2,10 @@
 import { PrismaClient } from '@prisma/client';
 import * as XLSX from 'xlsx';
 import * as path from 'path';
+import * as dotenv from 'dotenv';
+
+// Cargar variables de entorno
+dotenv.config({ path: path.join(__dirname, '..', '.env') });
 
 const prisma = new PrismaClient();
 

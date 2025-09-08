@@ -10,7 +10,7 @@ export async function GET() {
   try {
     const comercializadoras = await prisma.comercializadora.findMany({
       include: {
-        ofertas: {
+        tarifas: {
           orderBy: {
             createdAt: 'desc'
           }

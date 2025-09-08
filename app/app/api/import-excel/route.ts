@@ -135,17 +135,17 @@ export async function POST(request: NextRequest) {
         }
 
         // Verificar si la oferta ya existe
-        const ofertaExistente = await prisma.oferta.findFirst({
+        const tarifaExistente = await prisma.tarifa.findFirst({
           where: {
             comercializadoraId: comercializadora.id,
             nombre: nombreOferta.toString().trim()
           }
         });
 
-        if (ofertaExistente) {
-          // Actualizar oferta existente
-          await prisma.oferta.update({
-            where: { id: ofertaExistente.id },
+        if (tarifaExistente) {
+          // Actualizar tarifa existente
+          await prisma.tarifa.update({
+            where: { id: tarifaExistente.id },
             data: {
               tarifa: tarifa.toString(),
               tipo: tipo.toString(),
@@ -159,8 +159,8 @@ export async function POST(request: NextRequest) {
             }
           });
         } else {
-          // Crear nueva oferta
-          await prisma.oferta.create({
+          // Crear nueva tarifa
+          await prisma.tarifa.create({
             data: {
               comercializadoraId: comercializadora.id,
               nombre: nombreOferta.toString().trim(),

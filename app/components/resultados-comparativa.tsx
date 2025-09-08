@@ -47,13 +47,14 @@ interface ComparativaData {
     importeCalculado: number;
     ahorroAnual: number;
     comisionGanada: number;
-    oferta: {
+    tarifa: {
       id: string;
-      nombre: string;
-      tipo: string;
-      precioEnergia: number;
-      precioTermino: number;
-      descripcion: string;
+      nombreOferta: string;
+      tipoOferta: string;
+      tarifa: string;
+      energiaP1: number;
+      potenciaP1: number | null;
+      zona: string;
       comercializadora: {
         id: string;
         nombre: string;
@@ -72,6 +73,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   const [filtroComercializadora, setFiltroComercializadora] = useState('todas');
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
+  const [recalculando, setRecalculando] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -104,6 +106,41 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
       fetchData();
     }
   }, [comparativaId, toast]);
+
+  const handleRecalcular = async () => {
+    try {
+      setRecalculando(true);
+      
+      const response = await fetch(`/api/comparativas/${comparativaId}/calculate`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' }
+      });
+      
+      if (!response.ok) {
+        throw new Error(`Error ${response.status}: ${response.statusText}`);
+      }
+      
+      const result = await response.json();
+      
+      toast({
+        title: 'Recálculo completado',
+        description: `Se procesaron ${result.resultados} tarifas exitosamente`,
+      });
+      
+      // Recargar los datos
+      await fetchData();
+      
+    } catch (error) {
+      console.error('Error recalculando:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo recalcular la comparativa',
+        variant: 'destructive'
+      });
+    } finally {
+      setRecalculando(false);
+    }
+  };
 
   if (loading) {
     return (
@@ -138,17 +175,17 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   
   const ahorroTotal = mejorOferta?.ahorroAnual || 0;
   const comisionTotal = ofertas.reduce((sum, o) => sum + o.comisionGanada, 0);
-  const comercializadoras = [...new Set(ofertas.map(o => o.oferta.comercializadora.nombre))];
+  const comercializadoras = [...new Set(ofertas.map(o => o.tarifa.comercializadora.nombre))];
   
   // Aplicar filtros
   const ofertasFiltradas = ofertas.filter(oferta => {
     const matchComercializadora = filtroComercializadora === 'todas' || 
-      oferta.oferta.comercializadora.nombre === filtroComercializadora;
+      oferta.tarifa.comercializadora.nombre === filtroComercializadora;
     const matchTipo = filtroTipo === 'todos' || 
-      oferta.oferta.tipo.toLowerCase() === filtroTipo.toLowerCase();
+      oferta.tarifa.tipoOferta.toLowerCase() === filtroTipo.toLowerCase();
     const matchBusqueda = busqueda === '' ||
-      oferta.oferta.nombre.toLowerCase().includes(busqueda.toLowerCase()) ||
-      oferta.oferta.comercializadora.nombre.toLowerCase().includes(busqueda.toLowerCase());
+      oferta.tarifa.nombreOferta.toLowerCase().includes(busqueda.toLowerCase()) ||
+      oferta.tarifa.comercializadora.nombre.toLowerCase().includes(busqueda.toLowerCase());
     
     return matchComercializadora && matchTipo && matchBusqueda;
   });
@@ -188,6 +225,18 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
           </p>
         </div>
         <div className="flex space-x-2">
+          <Button 
+            variant="outline" 
+            onClick={handleRecalcular} 
+            disabled={recalculando}
+          >
+            {recalculando ? (
+              <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+            ) : (
+              <Calculator className="h-4 w-4 mr-2" />
+            )}
+            {recalculando ? 'Recalculando...' : 'Recalcular'}
+          </Button>
           <Button variant="outline" onClick={handleShare}>
             <Share2 className="h-4 w-4 mr-2" />
             Compartir
@@ -230,7 +279,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
               {ahorroTotal > 0 ? `${ahorroTotal.toFixed(0)}€` : 'Sin ahorro'}
             </div>
             <p className="text-xs text-gray-500">
-              {mejorOferta ? mejorOferta.oferta.comercializadora.nombre : 'N/A'}
+              {mejorOferta ? mejorOferta.tarifa.comercializadora.nombre : 'N/A'}
             </p>
           </CardContent>
         </Card>
@@ -319,7 +368,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
               <div className="relative">
                 <Search className="h-4 w-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                 <Input
-                  placeholder="Buscar por nombre de oferta..."
+                  placeholder="Buscar por nombre de tarifa..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   className="pl-10"
@@ -378,23 +427,23 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                         <tr key={resultado.id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-4">
                             <div className="font-medium text-gray-900">
-                              {resultado.oferta.comercializadora.nombre}
+                              {resultado.tarifa.comercializadora.nombre}
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-medium text-gray-900">
-                              {resultado.oferta.nombre}
+                              {resultado.tarifa.nombreOferta}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {resultado.oferta.descripcion}
+                              {resultado.tarifa.tipoOferta} - {resultado.tarifa.tarifa}
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <Badge 
-                              variant={resultado.oferta.tipo === 'Fija' ? 'default' : 'secondary'}
-                              className={resultado.oferta.tipo === 'Fija' ? 'bg-primary' : 'bg-secondary'}
+                              variant={resultado.tarifa.tipoOferta === 'Fijo' ? 'default' : 'secondary'}
+                              className={resultado.tarifa.tipoOferta === 'Fijo' ? 'bg-primary' : 'bg-secondary'}
                             >
-                              {resultado.oferta.tipo}
+                              {resultado.tarifa.tipoOferta}
                             </Badge>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -402,7 +451,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                               {resultado.importeCalculado.toFixed(2)}€
                             </div>
                             <div className="text-sm text-gray-500">
-                              {resultado.oferta.precioEnergia}€/kWh + {resultado.oferta.precioTermino}€/kW
+                              {resultado.tarifa.energiaP1.toFixed(4)}€/kWh + {resultado.tarifa.potenciaP1 ? resultado.tarifa.potenciaP1.toFixed(2) : '0'}€/kW
                             </div>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -477,13 +526,13 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <h3 className="font-medium text-gray-900">
-                  {mejorOferta.oferta.comercializadora.nombre}
+                  {mejorOferta.tarifa.comercializadora.nombre}
                 </h3>
                 <p className="text-lg font-semibold text-secondary">
-                  {mejorOferta.oferta.nombre}
+                  {mejorOferta.tarifa.nombreOferta}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {mejorOferta.oferta.descripcion}
+                  {mejorOferta.tarifa.tipoOferta} - {mejorOferta.tarifa.tarifa}
                 </p>
               </div>
               <div className="text-center">

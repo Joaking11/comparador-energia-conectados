@@ -17,7 +17,7 @@ export async function GET(
         cliente: true,
         ofertas: {
           include: {
-            oferta: {
+            tarifa: {
               include: {
                 comercializadora: true
               }
