@@ -57,7 +57,7 @@ export default function AdminComercializadorasCompleto() {
   const [showNewForm, setShowNewForm] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [importDialogOpen, setImportDialogOpen] = useState(false);
-  const [editingOferta, setEditingOferta] = useState<Oferta | null>(null);
+  const [editingTarifa, setEditingTarifa] = useState<Tarifa | null>(null);
   
   const { toast } = useToast();
 
@@ -67,7 +67,7 @@ export default function AdminComercializadorasCompleto() {
     activa: true
   });
 
-  // Estado para editar oferta
+  // Estado para editar tarifa
   const [formOferta, setFormOferta] = useState({
     id: '',
     comercializadoraId: '',
@@ -146,22 +146,22 @@ export default function AdminComercializadorasCompleto() {
     }
   };
 
-  const editarOferta = (oferta: Oferta) => {
-    setEditingOferta(oferta);
+  const editarTarifa = (tarifa: Tarifa) => {
+    setEditingTarifa(tarifa);
     setFormOferta({
-      id: oferta.id,
-      comercializadoraId: oferta.comercializadoraId,
-      nombre: oferta.nombre,
-      tarifa: oferta.tarifa,
-      tipo: oferta.tipo,
-      precioEnergia: oferta.precioEnergia,
-      precioTermino: oferta.precioTermino,
-      descripcion: oferta.descripcion || '',
-      activa: oferta.activa,
-      comisionTipo: oferta.comisionTipo,
-      comisionMinimo: oferta.comisionMinimo,
-      comisionMaximo: oferta.comisionMaximo || 0,
-      comisionValor: oferta.comisionValor
+      id: tarifa.id,
+      comercializadoraId: tarifa.comercializadoraId,
+      nombre: tarifa.nombreOferta,
+      tarifa: tarifa.tarifa,
+      tipo: tarifa.tipoOferta,
+      precioEnergia: tarifa.energiaP1,
+      precioTermino: tarifa.potenciaP1 || 0,
+      descripcion: tarifa.zona,
+      activa: tarifa.activa,
+      comisionTipo: tarifa.rango,
+      comisionMinimo: tarifa.rangoDesde,
+      comisionMaximo: tarifa.rangoHasta || 0,
+      comisionValor: 0
     });
     setEditDialogOpen(true);
   };
@@ -199,14 +199,14 @@ export default function AdminComercializadorasCompleto() {
     } catch (error) {
       toast({
         title: "Error",
-        description: "No se pudo actualizar la oferta",
+        description: "No se pudo actualizar la tarifa",
         variant: "destructive",
       });
     }
   };
 
-  const eliminarOferta = async (id: string) => {
-    if (!confirm('¿Estás seguro de eliminar esta oferta?')) return;
+  const eliminarTarifa = async (id: string) => {
+    if (!confirm('¿Estás seguro de eliminar esta tarifa?')) return;
 
     try {
       const response = await fetch('/api/ofertas', {
@@ -557,44 +557,44 @@ export default function AdminComercializadorasCompleto() {
             <CardContent className="p-0">
               {(comercializadora.tarifas?.length || 0) > 0 ? (
                 <div className="divide-y">
-                  {comercializadora.ofertas.map((oferta) => (
-                    <div key={oferta.id} className="p-6 hover:bg-gray-50 transition-colors">
+                  {comercializadora.tarifas?.map((tarifa) => (
+                    <div key={tarifa.id} className="p-6 hover:bg-gray-50 transition-colors">
                       <div className="flex justify-between items-start">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
-                            <h4 className="font-semibold text-lg">{oferta.nombre}</h4>
-                            <Badge variant="outline">{oferta.tipo}</Badge>
-                            <Badge variant={oferta.activa ? "default" : "secondary"}>
-                              {oferta.activa ? "Activa" : "Inactiva"}
+                            <h4 className="font-semibold text-lg">{tarifa.nombreOferta}</h4>
+                            <Badge variant="outline">{tarifa.tipoOferta}</Badge>
+                            <Badge variant={tarifa.activa ? "default" : "secondary"}>
+                              {tarifa.activa ? "Activa" : "Inactiva"}
                             </Badge>
                           </div>
                           
                           <p className="text-gray-600 mb-3">
-                            Tarifa {oferta.tarifa} • {oferta.descripcion}
+                            Tarifa {tarifa.tarifa} • {tarifa.zona}
                           </p>
                           
                           <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div className="bg-blue-50 rounded-lg p-3">
                               <p className="text-sm text-blue-600 font-medium">Precio Energía</p>
-                              <p className="text-lg font-bold text-blue-900">{oferta.precioEnergia.toFixed(3)} €/kWh</p>
+                              <p className="text-lg font-bold text-blue-900">{tarifa.energiaP1.toFixed(3)} €/kWh</p>
                             </div>
                             
                             <div className="bg-green-50 rounded-lg p-3">
                               <p className="text-sm text-green-600 font-medium">Término Potencia</p>
-                              <p className="text-lg font-bold text-green-900">{oferta.precioTermino.toFixed(2)} €/kW mes</p>
+                              <p className="text-lg font-bold text-green-900">{(tarifa.potenciaP1 || 0).toFixed(2)} €/kW mes</p>
                             </div>
                             
                             <div className="bg-purple-50 rounded-lg p-3">
                               <p className="text-sm text-purple-600 font-medium">Comisión</p>
                               <p className="text-lg font-bold text-purple-900">
-                                {oferta.comisionValor} {oferta.comisionTipo === 'E' ? '€/MWh' : '€/kW'}
+                                {tarifa.rango === 'E' ? 'Por Energía' : 'Por Potencia'}
                               </p>
                             </div>
                             
                             <div className="bg-orange-50 rounded-lg p-3">
                               <p className="text-sm text-orange-600 font-medium">Rango Comisión</p>
                               <p className="text-sm font-medium text-orange-900">
-                                {oferta.comisionMinimo} - {oferta.comisionMaximo || '∞'}
+                                {tarifa.rangoDesde} - {tarifa.rangoHasta || '∞'}
                               </p>
                             </div>
                           </div>
@@ -604,14 +604,14 @@ export default function AdminComercializadorasCompleto() {
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => editarOferta(oferta)}
+                            onClick={() => editarTarifa(tarifa)}
                           >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="outline"
                             size="sm"
-                            onClick={() => eliminarOferta(oferta.id)}
+                            onClick={() => eliminarTarifa(tarifa.id)}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
