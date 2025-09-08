@@ -33,6 +33,29 @@ export default function InformeDetalladoComparativa({
   
   const [paginaActual, setPaginaActual] = useState(1);
   
+  const handleDescargarPDF = () => {
+    // Generar PDF usando window.print
+    window.print();
+  };
+
+  const handleCompartir = async () => {
+    try {
+      if (navigator.share) {
+        await navigator.share({
+          title: `Comparativa - ${resultado.tarifa.nombreOferta}`,
+          text: `Informe de comparativa energética para ${comparativa.cliente.razonSocial}`,
+          url: window.location.href
+        });
+      } else {
+        // Fallback: copiar al portapapeles
+        await navigator.clipboard.writeText(window.location.href);
+        alert('Enlace copiado al portapapeles');
+      }
+    } catch (error) {
+      console.error('Error al compartir:', error);
+    }
+  };
+  
   // Cálculos básicos para el informe
   const consumoAnual = comparativa.consumoAnualElectricidad;
   const potenciaContratada = comparativa.potenciaP1;
@@ -115,180 +138,236 @@ export default function InformeDetalladoComparativa({
   };
 
   const renderPaginaOficial = () => (
-    <div className="bg-white text-black font-mono text-sm leading-tight">
+    <div className="bg-white text-black font-sans text-sm leading-relaxed">
       {/* ENCABEZADO CORPORATIVO */}
-      <div className="border-b-2 border-black pb-2 mb-4">
+      <div className="bg-gradient-to-r from-primary to-primary/90 text-white p-4 rounded-lg mb-6">
         <div className="flex justify-between items-center">
-          <div className="font-bold">
-            Conectados Consulting - Consultoría Energética
+          <div className="flex items-center space-x-4">
+            <img 
+              src="/conectados-logo.png" 
+              alt="CONECTADOS" 
+              className="h-12 w-auto bg-white p-1 rounded"
+            />
+            <div>
+              <div className="font-bold text-lg">
+                Conectados Consulting - Consultoría Energética
+              </div>
+              <div className="text-sm opacity-90">
+                Su agente más cercano en www.conectadosconsulting.es
+              </div>
+            </div>
           </div>
           <div className="text-right">
-            Su agente más cercano en www.conectadosconsulting.es
+            <div className="bg-white text-primary px-3 py-1 rounded font-bold">
+              Comparativa<br/>
+              Oferta Suministro
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      {/* INFORMACIÓN DE LA OFERTA */}
+      <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-primary">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="font-bold text-primary">Comercializadora:</span> {resultado.tarifa.comercializadora.nombre}
+          </div>
+          <div>
+            <span className="font-bold text-primary">Oferta:</span> {resultado.tarifa.nombreOferta}
           </div>
         </div>
         
-        <div className="flex justify-between items-center mt-2">
+        <div className="flex justify-between items-center mt-4">
           <div>
-            <span className="font-bold">Comercializadora:</span> {resultado.tarifa.comercializadora.nombre}
-            <span className="ml-8 font-bold">Oferta:</span> {resultado.tarifa.nombreOferta}
-          </div>
-          <div className="font-bold">
-            Comparativa<br/>
-            Oferta Suministro
-          </div>
-        </div>
-        
-        <div className="flex justify-between items-center mt-2">
-          <div>
-            <span className="font-bold">AGENTE:</span> Consultor Energético
+            <span className="font-bold text-gray-700">AGENTE:</span> Consultor Energético
           </div>
           <div className="text-right">
-            <span className="font-bold">Fecha:</span> {formatearFecha(fechaInicio)}
+            <span className="font-bold text-gray-700">Fecha:</span> {formatearFecha(fechaInicio)}
           </div>
         </div>
       </div>
 
       {/* DATOS DEL CLIENTE Y SUMINISTRO */}
-      <div className="grid grid-cols-2 gap-8 mb-6">
-        <div>
-          <div className="font-bold underline mb-2">DATOS DEL CLIENTE</div>
-          <div><span className="font-bold">Razón Social:</span> {comparativa.cliente.razonSocial}</div>
-          <div><span className="font-bold">NIF / CIF:</span> {comparativa.cliente.cif || 'N/A'}</div>
-          <div><span className="font-bold">Dirección:</span> {comparativa.cliente.direccion || 'N/A'}</div>
-          <div><span className="font-bold">Localidad:</span> {comparativa.cliente.localidad || 'N/A'}</div>
-          <div><span className="font-bold">Provincia:</span> {comparativa.cliente.provincia || 'N/A'}</div>
+      <div className="grid grid-cols-2 gap-6 mb-6">
+        <div className="bg-blue-50 p-4 rounded-lg border-l-4 border-blue-500">
+          <div className="font-bold text-blue-800 text-lg mb-3 flex items-center">
+            <Building className="h-5 w-5 mr-2" />
+            DATOS DEL CLIENTE
+          </div>
+          <div className="space-y-2">
+            <div><span className="font-bold text-blue-700">Razón Social:</span> {comparativa.cliente.razonSocial}</div>
+            <div><span className="font-bold text-blue-700">NIF / CIF:</span> {comparativa.cliente.cif || 'N/A'}</div>
+            <div><span className="font-bold text-blue-700">Dirección:</span> {comparativa.cliente.direccion || 'N/A'}</div>
+            <div><span className="font-bold text-blue-700">Localidad:</span> {comparativa.cliente.localidad || 'N/A'}</div>
+            <div><span className="font-bold text-blue-700">Provincia:</span> {comparativa.cliente.provincia || 'N/A'}</div>
+          </div>
         </div>
         
-        <div>
-          <div className="font-bold underline mb-2">DATOS DEL SUMINISTRO</div>
-          <div><span className="font-bold">CUPS Electricidad:</span> {comparativa.cupsElectricidad || 'N/A'}</div>
-          <div><span className="font-bold">Tarifa Acceso Electricidad:</span> {comparativa.tarifaAccesoElectricidad}</div>
+        <div className="bg-green-50 p-4 rounded-lg border-l-4 border-green-500">
+          <div className="font-bold text-green-800 text-lg mb-3 flex items-center">
+            <Zap className="h-5 w-5 mr-2" />
+            DATOS DEL SUMINISTRO
+          </div>
+          <div className="space-y-2">
+            <div><span className="font-bold text-green-700">CUPS Electricidad:</span><br/><span className="text-xs font-mono">{comparativa.cupsElectricidad || 'N/A'}</span></div>
+            <div><span className="font-bold text-green-700">Tarifa Acceso Electricidad:</span> <span className="bg-green-200 px-2 py-1 rounded font-bold">{comparativa.tarifaAccesoElectricidad}</span></div>
+          </div>
         </div>
       </div>
 
       {/* COMPARATIVA SUMINISTRO ELÉCTRICO */}
-      <div className="text-center font-bold text-lg mb-4">
-        COMPARATIVA SUMINISTRO ELÉCTRICO
-      </div>
-      
-      <div className="flex justify-between mb-4">
-        <div>
-          <span className="font-bold">Tarifa Electricidad ofertada por:</span> {resultado.tarifa.comercializadora.nombre}
-        </div>
-        <div className="text-right">
-          {resultado.tarifa.tarifa}
+      <div className="bg-gradient-to-r from-accent to-accent/90 text-white p-4 rounded-lg mb-6 text-center">
+        <div className="font-bold text-xl flex items-center justify-center">
+          <Calculator className="h-6 w-6 mr-2" />
+          COMPARATIVA SUMINISTRO ELÉCTRICO
         </div>
       </div>
       
-      <div className="flex justify-between mb-6">
-        <div>
-          <span className="font-bold">Período de facturación:</span> {formatearFecha(fechaInicio)} a {formatearFecha(fechaFin)}
+      <div className="bg-yellow-50 p-4 rounded-lg mb-4 border border-yellow-200">
+        <div className="grid grid-cols-2 gap-4">
+          <div>
+            <span className="font-bold text-yellow-800">Tarifa Electricidad ofertada por:</span> <span className="text-yellow-900">{resultado.tarifa.comercializadora.nombre}</span>
+          </div>
+          <div className="text-right">
+            <span className="bg-yellow-200 px-3 py-1 rounded font-bold text-yellow-800">{resultado.tarifa.tarifa}</span>
+          </div>
         </div>
-        <div className="text-right">
-          {diasFacturacion} días
+        
+        <div className="grid grid-cols-2 gap-4 mt-2">
+          <div>
+            <span className="font-bold text-yellow-800">Período de facturación:</span> <span className="text-yellow-900">{formatearFecha(fechaInicio)} a {formatearFecha(fechaFin)}</span>
+          </div>
+          <div className="text-right">
+            <span className="bg-yellow-300 px-3 py-1 rounded font-bold text-yellow-800">{diasFacturacion} días</span>
+          </div>
         </div>
       </div>
 
       {/* TÉRMINO DE POTENCIA */}
-      <div className="mb-6">
-        <div className="flex justify-between font-bold mb-2">
-          <span>Término de Potencia</span>
-          <span>{totalTerminoPotencia.toFixed(2)} €</span>
+      <div className="mb-6 bg-purple-50 p-4 rounded-lg border border-purple-200">
+        <div className="flex justify-between items-center mb-3 bg-purple-500 text-white p-2 rounded">
+          <span className="font-bold flex items-center">
+            <Zap className="h-4 w-4 mr-2" />
+            Término de Potencia
+          </span>
+          <span className="font-bold text-lg">{totalTerminoPotencia.toFixed(2)} €</span>
         </div>
         
-        {Object.entries(calculosPorPeriodo).map(([periodo, calculo]: [string, any]) => (
-          <div key={periodo} className="flex justify-between text-xs mb-1">
-            <span>
-              {periodo}: {preciosPotencia[periodo as keyof typeof preciosPotencia].toFixed(6)} €/kW día × {calculo.potencia.toFixed(2)} kW × {diasFacturacion} días
-            </span>
-            <span>{calculo.costoPotencia.toFixed(2)} €</span>
-          </div>
-        ))}
+        <div className="space-y-1">
+          {Object.entries(calculosPorPeriodo).map(([periodo, calculo]: [string, any]) => (
+            <div key={periodo} className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-purple-300">
+              <span className="text-purple-700">
+                <span className="font-bold text-purple-800">{periodo}:</span> {preciosPotencia[periodo as keyof typeof preciosPotencia].toFixed(6)} €/kW día × {calculo.potencia.toFixed(2)} kW × {diasFacturacion} días
+              </span>
+              <span className="font-bold text-purple-800">{calculo.costoPotencia.toFixed(2)} €</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* TÉRMINO DE ENERGÍA */}
-      <div className="mb-6">
-        <div className="flex justify-between font-bold mb-2">
-          <span>Término de Energía</span>
-          <span>{totalTerminoEnergia.toFixed(2)} €</span>
+      <div className="mb-6 bg-orange-50 p-4 rounded-lg border border-orange-200">
+        <div className="flex justify-between items-center mb-3 bg-orange-500 text-white p-2 rounded">
+          <span className="font-bold flex items-center">
+            <TrendingUp className="h-4 w-4 mr-2" />
+            Término de Energía
+          </span>
+          <span className="font-bold text-lg">{totalTerminoEnergia.toFixed(2)} €</span>
         </div>
         
-        {Object.entries(calculosPorPeriodo).map(([periodo, calculo]: [string, any]) => (
-          <div key={periodo} className="flex justify-between text-xs mb-1">
-            <span>
-              {periodo}: {preciosEnergia[periodo as keyof typeof preciosEnergia].toFixed(6)} €/kWh × {calculo.consumo.toFixed(2)} kWh
-            </span>
-            <span>{calculo.costoEnergia > 0 ? calculo.costoEnergia.toFixed(2) + ' €' : '- €'}</span>
-          </div>
-        ))}
+        <div className="space-y-1">
+          {Object.entries(calculosPorPeriodo).map(([periodo, calculo]: [string, any]) => (
+            <div key={periodo} className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-orange-300">
+              <span className="text-orange-700">
+                <span className="font-bold text-orange-800">{periodo}:</span> {preciosEnergia[periodo as keyof typeof preciosEnergia].toFixed(6)} €/kWh × {calculo.consumo.toFixed(2)} kWh
+              </span>
+              <span className="font-bold text-orange-800">{calculo.costoEnergia > 0 ? calculo.costoEnergia.toFixed(2) + ' €' : '- €'}</span>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* CONCEPTOS ADICIONALES */}
-      <div className="mb-6">
-        <div className="flex justify-between text-xs mb-1">
-          <span>Financiación del Bono Social: {diasFacturacion} días × {(4.6510 / 365).toFixed(4)} €/día</span>
-          <span>{bonoSocial.toFixed(2)} €</span>
+      <div className="mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+        <div className="font-bold text-gray-800 mb-3 flex items-center">
+          <FileText className="h-4 w-4 mr-2" />
+          Conceptos Adicionales
         </div>
-        <div className="flex justify-between text-xs mb-1">
-          <span>Exceso de potencia:</span>
-          <span>- €</span>
-        </div>
-        <div className="flex justify-between text-xs mb-1">
-          <span>Total Reactiva:</span>
-          <span>- €</span>
-        </div>
-        <div className="flex justify-between text-xs mb-1">
-          <span>Compensación Excedentes (0,07€/Kw) + KW acumulados bateria virtual:</span>
-          <span>- €</span>
-        </div>
-        <div className="flex justify-between text-xs mb-1">
-          <span>Coste de Gestión:</span>
-          <span>- €</span>
-        </div>
-        <div className="flex justify-between text-xs mb-1">
-          <span>Impuesto sobre electricidad: 5,11% s/ {(totalTerminoPotencia + totalTerminoEnergia).toFixed(2)} €</span>
-          <span>{impuestoElectricidad.toFixed(2)} €</span>
-        </div>
-        <div className="flex justify-between text-xs mb-1">
-          <span>Alquiler de equipos de medida y control:</span>
-          <span>{alquilerEquipos.toFixed(2)} €</span>
+        <div className="space-y-1">
+          <div className="flex justify-between text-xs bg-white p-2 rounded">
+            <span className="text-gray-600">Financiación del Bono Social: {diasFacturacion} días × {(4.6510 / 365).toFixed(4)} €/día</span>
+            <span className="font-bold text-gray-700">{bonoSocial.toFixed(2)} €</span>
+          </div>
+          <div className="flex justify-between text-xs bg-white p-2 rounded">
+            <span className="text-gray-600">Exceso de potencia:</span>
+            <span className="font-bold text-gray-700">- €</span>
+          </div>
+          <div className="flex justify-between text-xs bg-white p-2 rounded">
+            <span className="text-gray-600">Total Reactiva:</span>
+            <span className="font-bold text-gray-700">- €</span>
+          </div>
+          <div className="flex justify-between text-xs bg-white p-2 rounded">
+            <span className="text-gray-600">Compensación Excedentes (0,07€/Kw) + KW acumulados bateria virtual:</span>
+            <span className="font-bold text-gray-700">- €</span>
+          </div>
+          <div className="flex justify-between text-xs bg-white p-2 rounded">
+            <span className="text-gray-600">Coste de Gestión:</span>
+            <span className="font-bold text-gray-700">- €</span>
+          </div>
+          <div className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-red-300">
+            <span className="text-gray-600">Impuesto sobre electricidad: 5,11% s/ {(totalTerminoPotencia + totalTerminoEnergia).toFixed(2)} €</span>
+            <span className="font-bold text-red-600">{impuestoElectricidad.toFixed(2)} €</span>
+          </div>
+          <div className="flex justify-between text-xs bg-white p-2 rounded">
+            <span className="text-gray-600">Alquiler de equipos de medida y control:</span>
+            <span className="font-bold text-gray-700">{alquilerEquipos.toFixed(2)} €</span>
+          </div>
         </div>
       </div>
 
       {/* NOTA SOBRE DESCUENTOS */}
-      <div className="text-xs italic mb-4 text-center">
-        "El precio incluye descuentos especiales según condiciones de la oferta."
+      <div className="bg-blue-100 p-3 rounded-lg text-sm italic mb-6 text-center border border-blue-200">
+        <span className="text-blue-800">"El precio incluye descuentos especiales según condiciones de la oferta."</span>
       </div>
 
       {/* RESUMEN FINAL */}
-      <div className="border-t-2 border-black pt-4">
-        <div className="flex justify-between font-bold mb-2">
-          <span>TOTAL BASE FACTURA:</span>
-          <span>{totalBase.toFixed(2)} €</span>
+      <div className="bg-gradient-to-r from-secondary to-secondary/90 text-white p-6 rounded-lg shadow-lg">
+        <div className="text-center mb-4">
+          <h3 className="font-bold text-xl flex items-center justify-center">
+            <Euro className="h-5 w-5 mr-2" />
+            RESUMEN FINANCIERO
+          </h3>
         </div>
-        <div className="flex justify-between mb-2">
-          <span>I.V.A (21% × {totalBase.toFixed(2)}):</span>
-          <span>{iva.toFixed(2)} €</span>
-        </div>
-        <div className="flex justify-between font-bold text-lg mb-2">
-          <span>TOTAL FACTURA OFERTA:</span>
-          <span>{totalFactura.toFixed(2)} €</span>
-        </div>
-        <div className="flex justify-between mb-2">
-          <span>PAGA ACTUALMENTE:</span>
-          <span>{facturaActual.toFixed(2)} €</span>
-        </div>
-        <div className="flex justify-between font-bold text-lg mb-2">
-          <span>AHORRO EN FACTURA: {porcentajeAhorro.toFixed(2)}%</span>
-          <span className={ahorroAnual > 0 ? 'text-green-600' : 'text-red-600'}>
-            {ahorroAnual.toFixed(2)} €
-          </span>
-        </div>
-        <div className="flex justify-between font-bold text-xl">
-          <span>AHORRO ANUAL ESTIMADO:</span>
-          <span className={ahorroAnual > 0 ? 'text-green-600' : 'text-red-600'}>
-            {(ahorroAnual * 12).toFixed(2)} €
-          </span>
+        
+        <div className="space-y-3">
+          <div className="flex justify-between font-bold bg-white/10 p-2 rounded">
+            <span>TOTAL BASE FACTURA:</span>
+            <span>{totalBase.toFixed(2)} €</span>
+          </div>
+          <div className="flex justify-between bg-white/10 p-2 rounded">
+            <span>I.V.A (21% × {totalBase.toFixed(2)}):</span>
+            <span>{iva.toFixed(2)} €</span>
+          </div>
+          <div className="flex justify-between font-bold text-lg bg-white/20 p-3 rounded border-2 border-white/30">
+            <span>TOTAL FACTURA OFERTA:</span>
+            <span>{totalFactura.toFixed(2)} €</span>
+          </div>
+          <div className="flex justify-between bg-white/10 p-2 rounded">
+            <span>PAGA ACTUALMENTE:</span>
+            <span>{facturaActual.toFixed(2)} €</span>
+          </div>
+          <div className={`flex justify-between font-bold text-lg p-3 rounded border-2 ${ahorroAnual > 0 ? 'bg-green-500 border-green-300' : 'bg-red-500 border-red-300'}`}>
+            <span>AHORRO EN FACTURA: {porcentajeAhorro.toFixed(2)}%</span>
+            <span>
+              {ahorroAnual.toFixed(2)} €
+            </span>
+          </div>
+          <div className={`flex justify-between font-bold text-2xl p-4 rounded-lg shadow-inner ${ahorroAnual > 0 ? 'bg-green-600 text-green-100' : 'bg-red-600 text-red-100'}`}>
+            <span>AHORRO ANUAL ESTIMADO:</span>
+            <span>
+              {(ahorroAnual * 12).toFixed(2)} €
+            </span>
+          </div>
         </div>
       </div>
     </div>
@@ -414,11 +493,31 @@ export default function InformeDetalladoComparativa({
   );
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
-      <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto">
+    <>
+      <style jsx global>{`
+        @media print {
+          .print-hidden { display: none !important; }
+          .print-full { 
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            right: 0 !important;
+            bottom: 0 !important;
+            z-index: 9999 !important;
+            background: white !important;
+            width: 100% !important;
+            height: 100% !important;
+            overflow: visible !important;
+          }
+          body * { visibility: hidden; }
+          .print-full, .print-full * { visibility: visible; }
+        }
+      `}</style>
+      <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 print-hidden">
+        <div className="bg-white rounded-lg shadow-xl max-w-5xl w-full max-h-[90vh] overflow-y-auto print-full">
         
         {/* Header del informe */}
-        <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between">
+        <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between print-hidden">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-bold text-gray-900">
               Comparativa - {resultado.tarifa.nombreOferta}
@@ -442,11 +541,11 @@ export default function InformeDetalladoComparativa({
           </div>
           
           <div className="flex items-center space-x-2">
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleDescargarPDF}>
               <Download className="h-4 w-4 mr-2" />
               PDF
             </Button>
-            <Button variant="outline" size="sm">
+            <Button variant="outline" size="sm" onClick={handleCompartir}>
               <Share2 className="h-4 w-4 mr-2" />
               Compartir
             </Button>
