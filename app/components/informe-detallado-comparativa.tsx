@@ -276,10 +276,20 @@ export default function InformeDetalladoComparativa({
           </div>
         </div>
         
-        {/* Info de debug de períodos */}
+        {/* Info de debug de períodos y consumo histórico */}
         <div className="mt-3 text-xs text-yellow-700 bg-yellow-100 p-2 rounded">
           <div><strong>Períodos de Energía detectados:</strong> {periodosEnergia.map(p => `${p.periodo}(${p.precio.toFixed(4)}€/kWh)`).join(', ') || 'Ninguno'}</div>
           <div><strong>Períodos de Potencia detectados:</strong> {periodosPotencia.map(p => `${p.periodo}(${p.precio.toFixed(4)}€/kW)`).join(', ') || 'Ninguno'}</div>
+          {comparativa.historicoTieneGrafico && (
+            <div className="mt-2 border-t border-yellow-200 pt-2">
+              <div><strong>Histórico del gráfico:</strong> {comparativa.historicoMesesDetectados} meses detectados</div>
+              {comparativa.historicoConsumosMensuales && (
+                <div><strong>Consumos mensuales:</strong> {JSON.parse(comparativa.historicoConsumosMensuales).slice(0, 5).map((c: number) => `${c}kWh`).join(', ')}
+                {JSON.parse(comparativa.historicoConsumosMensuales).length > 5 && '...'}</div>
+              )}
+              <div><strong>Consumo anual calculado:</strong> {comparativa.historicoConsumoCalculado?.toFixed(0)} kWh</div>
+            </div>
+          )}
         </div>
       </div>
 
@@ -492,8 +502,15 @@ export default function InformeDetalladoComparativa({
                   comparado con su facturación actual.
                 </p>
                 <p className="text-gray-700 mt-2">
-                  El cálculo del consumo anual se ha estimado en base a los datos aportados en su última factura{comparativa.historicoTieneGrafico ? `, el historial de los últimos ${comparativa.historicoMesesDetectados || 12} meses mostrado en el gráfico de consumo` : ''}. 
-                  Los cálculos incluyen todos los conceptos y están basados en las condiciones específicas de su suministro.
+                  {comparativa.historicoTieneGrafico ? (
+                    comparativa.historicoMesesDetectados === 12 
+                      ? `El cálculo del consumo anual se ha obtenido sumando los 12 meses completos del gráfico de consumo de su última factura.`
+                      : comparativa.historicoMesesDetectados > 12
+                        ? `El cálculo del consumo anual se ha obtenido usando los últimos 12 meses del gráfico de consumo (de ${comparativa.historicoMesesDetectados} meses disponibles).`
+                        : `El cálculo del consumo anual se ha estimado extrapolando los ${comparativa.historicoMesesDetectados} meses disponibles en el gráfico de consumo de su factura.`
+                  ) : (
+                    'El cálculo del consumo anual se ha estimado en base a los datos aportados en su última factura.'
+                  )} Los cálculos incluyen todos los conceptos y están basados en las condiciones específicas de su suministro.
                 </p>
               </div>
             ) : (
@@ -506,7 +523,15 @@ export default function InformeDetalladoComparativa({
                   comparado con la facturación actual. Se recomienda evaluar otras opciones disponibles.
                 </p>
                 <p className="text-gray-700 mt-2">
-                  El cálculo del consumo anual se ha estimado en base a los datos aportados en su última factura{comparativa.historicoTieneGrafico ? `, el historial de los últimos ${comparativa.historicoMesesDetectados || 12} meses mostrado en el gráfico de consumo` : ''}.
+                  {comparativa.historicoTieneGrafico ? (
+                    comparativa.historicoMesesDetectados === 12 
+                      ? `El cálculo del consumo anual se ha obtenido sumando los 12 meses completos del gráfico de consumo de su última factura.`
+                      : comparativa.historicoMesesDetectados > 12
+                        ? `El cálculo del consumo anual se ha obtenido usando los últimos 12 meses del gráfico de consumo (de ${comparativa.historicoMesesDetectados} meses disponibles).`
+                        : `El cálculo del consumo anual se ha estimado extrapolando los ${comparativa.historicoMesesDetectados} meses disponibles en el gráfico de consumo de su factura.`
+                  ) : (
+                    'El cálculo del consumo anual se ha estimado en base a los datos aportados en su última factura.'
+                  )}
                 </p>
               </div>
             )}

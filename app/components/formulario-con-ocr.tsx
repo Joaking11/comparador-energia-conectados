@@ -19,21 +19,55 @@ export function FormularioConOCR() {
     if (datos) {
       // Priorizar consumo anual calculado del gráfico si está disponible
       if (datos.historicoConsumo?.tieneGrafico && datos.historicoConsumo?.consumoAnualCalculado > 0) {
-        datos.electricidad.consumoAnualElectricidad = datos.historicoConsumo.consumoAnualCalculado;
-        console.log(`📊 Usando consumo anual del gráfico: ${datos.historicoConsumo.consumoAnualCalculado} kWh (basado en ${datos.historicoConsumo.mesesDetectados} meses)`);
+        // Verificar y corregir la lógica del cálculo anual si es necesario
+        let consumoAnualFinal = datos.historicoConsumo.consumoAnualCalculado;
+        
+        if (datos.historicoConsumo.consumosMensuales && Array.isArray(datos.historicoConsumo.consumosMensuales)) {
+          const consumosMensuales: number[] = datos.historicoConsumo.consumosMensuales.filter((c: any) => c > 0);
+          const numMeses = consumosMensuales.length;
+          
+          if (numMeses === 12) {
+            // Exactamente 12 meses: sumar todos
+            consumoAnualFinal = consumosMensuales.reduce((sum: number, consumo: number) => sum + consumo, 0);
+            console.log(`📊 Calculando con 12 meses exactos: ${consumoAnualFinal} kWh`);
+          } else if (numMeses > 12) {
+            // Más de 12 meses: usar solo los últimos 12
+            const ultimos12 = consumosMensuales.slice(-12);
+            consumoAnualFinal = ultimos12.reduce((sum: number, consumo: number) => sum + consumo, 0);
+            console.log(`📊 Usando últimos 12 meses de ${numMeses} disponibles: ${consumoAnualFinal} kWh`);
+          } else if (numMeses > 0) {
+            // Menos de 12 meses: extrapolación
+            const sumaDisponible = consumosMensuales.reduce((sum: number, consumo: number) => sum + consumo, 0);
+            const mediaMensual = sumaDisponible / numMeses;
+            consumoAnualFinal = mediaMensual * 12;
+            console.log(`📊 Extrapolando ${numMeses} meses a 12: media ${mediaMensual.toFixed(0)} kWh/mes → ${consumoAnualFinal.toFixed(0)} kWh/año`);
+          }
+        }
+        
+        datos.electricidad.consumoAnualElectricidad = Math.round(consumoAnualFinal);
+        console.log(`📊 Consumo anual final: ${datos.electricidad.consumoAnualElectricidad} kWh (basado en ${datos.historicoConsumo.mesesDetectados} meses)`);
       }
       
       setDatosOCR(datos);
       setFacturaProcessed(true);
       setMetodoSeleccionado('manual'); // Cambiar a manual para revisar/editar
       
-      const mensajeExtra = datos.historicoConsumo?.tieneGrafico 
-        ? ` - Consumo anual calculado automáticamente desde gráfico (${datos.historicoConsumo.mesesDetectados} meses)`
-        : '';
+      let mensajeExtra = '';
+      if (datos.historicoConsumo?.tieneGrafico) {
+        const meses = datos.historicoConsumo.mesesDetectados;
+        if (meses === 12) {
+          mensajeExtra = ` - Consumo anual calculado desde gráfico (${meses} meses completos)`;
+        } else if (meses > 12) {
+          mensajeExtra = ` - Consumo anual calculado usando últimos 12 meses de ${meses} disponibles`;
+        } else {
+          mensajeExtra = ` - Consumo anual estimado desde ${meses} meses del gráfico`;
+        }
+      }
       
       toast({
         title: '✅ Datos extraídos',
         description: `Revisa y edita los datos extraídos antes de calcular la comparativa${mensajeExtra}`,
+        duration: 5000,
       });
     } else {
       // Usuario eligió completar manualmente

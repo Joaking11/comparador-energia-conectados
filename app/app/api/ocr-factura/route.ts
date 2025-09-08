@@ -111,9 +111,12 @@ INSTRUCCIONES ESPECÍFICAS:
 3. ⭐ ANÁLISIS DE GRÁFICO DE CONSUMO (PRIORIDAD ALTA):
    - Busca gráficos de barras con consumo mensual (típicamente en kWh)
    - Cuenta exactamente cuántas barras/meses aparecen
-   - Lee los valores de cada barra (consumo en kWh por mes)
-   - Suma todos los consumos mensuales para obtener el total anual
-   - Si encuentras gráfico, usa ese valor como "consumoAnualElectricidad"
+   - Lee los valores de cada barra (consumo en kWh por mes) de IZQUIERDA A DERECHA
+   - LÓGICA DE CÁLCULO ANUAL:
+     * Si hay EXACTAMENTE 12 meses: suma todos los valores
+     * Si hay MÁS de 12 meses: usa SOLO los últimos 12 meses (más recientes)
+     * Si hay MENOS de 12 meses: calcula la media mensual y multiplica por 12
+   - El resultado va en "consumoAnualCalculado"
    - Si no hay gráfico, busca el consumo anual en el texto
 4. Extrae términos fijo y variable por separado
 5. Identifica correctamente impuestos de electricidad vs IVA
