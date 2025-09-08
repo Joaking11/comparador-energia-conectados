@@ -64,56 +64,90 @@ export default function InformeDetalladoComparativa({
   const ahorroAnual = facturaActual - nuevaFactura;
   const porcentajeAhorro = (ahorroAnual / facturaActual) * 100;
   
-  // Simular período de facturación (asumiendo 30 días para el ejemplo)
+  // Período de facturación (asumiendo 30 días para el ejemplo)
   const diasFacturacion = 30;
   const fechaInicio = new Date();
   const fechaFin = new Date();
   fechaFin.setDate(fechaInicio.getDate() + diasFacturacion);
   
-  // Simular distribución de consumo por períodos (valores estimados)
-  const distribuciones = {
-    P1: { consumo: consumoAnual * 0.25, potencia: potenciaContratada * 0.4 },
-    P2: { consumo: consumoAnual * 0.20, potencia: potenciaContratada * 0.5 },
-    P3: { consumo: consumoAnual * 0.15, potencia: potenciaContratada * 0.5 },
-    P4: { consumo: consumoAnual * 0.10, potencia: potenciaContratada * 0.5 },
-    P5: { consumo: consumoAnual * 0.05, potencia: potenciaContratada * 0.5 },
-    P6: { consumo: consumoAnual * 0.25, potencia: potenciaContratada * 0.9 }
+  // Obtener períodos reales de la tarifa desde la base de datos
+  const periodosEnergia: Array<{periodo: string, precio: number}> = [];
+  const periodosPotencia: Array<{periodo: string, precio: number}> = [];
+  
+  // Revisar qué períodos de energía están disponibles
+  if (resultado.tarifa.energiaP1) periodosEnergia.push({ periodo: 'P1', precio: resultado.tarifa.energiaP1 });
+  if (resultado.tarifa.energiaP2) periodosEnergia.push({ periodo: 'P2', precio: resultado.tarifa.energiaP2 });
+  if (resultado.tarifa.energiaP3) periodosEnergia.push({ periodo: 'P3', precio: resultado.tarifa.energiaP3 });
+  if (resultado.tarifa.energiaP4) periodosEnergia.push({ periodo: 'P4', precio: resultado.tarifa.energiaP4 });
+  if (resultado.tarifa.energiaP5) periodosEnergia.push({ periodo: 'P5', precio: resultado.tarifa.energiaP5 });
+  if (resultado.tarifa.energiaP6) periodosEnergia.push({ periodo: 'P6', precio: resultado.tarifa.energiaP6 });
+  
+  // Revisar qué períodos de potencia están disponibles
+  if (resultado.tarifa.potenciaP1) periodosPotencia.push({ periodo: 'P1', precio: resultado.tarifa.potenciaP1 });
+  if (resultado.tarifa.potenciaP2) periodosPotencia.push({ periodo: 'P2', precio: resultado.tarifa.potenciaP2 });
+  if (resultado.tarifa.potenciaP3) periodosPotencia.push({ periodo: 'P3', precio: resultado.tarifa.potenciaP3 });
+  if (resultado.tarifa.potenciaP4) periodosPotencia.push({ periodo: 'P4', precio: resultado.tarifa.potenciaP4 });
+  if (resultado.tarifa.potenciaP5) periodosPotencia.push({ periodo: 'P5', precio: resultado.tarifa.potenciaP5 });
+  if (resultado.tarifa.potenciaP6) periodosPotencia.push({ periodo: 'P6', precio: resultado.tarifa.potenciaP6 });
+  
+  // Distribución de consumo según el tipo de tarifa
+  const getDistribucionConsumo = (tipoTarifa: string, numPeriodos: number) => {
+    if (tipoTarifa === '2.0TD') {
+      // Para 2.0TD: típicamente 3 períodos de energía
+      if (numPeriodos === 1) return [1.0];
+      if (numPeriodos === 2) return [0.6, 0.4];
+      if (numPeriodos === 3) return [0.4, 0.35, 0.25]; // P1: punta, P2: llano, P3: valle
+      return [0.4, 0.35, 0.25]; // por defecto
+    }
+    // Para otras tarifas, distribución más compleja
+    if (numPeriodos <= 3) return [0.4, 0.35, 0.25];
+    return [0.25, 0.20, 0.20, 0.15, 0.10, 0.10];
   };
   
-  // Precios por períodos (simulados basados en la tarifa)
-  const preciosPotencia = {
-    P1: 0.062078,
-    P2: 0.036306,
-    P3: 0.019897,
-    P4: 0.029265,
-    P5: 0.033776,
-    P6: 0.035223
+  const getDistribucionPotencia = (tipoTarifa: string, numPeriodos: number) => {
+    if (tipoTarifa === '2.0TD') {
+      // Para 2.0TD: típicamente 2 períodos de potencia
+      if (numPeriodos === 1) return [1.0];
+      if (numPeriodos === 2) return [0.6, 0.4]; // P1: punta, P2: valle
+      return [0.6, 0.4]; // por defecto
+    }
+    // Para otras tarifas
+    if (numPeriodos <= 2) return [0.6, 0.4];
+    if (numPeriodos <= 3) return [0.5, 0.3, 0.2];
+    return [0.4, 0.25, 0.15, 0.10, 0.06, 0.04];
   };
   
-  const preciosEnergia = {
-    P1: resultado.tarifa.energiaP1,
-    P2: resultado.tarifa.energiaP1,
-    P3: resultado.tarifa.energiaP1 * 0.9,
-    P4: resultado.tarifa.energiaP1 * 0.9,
-    P5: resultado.tarifa.energiaP1 * 0.8,
-    P6: resultado.tarifa.energiaP1
-  };
+  const distribucionConsumo = getDistribucionConsumo(resultado.tarifa.tarifa, periodosEnergia.length);
+  const distribucionPotencia = getDistribucionPotencia(resultado.tarifa.tarifa, periodosPotencia.length);
   
-  // Cálculos por período
-  const calculosPorPeriodo = Object.keys(distribuciones).reduce((acc: any, periodo) => {
-    const dist = distribuciones[periodo as keyof typeof distribuciones];
-    const precioPot = preciosPotencia[periodo as keyof typeof preciosPotencia];
-    const precioEn = preciosEnergia[periodo as keyof typeof preciosEnergia];
-    
-    acc[periodo] = {
-      costoPotencia: precioPot * dist.potencia * diasFacturacion,
-      costoEnergia: precioEn * (dist.consumo / 365) * diasFacturacion,
-      consumo: (dist.consumo / 365) * diasFacturacion,
-      potencia: dist.potencia
-    };
-    
-    return acc;
-  }, {});
+  // Cálculos por período usando datos reales
+  const calculosPorPeriodo: any = {};
+  
+  // Calcular costos de energía
+  periodosEnergia.forEach((periodoEn, index) => {
+    const consumoPeriodo = (consumoAnual * distribucionConsumo[index] / 365) * diasFacturacion;
+    if (!calculosPorPeriodo[periodoEn.periodo]) calculosPorPeriodo[periodoEn.periodo] = {};
+    calculosPorPeriodo[periodoEn.periodo].costoEnergia = periodoEn.precio * consumoPeriodo;
+    calculosPorPeriodo[periodoEn.periodo].consumo = consumoPeriodo;
+    calculosPorPeriodo[periodoEn.periodo].precioEnergia = periodoEn.precio;
+  });
+  
+  // Calcular costos de potencia
+  periodosPotencia.forEach((periodoP, index) => {
+    const potenciaPeriodo = potenciaContratada * distribucionPotencia[index];
+    if (!calculosPorPeriodo[periodoP.periodo]) calculosPorPeriodo[periodoP.periodo] = {};
+    calculosPorPeriodo[periodoP.periodo].costoPotencia = (periodoP.precio * potenciaPeriodo * diasFacturacion) / 30;
+    calculosPorPeriodo[periodoP.periodo].potencia = potenciaPeriodo;
+    calculosPorPeriodo[periodoP.periodo].precioPotencia = periodoP.precio;
+  });
+  
+  // Asegurar que todos los períodos tengan valores por defecto
+  Object.keys(calculosPorPeriodo).forEach(periodo => {
+    if (!calculosPorPeriodo[periodo].costoEnergia) calculosPorPeriodo[periodo].costoEnergia = 0;
+    if (!calculosPorPeriodo[periodo].costoPotencia) calculosPorPeriodo[periodo].costoPotencia = 0;
+    if (!calculosPorPeriodo[periodo].consumo) calculosPorPeriodo[periodo].consumo = 0;
+    if (!calculosPorPeriodo[periodo].potencia) calculosPorPeriodo[periodo].potencia = 0;
+  });
   
   // Totales
   const totalTerminoPotencia = Object.values(calculosPorPeriodo).reduce((sum: number, p: any) => sum + p.costoPotencia, 0);
@@ -241,6 +275,12 @@ export default function InformeDetalladoComparativa({
             <span className="bg-yellow-300 px-3 py-1 rounded font-bold text-yellow-800">{diasFacturacion} días</span>
           </div>
         </div>
+        
+        {/* Info de debug de períodos */}
+        <div className="mt-3 text-xs text-yellow-700 bg-yellow-100 p-2 rounded">
+          <div><strong>Períodos de Energía detectados:</strong> {periodosEnergia.map(p => `${p.periodo}(${p.precio.toFixed(4)}€/kWh)`).join(', ') || 'Ninguno'}</div>
+          <div><strong>Períodos de Potencia detectados:</strong> {periodosPotencia.map(p => `${p.periodo}(${p.precio.toFixed(4)}€/kW)`).join(', ') || 'Ninguno'}</div>
+        </div>
       </div>
 
       {/* TÉRMINO DE POTENCIA */}
@@ -254,14 +294,18 @@ export default function InformeDetalladoComparativa({
         </div>
         
         <div className="space-y-1">
-          {Object.entries(calculosPorPeriodo).map(([periodo, calculo]: [string, any]) => (
-            <div key={periodo} className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-purple-300">
-              <span className="text-purple-700">
-                <span className="font-bold text-purple-800">{periodo}:</span> {preciosPotencia[periodo as keyof typeof preciosPotencia].toFixed(6)} €/kW día × {calculo.potencia.toFixed(2)} kW × {diasFacturacion} días
-              </span>
-              <span className="font-bold text-purple-800">{calculo.costoPotencia.toFixed(2)} €</span>
-            </div>
-          ))}
+          {periodosPotencia.map((periodoP) => {
+            const calculo = calculosPorPeriodo[periodoP.periodo];
+            if (!calculo || calculo.costoPotencia === 0) return null;
+            return (
+              <div key={periodoP.periodo} className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-purple-300">
+                <span className="text-purple-700">
+                  <span className="font-bold text-purple-800">{periodoP.periodo}:</span> {periodoP.precio.toFixed(6)} €/kW mes × {calculo.potencia.toFixed(2)} kW
+                </span>
+                <span className="font-bold text-purple-800">{calculo.costoPotencia.toFixed(2)} €</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
@@ -276,14 +320,18 @@ export default function InformeDetalladoComparativa({
         </div>
         
         <div className="space-y-1">
-          {Object.entries(calculosPorPeriodo).map(([periodo, calculo]: [string, any]) => (
-            <div key={periodo} className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-orange-300">
-              <span className="text-orange-700">
-                <span className="font-bold text-orange-800">{periodo}:</span> {preciosEnergia[periodo as keyof typeof preciosEnergia].toFixed(6)} €/kWh × {calculo.consumo.toFixed(2)} kWh
-              </span>
-              <span className="font-bold text-orange-800">{calculo.costoEnergia > 0 ? calculo.costoEnergia.toFixed(2) + ' €' : '- €'}</span>
-            </div>
-          ))}
+          {periodosEnergia.map((periodoE) => {
+            const calculo = calculosPorPeriodo[periodoE.periodo];
+            if (!calculo || calculo.costoEnergia === 0) return null;
+            return (
+              <div key={periodoE.periodo} className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-orange-300">
+                <span className="text-orange-700">
+                  <span className="font-bold text-orange-800">{periodoE.periodo}:</span> {periodoE.precio.toFixed(6)} €/kWh × {calculo.consumo.toFixed(2)} kWh
+                </span>
+                <span className="font-bold text-orange-800">{calculo.costoEnergia.toFixed(2)} €</span>
+              </div>
+            );
+          })}
         </div>
       </div>
 
