@@ -28,13 +28,13 @@ export async function GET(request: Request) {
       whereClause.tipoOferta = tipo;
     }
 
-    const ofertas = await prisma.tarifa.findMany({
+    const ofertas = await prisma.tarifas.findMany({
       where: whereClause,
       include: {
-        comercializadora: true
+        comercializadoras: true
       },
       orderBy: [
-        { comercializadora: { nombre: 'asc' } },
+        { comercializadoras: { nombre: 'asc' } },
         { energiaP1: 'asc' }
       ]
     });
@@ -56,50 +56,82 @@ export async function POST(request: Request) {
     const body = await request.json();
     const {
       comercializadoraId,
-      nombre,
+      nombreOferta,
       tarifa,
-      tipo,
-      precioEnergia,
-      precioTermino,
-      descripcion,
-      activa = true,
-      comisionTipo,
-      comisionMinimo,
-      comisionMaximo,
-      comisionValor
+      tipoOferta,
+      zona,
+      energiaP1,
+      energiaP2,
+      energiaP3,
+      energiaP4,
+      energiaP5,
+      energiaP6,
+      potenciaP1,
+      potenciaP2,
+      potenciaP3,
+      potenciaP4,
+      potenciaP5,
+      potenciaP6,
+      tieneFee,
+      feeEnergia,
+      feePotencia,
+      feeEnergiaMinimo,
+      feeEnergiaMaximo,
+      feePotenciaMinimo,
+      feePotenciaMaximo,
+      costeGestion,
+      activa = true
     } = body;
 
-    if (!comercializadoraId || !nombre?.trim()) {
+    if (!comercializadoraId || !nombreOferta?.trim()) {
       return NextResponse.json(
-        { error: 'Comercializadora y nombre son requeridos' },
+        { error: 'Comercializadora y nombre de la oferta son requeridos' },
         { status: 400 }
       );
     }
 
-    const oferta = await prisma.tarifa.create({
+    const nuevaTarifa = await prisma.tarifas.create({
       data: {
         comercializadoraId,
-        nombreOferta: nombre.trim(),
+        nombreOferta: nombreOferta.trim(),
         tarifa: tarifa || '2.0TD',
-        tipoOferta: tipo || 'Fijo',
-        zona: 'PENINSULA',
-        rango: comisionTipo || 'E',
-        rangoDesde: parseFloat(comisionMinimo) || 0,
-        rangoHasta: comisionMaximo ? parseFloat(comisionMaximo) : null,
-        energiaP1: parseFloat(precioEnergia) || 0,
-        potenciaP1: parseFloat(precioTermino) || null,
-        activa
+        tipoOferta: tipoOferta || 'Fijo',
+        zona: zona || 'PENINSULA',
+        rango: 'E',
+        rangoDesde: 0,
+        rangoHasta: null,
+        energiaP1: parseFloat(energiaP1) || 0,
+        energiaP2: energiaP2 ? parseFloat(energiaP2) : null,
+        energiaP3: energiaP3 ? parseFloat(energiaP3) : null,
+        energiaP4: energiaP4 ? parseFloat(energiaP4) : null,
+        energiaP5: energiaP5 ? parseFloat(energiaP5) : null,
+        energiaP6: energiaP6 ? parseFloat(energiaP6) : null,
+        potenciaP1: potenciaP1 ? parseFloat(potenciaP1) : null,
+        potenciaP2: potenciaP2 ? parseFloat(potenciaP2) : null,
+        potenciaP3: potenciaP3 ? parseFloat(potenciaP3) : null,
+        potenciaP4: potenciaP4 ? parseFloat(potenciaP4) : null,
+        potenciaP5: potenciaP5 ? parseFloat(potenciaP5) : null,
+        potenciaP6: potenciaP6 ? parseFloat(potenciaP6) : null,
+        tieneFee: Boolean(tieneFee),
+        feeEnergia: feeEnergia ? parseFloat(feeEnergia) : null,
+        feePotencia: feePotencia ? parseFloat(feePotencia) : null,
+        feeEnergiaMinimo: feeEnergiaMinimo ? parseFloat(feeEnergiaMinimo) : null,
+        feeEnergiaMaximo: feeEnergiaMaximo ? parseFloat(feeEnergiaMaximo) : null,
+        feePotenciaMinimo: feePotenciaMinimo ? parseFloat(feePotenciaMinimo) : null,
+        feePotenciaMaximo: feePotenciaMaximo ? parseFloat(feePotenciaMaximo) : null,
+        costeGestion: costeGestion ? parseFloat(costeGestion) : null,
+        activa: activa !== undefined ? Boolean(activa) : true
       },
       include: {
-        comercializadora: true
+        comercializadoras: true
       }
     });
 
-    return NextResponse.json(oferta);
+    return NextResponse.json(nuevaTarifa);
   } catch (error) {
-    console.error('Error creating oferta:', error);
+    console.error('Error creando tarifa:', error);
     return NextResponse.json(
-      { error: 'Error creating oferta' },
+      { error: 'Error creando tarifa', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }
     );
   } finally {

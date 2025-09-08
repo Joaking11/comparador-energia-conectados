@@ -1,7 +1,14 @@
 
-import { Calculator, Zap, Settings, Building } from 'lucide-react';
+import { Calculator, Zap, Settings, Building, ChevronDown, DollarSign } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { Button } from "@/components/ui/button";
 
 export function Header() {
   return (
@@ -43,13 +50,35 @@ export function Header() {
           >
             Comercializadoras
           </Link>
-          <Link 
-            href="/admin/comercializadoras"
-            className="flex items-center space-x-2 px-3 py-2 bg-amber-500 text-white rounded-lg hover:bg-amber-600 transition-colors text-sm"
-          >
-            <Settings className="h-4 w-4" />
-            <span>Admin</span>
-          </Link>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="outline" className="bg-amber-500 text-white hover:bg-amber-600 border-amber-500">
+                <Settings className="h-4 w-4 mr-2" />
+                Admin
+                <ChevronDown className="h-4 w-4 ml-2" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/comercializadoras" className="flex items-center w-full">
+                  <Building className="h-4 w-4 mr-2" />
+                  Comercializadoras
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/tarifas" className="flex items-center w-full">
+                  <Zap className="h-4 w-4 mr-2" />
+                  Tarifas
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/comisiones" className="flex items-center w-full">
+                  <DollarSign className="h-4 w-4 mr-2" />
+                  Comisiones
+                </Link>
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </nav>
       </div>
     </header>

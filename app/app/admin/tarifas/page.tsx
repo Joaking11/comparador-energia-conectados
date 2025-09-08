@@ -1,0 +1,633 @@
+
+'use client';
+
+import React, { useState, useEffect } from 'react';
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { useToast } from "@/hooks/use-toast";
+import { 
+  Upload, 
+  FileSpreadsheet, 
+  Edit, 
+  Trash2, 
+  Plus, 
+  Search, 
+  Filter,
+  Download,
+  RefreshCw,
+  AlertTriangle,
+  FileText,
+  Zap,
+  Building
+} from 'lucide-react';
+
+export default function AdminTarifasPage() {
+  const [tarifas, setTarifas] = useState<any[]>([]);
+  const [comercializadoras, setComercializadoras] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [filtroComercializadora, setFiltroComercializadora] = useState('todas');
+  const [filtroTarifa, setFiltroTarifa] = useState('todas');
+  const [busqueda, setBusqueda] = useState('');
+  const [mostrandoEditor, setMostrandoEditor] = useState(false);
+  const [tarifaEditando, setTarifaEditando] = useState<any>(null);
+  const [procesandoArchivo, setProcesandoArchivo] = useState(false);
+  const { toast } = useToast();
+
+  const [formData, setFormData] = useState({
+    comercializadoraId: '',
+    nombreOferta: '',
+    tarifa: '2.0TD',
+    tipoOferta: 'Fijo',
+    zona: 'Peninsula',
+    energiaP1: 0,
+    energiaP2: 0,
+    energiaP3: 0,
+    potenciaP1: 0,
+    potenciaP2: 0,
+    tieneFee: false,
+    feeEnergia: 0,
+    feePotencia: 0,
+    costeGestion: 0
+  });
+
+  useEffect(() => {
+    cargarDatos();
+  }, []);
+
+  const cargarDatos = async () => {
+    try {
+      setLoading(true);
+      
+      const [tarifasRes, comercializadorasRes] = await Promise.all([
+        fetch('/api/ofertas'),
+        fetch('/api/comercializadoras')
+      ]);
+
+      if (tarifasRes.ok) {
+        const tarifasData = await tarifasRes.json();
+        setTarifas(tarifasData);
+      }
+
+      if (comercializadorasRes.ok) {
+        const comercializadorasData = await comercializadorasRes.json();
+        setComercializadoras(comercializadorasData);
+      }
+
+    } catch (error) {
+      console.error('Error cargando datos:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudieron cargar los datos',
+        variant: 'destructive'
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const tarifasFiltradas = tarifas.filter(tarifa => {
+    const matchComercializadora = filtroComercializadora === 'todas' || 
+      tarifa.comercializadora?.id === filtroComercializadora;
+    const matchTarifa = filtroTarifa === 'todas' || tarifa.tarifa === filtroTarifa;
+    const matchBusqueda = !busqueda || 
+      tarifa.nombreOferta?.toLowerCase().includes(busqueda.toLowerCase()) ||
+      tarifa.comercializadora?.nombre?.toLowerCase().includes(busqueda.toLowerCase());
+    
+    return matchComercializadora && matchTarifa && matchBusqueda;
+  });
+
+  const handleSubirExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    if (!file.name.match(/\.(xlsx|xlsm|xls)$/i)) {
+      toast({
+        title: 'Error',
+        description: 'Por favor sube un archivo Excel válido (.xlsx, .xlsm, .xls)',
+        variant: 'destructive'
+      });
+      return;
+    }
+
+    const formData = new FormData();
+    formData.append('file', file);
+    formData.append('tipo', 'tarifas');
+
+    setProcesandoArchivo(true);
+    
+    try {
+      const response = await fetch('/api/admin/import-smart', {
+        method: 'POST',
+        body: formData
+      });
+
+      const result = await response.json();
+
+      if (response.ok) {
+        toast({
+          title: 'Importación exitosa',
+          description: `${result.imported} tarifas procesadas correctamente`
+        });
+        cargarDatos();
+      } else {
+        throw new Error(result.error || 'Error en la importación');
+      }
+    } catch (error) {
+      console.error('Error subiendo archivo:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo procesar el archivo: ' + (error instanceof Error ? error.message : 'Error desconocido'),
+        variant: 'destructive'
+      });
+    } finally {
+      setProcesandoArchivo(false);
+      event.target.value = '';
+    }
+  };
+
+  const abrirEditor = (tarifa = null) => {
+    if (tarifa) {
+      setTarifaEditando(tarifa);
+      setFormData({
+        comercializadoraId: tarifa.comercializadoraId,
+        nombreOferta: tarifa.nombreOferta,
+        tarifa: tarifa.tarifa,
+        tipoOferta: tarifa.tipoOferta,
+        zona: tarifa.zona,
+        energiaP1: tarifa.energiaP1 || 0,
+        energiaP2: tarifa.energiaP2 || 0,
+        energiaP3: tarifa.energiaP3 || 0,
+        potenciaP1: tarifa.potenciaP1 || 0,
+        potenciaP2: tarifa.potenciaP2 || 0,
+        tieneFee: tarifa.tieneFee || false,
+        feeEnergia: tarifa.feeEnergia || 0,
+        feePotencia: tarifa.feePotencia || 0,
+        costeGestion: tarifa.costeGestion || 0
+      });
+    } else {
+      setTarifaEditando(null);
+      setFormData({
+        comercializadoraId: '',
+        nombreOferta: '',
+        tarifa: '2.0TD',
+        tipoOferta: 'Fijo',
+        zona: 'Peninsula',
+        energiaP1: 0,
+        energiaP2: 0,
+        energiaP3: 0,
+        potenciaP1: 0,
+        potenciaP2: 0,
+        tieneFee: false,
+        feeEnergia: 0,
+        feePotencia: 0,
+        costeGestion: 0
+      });
+    }
+    setMostrandoEditor(true);
+  };
+
+  const guardarTarifa = async () => {
+    try {
+      const method = tarifaEditando ? 'PUT' : 'POST';
+      const url = tarifaEditando ? `/api/ofertas/${tarifaEditando.id}` : '/api/ofertas';
+
+      const response = await fetch(url, {
+        method,
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(formData)
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Éxito',
+          description: tarifaEditando ? 'Tarifa actualizada' : 'Tarifa creada'
+        });
+        setMostrandoEditor(false);
+        cargarDatos();
+      } else {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      console.error('Error guardando tarifa:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error desconocido',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const eliminarTarifa = async (id: string) => {
+    if (!confirm('¿Estás seguro de que quieres eliminar esta tarifa?')) return;
+
+    try {
+      const response = await fetch(`/api/ofertas/${id}`, {
+        method: 'DELETE'
+      });
+
+      if (response.ok) {
+        toast({
+          title: 'Éxito',
+          description: 'Tarifa eliminada'
+        });
+        cargarDatos();
+      } else {
+        const error = await response.json();
+        throw new Error(error.message);
+      }
+    } catch (error) {
+      console.error('Error eliminando tarifa:', error);
+      toast({
+        title: 'Error',
+        description: error instanceof Error ? error.message : 'Error desconocido',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <RefreshCw className="h-8 w-8 animate-spin" />
+      </div>
+    );
+  }
+
+  return (
+    <div className="container mx-auto px-4 py-8 max-w-7xl">
+      <div className="flex items-center justify-between mb-8">
+        <div>
+          <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
+            <Zap className="h-8 w-8 text-primary" />
+            Administración de Tarifas
+          </h1>
+          <p className="text-gray-600 mt-2">
+            Gestiona las tarifas eléctricas, sube archivos Excel o añade manualmente
+          </p>
+        </div>
+        
+        <div className="flex items-center gap-3">
+          <Button onClick={() => abrirEditor()} className="flex items-center gap-2">
+            <Plus className="h-4 w-4" />
+            Nueva Tarifa
+          </Button>
+        </div>
+      </div>
+
+      {/* Panel de Importación */}
+      <Card className="mb-6">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Upload className="h-5 w-5" />
+            Importación Inteligente
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div>
+              <Label htmlFor="excel-upload" className="text-sm font-medium mb-2 block">
+                Subir Excel de Tarifas
+              </Label>
+              <div className="flex items-center gap-3">
+                <Input
+                  id="excel-upload"
+                  type="file"
+                  accept=".xlsx,.xlsm,.xls"
+                  onChange={handleSubirExcel}
+                  disabled={procesandoArchivo}
+                />
+                {procesandoArchivo && <RefreshCw className="h-4 w-4 animate-spin" />}
+              </div>
+              <p className="text-xs text-gray-500 mt-2">
+                Soporta archivos .xlsx, .xlsm, .xls - El sistema interpretará automáticamente las columnas
+              </p>
+            </div>
+            
+            <div className="bg-blue-50 p-4 rounded-lg">
+              <h4 className="font-semibold text-blue-900 mb-2 flex items-center gap-2">
+                <FileSpreadsheet className="h-4 w-4" />
+                Funcionalidad IA
+              </h4>
+              <ul className="text-sm text-blue-800 space-y-1">
+                <li>• Detección automática de columnas</li>
+                <li>• Mapeo inteligente de campos</li>
+                <li>• Validación de datos</li>
+                <li>• Reemplazo o actualización de tarifas existentes</li>
+              </ul>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Filtros */}
+      <Card className="mb-6">
+        <CardContent className="pt-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div>
+              <Label className="text-sm font-medium">Buscar</Label>
+              <div className="relative">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
+                <Input
+                  placeholder="Buscar tarifa o comercializadora..."
+                  value={busqueda}
+                  onChange={(e) => setBusqueda(e.target.value)}
+                  className="pl-10"
+                />
+              </div>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Comercializadora</Label>
+              <Select value={filtroComercializadora} onValueChange={setFiltroComercializadora}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {comercializadoras.map(c => (
+                    <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div>
+              <Label className="text-sm font-medium">Tipo de Tarifa</Label>
+              <Select value={filtroTarifa} onValueChange={setFiltroTarifa}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  <SelectItem value="2.0TD">2.0TD</SelectItem>
+                  <SelectItem value="3.0TD">3.0TD</SelectItem>
+                  <SelectItem value="6.1TD">6.1TD</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            
+            <div className="flex items-end">
+              <Button variant="outline" onClick={cargarDatos} className="flex items-center gap-2">
+                <RefreshCw className="h-4 w-4" />
+                Actualizar
+              </Button>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Estadísticas */}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-6">
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Total Tarifas</p>
+                <p className="text-2xl font-bold">{tarifas.length}</p>
+              </div>
+              <FileSpreadsheet className="h-8 w-8 text-blue-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Filtradas</p>
+                <p className="text-2xl font-bold">{tarifasFiltradas.length}</p>
+              </div>
+              <Filter className="h-8 w-8 text-green-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Comercializadoras</p>
+                <p className="text-2xl font-bold">{comercializadoras.length}</p>
+              </div>
+              <Building className="h-8 w-8 text-purple-600" />
+            </div>
+          </CardContent>
+        </Card>
+        
+        <Card>
+          <CardContent className="pt-6">
+            <div className="flex items-center justify-between">
+              <div>
+                <p className="text-sm font-medium text-gray-600">Con Fee</p>
+                <p className="text-2xl font-bold">{tarifas.filter(t => t.tieneFee).length}</p>
+              </div>
+              <Zap className="h-8 w-8 text-orange-600" />
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Tabla de Tarifas */}
+      <Card>
+        <CardHeader>
+          <CardTitle>Tarifas ({tarifasFiltradas.length})</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="overflow-x-auto">
+            <table className="w-full border-collapse border border-gray-200">
+              <thead>
+                <tr className="bg-gray-50">
+                  <th className="border border-gray-200 px-4 py-2 text-left">Comercializadora</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Oferta</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Tarifa</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Tipo</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Energía P1</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Potencia P1</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Fee</th>
+                  <th className="border border-gray-200 px-4 py-2 text-left">Acciones</th>
+                </tr>
+              </thead>
+              <tbody>
+                {tarifasFiltradas.map((tarifa) => (
+                  <tr key={tarifa.id} className="hover:bg-gray-50">
+                    <td className="border border-gray-200 px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        {tarifa.comercializadora?.logoUrl && (
+                          <img 
+                            src={tarifa.comercializadora.logoUrl} 
+                            alt={tarifa.comercializadora.nombre}
+                            className="h-6 w-6 object-contain"
+                          />
+                        )}
+                        <span className="font-medium">{tarifa.comercializadora?.nombre}</span>
+                      </div>
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">{tarifa.nombreOferta}</td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      <Badge variant="outline">{tarifa.tarifa}</Badge>
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">{tarifa.tipoOferta}</td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      {tarifa.energiaP1?.toFixed(6)} €/kWh
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      {tarifa.potenciaP1?.toFixed(6)} €/kW
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      {tarifa.tieneFee ? (
+                        <Badge variant="secondary">Sí</Badge>
+                      ) : (
+                        <Badge variant="outline">No</Badge>
+                      )}
+                    </td>
+                    <td className="border border-gray-200 px-4 py-2">
+                      <div className="flex items-center gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => abrirEditor(tarifa)}
+                        >
+                          <Edit className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => eliminarTarifa(tarifa.id)}
+                          className="text-red-600 hover:text-red-700"
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* Modal Editor */}
+      {mostrandoEditor && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold">
+                  {tarifaEditando ? 'Editar Tarifa' : 'Nueva Tarifa'}
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMostrandoEditor(false)}
+                >
+                  ×
+                </Button>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <Label htmlFor="comercializadora">Comercializadora</Label>
+                  <Select value={formData.comercializadoraId} onValueChange={(value) => 
+                    setFormData(prev => ({...prev, comercializadoraId: value}))
+                  }>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Seleccionar comercializadora" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {comercializadoras.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="nombreOferta">Nombre de la Oferta</Label>
+                  <Input
+                    id="nombreOferta"
+                    value={formData.nombreOferta}
+                    onChange={(e) => setFormData(prev => ({...prev, nombreOferta: e.target.value}))}
+                    placeholder="Ej: Tarifa Verde 2024"
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="tarifa">Tipo de Tarifa</Label>
+                  <Select value={formData.tarifa} onValueChange={(value) => 
+                    setFormData(prev => ({...prev, tarifa: value}))
+                  }>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="2.0TD">2.0TD</SelectItem>
+                      <SelectItem value="3.0TD">3.0TD</SelectItem>
+                      <SelectItem value="6.1TD">6.1TD</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="tipoOferta">Tipo de Oferta</Label>
+                  <Select value={formData.tipoOferta} onValueChange={(value) => 
+                    setFormData(prev => ({...prev, tipoOferta: value}))
+                  }>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="Fijo">Fijo</SelectItem>
+                      <SelectItem value="Indexado">Indexado</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div>
+                  <Label htmlFor="energiaP1">Precio Energía P1 (€/kWh)</Label>
+                  <Input
+                    id="energiaP1"
+                    type="number"
+                    step="0.000001"
+                    value={formData.energiaP1}
+                    onChange={(e) => setFormData(prev => ({...prev, energiaP1: parseFloat(e.target.value) || 0}))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="potenciaP1">Precio Potencia P1 (€/kW)</Label>
+                  <Input
+                    id="potenciaP1"
+                    type="number"
+                    step="0.000001"
+                    value={formData.potenciaP1}
+                    onChange={(e) => setFormData(prev => ({...prev, potenciaP1: parseFloat(e.target.value) || 0}))}
+                  />
+                </div>
+
+                {/* Más campos según sea necesario */}
+              </div>
+
+              <div className="flex justify-end space-x-3 mt-6">
+                <Button
+                  variant="outline"
+                  onClick={() => setMostrandoEditor(false)}
+                >
+                  Cancelar
+                </Button>
+                <Button onClick={guardarTarifa}>
+                  {tarifaEditando ? 'Actualizar' : 'Crear'} Tarifa
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
