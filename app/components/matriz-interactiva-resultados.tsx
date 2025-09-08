@@ -142,9 +142,33 @@ export default function MatrizInteractivaResultados({
           if (comercializadora) {
             toggleComercializadora(comercializadora.id);
           }
+        },
+        labels: {
+          color: '#374151', // Color gris oscuro para mejor contraste
+          font: {
+            size: 12,
+            weight: 'bold' as const
+          },
+          padding: 15,
+          usePointStyle: true
         }
       },
       tooltip: {
+        backgroundColor: 'rgba(255, 255, 255, 0.95)',
+        titleColor: '#1F2937',
+        bodyColor: '#374151',
+        borderColor: '#D1D5DB',
+        borderWidth: 1,
+        cornerRadius: 8,
+        padding: 12,
+        displayColors: true,
+        titleFont: {
+          size: 14,
+          weight: 'bold' as const
+        },
+        bodyFont: {
+          size: 12
+        },
         callbacks: {
           title: (context) => {
             const punto = context[0].raw as any;
@@ -170,10 +194,20 @@ export default function MatrizInteractivaResultados({
         title: {
           display: true,
           text: 'Coste para el cliente (€/mes)',
+          color: '#1F2937',
           font: {
             size: 14,
             weight: 'bold'
           }
+        },
+        ticks: {
+          color: '#374151',
+          font: {
+            size: 11
+          }
+        },
+        grid: {
+          color: 'rgba(156, 163, 175, 0.3)'
         }
       },
       y: {
@@ -182,10 +216,20 @@ export default function MatrizInteractivaResultados({
         title: {
           display: true,
           text: 'Comisión (€/mes)',
+          color: '#1F2937',
           font: {
             size: 14,
             weight: 'bold'
           }
+        },
+        ticks: {
+          color: '#374151',
+          font: {
+            size: 11
+          }
+        },
+        grid: {
+          color: 'rgba(156, 163, 175, 0.3)'
         }
       }
     },
@@ -289,6 +333,27 @@ export default function MatrizInteractivaResultados({
                 onCheckedChange={setMostrarSoloPositivos}
               />
               <Label htmlFor="solo-positivos">Solo ofertas con ahorro</Label>
+            </div>
+            
+            <div className="flex items-center space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setComercializadorasOcultas(new Set())}
+                className="flex items-center gap-1"
+              >
+                <Eye className="h-3 w-3" />
+                Mostrar Todas
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setComercializadorasOcultas(new Set(comercializadorasConColor.map(c => c.id)))}
+                className="flex items-center gap-1"
+              >
+                <EyeOff className="h-3 w-3" />
+                Ocultar Todas
+              </Button>
             </div>
           </div>
 
