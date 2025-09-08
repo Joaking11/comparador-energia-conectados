@@ -1,6 +1,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 import * as XLSX from 'xlsx';
 
 export const dynamic = 'force-dynamic';
@@ -128,8 +129,10 @@ export async function POST(request: NextRequest) {
         if (!comercializadora) {
           comercializadora = await prisma.comercializadoras.create({
             data: {
+              id: uuidv4(),
               nombre: nombreComercializadora.toString().trim(),
-              activa: true
+              activa: true,
+              updatedAt: new Date()
             }
           });
         }
@@ -160,6 +163,7 @@ export async function POST(request: NextRequest) {
           // Crear nueva tarifa
           await prisma.tarifas.create({
             data: {
+              id: uuidv4(),
               comercializadoraId: comercializadora.id,
               nombreOferta: nombreOferta.toString().trim(),
               tarifa: tarifa.toString(),
@@ -170,7 +174,8 @@ export async function POST(request: NextRequest) {
               rangoHasta: comisionMaximo || null,
               energiaP1: precioEnergia,
               potenciaP1: precioTermino,
-              activa: true
+              activa: true,
+              updatedAt: new Date()
             }
           });
         }

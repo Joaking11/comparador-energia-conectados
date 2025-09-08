@@ -1,5 +1,7 @@
 
 import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -70,7 +72,7 @@ async function importExcelData() {
     const comercializadora = await prisma.comercializadoras.upsert({
       where: { nombre },
       update: { activa: true },
-      create: { nombre, activa: true }
+      create: { id: uuidv4(), nombre, activa: true, updatedAt: new Date() }
     });
     comercializadorasCreadas.push(comercializadora);
   }
@@ -108,6 +110,7 @@ async function importExcelData() {
     try {
       await prisma.tarifas.create({
         data: {
+          id: uuidv4(),
           comercializadoraId: comercializadora.id,
           nombreOferta: row[1]?.toString().trim() || '', // Columna 1: Oferta
           energiaVerde: row[2]?.toString().toLowerCase() === 'si' || false, // Columna 2: ¿Energía verde?
@@ -143,7 +146,8 @@ async function importExcelData() {
           costeGestion: parseExcelValue(row[32]) || 0, // Columna 32: Coste gestión
           tipoCliente: row[33]?.toString().trim() || '', // Columna 33: Tipo cliente
           costeTotal: parseExcelValue(row[34]) || 0, // Columna 34: Coste total
-          activa: true
+          activa: true,
+          updatedAt: new Date()
         }
       });
       tarifasCreadas++;
@@ -185,6 +189,7 @@ async function importExcelData() {
     try {
       await prisma.comisiones.create({
         data: {
+          id: uuidv4(),
           comercializadoraId: comercializadora.id,
           nombreOferta: row[1]?.toString().trim() || 'Sin nombre', // Columna 1: Oferta
           energiaVerde: row[2]?.toString().toLowerCase() === 'si' || false, // Columna 2: ¿Energía verde?
@@ -194,7 +199,8 @@ async function importExcelData() {
           rango: row[6]?.toString().trim() || '', // Columna 6: Rango
           rangoDesde: parseExcelValue(row[7]) || 0, // Columna 7: Desde
           rangoHasta: parseExcelValue(row[8]) || null, // Columna 8: Hasta
-          comision: parseExcelValue(row[12]) || 0 // Columna 12: COMISION (campo requerido)
+          comision: parseExcelValue(row[12]) || 0, // Columna 12: COMISION (campo requerido)
+          updatedAt: new Date()
         }
       });
       comisionesCreadas++;
@@ -214,6 +220,7 @@ async function importExcelData() {
   try {
     const userDemo = await prisma.users.create({
       data: {
+        id: uuidv4(),
         email: 'demo@energia.com',
         name: 'Usuario Demo',
         password: hashedPassword

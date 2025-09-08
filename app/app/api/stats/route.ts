@@ -15,12 +15,12 @@ export async function GET() {
       totalOfertas,
       comparativas
     ] = await Promise.all([
-      prisma.comparativa.count(),
-      prisma.comercializadora.count({ where: { activa: true } }),
-      prisma.tarifa.count({ where: { activa: true } }),
-      prisma.comparativa.findMany({
+      prisma.comparativas.count(),
+      prisma.comercializadoras.count({ where: { activa: true } }),
+      prisma.tarifas.count({ where: { activa: true } }),
+      prisma.comparativas.findMany({
         include: {
-          ofertas: true
+          comparativa_ofertas: true
         }
       })
     ]);

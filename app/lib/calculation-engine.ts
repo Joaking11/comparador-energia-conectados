@@ -1,5 +1,5 @@
 
-import { PrismaClient, Tarifa, Comision, Comparativa } from '@prisma/client';
+import { PrismaClient, tarifas, comisiones, comparativas } from '@prisma/client';
 
 const prisma = new PrismaClient();
 
@@ -31,7 +31,7 @@ export class CalculationEngine {
       console.log('🔢 Iniciando cálculo de ofertas para comparativa:', comparativaId);
       
       // Obtener datos de la comparativa
-      const comparativa = await prisma.comparativa.findUnique({
+      const comparativa = await prisma.comparativas.findUnique({
         where: { id: comparativaId }
       });
 
@@ -85,7 +85,7 @@ export class CalculationEngine {
   /**
    * Encuentra tarifas aplicables según el rango de consumo/potencia
    */
-  private static async findApplicableTarifas(comparativa: Comparativa): Promise<Tarifa[]> {
+  private static async findApplicableTarifas(comparativa: comparativas): Promise<tarifas[]> {
     // Calcular valores clave
     const consumoAnual = comparativa.consumoAnualElectricidad;
     const potenciaMaxima = Math.max(
@@ -98,7 +98,7 @@ export class CalculationEngine {
     );
 
     // Buscar tarifas donde el consumo/potencia esté dentro del rango
-    const tarifas = await prisma.tarifa.findMany({
+    const tarifas = await prisma.tarifas.findMany({
       where: {
         activa: true,
         tarifa: comparativa.tarifaAccesoElectricidad, // Debe coincidir la tarifa de acceso
@@ -124,7 +124,7 @@ export class CalculationEngine {
         ]
       },
       include: {
-        comercializadora: true
+        comercializadoras: true
       }
     });
 
@@ -135,7 +135,7 @@ export class CalculationEngine {
    * Calcula el coste de una tarifa específica
    */
   private static async calculateSingleTarifa(
-    comparativa: Comparativa, 
+    comparativa: comparativas, 
     tarifa: any,
     parametrosPersonalizados?: any
   ): Promise<CalculationResult | null> {
@@ -193,7 +193,7 @@ export class CalculationEngine {
   /**
    * Calcula el coste de energía según los períodos
    */
-  private static calculateEnergiaCost(comparativa: Comparativa, tarifa: Tarifa, parametrosPersonalizados?: any): number {
+  private static calculateEnergiaCost(comparativa: comparativas, tarifa: tarifas, parametrosPersonalizados?: any): number {
     let totalEnergia = 0;
 
     // Calcular para cada período (P1-P6)
@@ -246,7 +246,7 @@ export class CalculationEngine {
   /**
    * Calcula el coste de potencia según los períodos
    */
-  private static calculatePotenciaCost(comparativa: Comparativa, tarifa: Tarifa, parametrosPersonalizados?: any): number {
+  private static calculatePotenciaCost(comparativa: comparativas, tarifa: tarifas, parametrosPersonalizados?: any): number {
     let totalPotencia = 0;
 
     // Calcular para cada período (P1-P6)
@@ -313,7 +313,7 @@ export class CalculationEngine {
    * - Rango P: buscar donde cae la potencia máxima
    */
   private static async findMatchingComision(
-    comparativa: Comparativa, 
+    comparativa: comparativas, 
     tarifa: any
   ): Promise<number> {
     try {
@@ -328,7 +328,7 @@ export class CalculationEngine {
       );
 
       // Buscar comisión con matching exacto
-      const comision = await prisma.comision.findFirst({
+      const comision = await prisma.comisiones.findFirst({
         where: {
           comercializadoraId: tarifa.comercializadoraId,
           nombreOferta: tarifa.nombreOferta,
@@ -380,13 +380,13 @@ export class CalculationEngine {
   ): Promise<void> {
     try {
       // Eliminar resultados anteriores
-      await prisma.comparativaOferta.deleteMany({
+      await prisma.comparativa_ofertas.deleteMany({
         where: { comparativaId }
       });
 
       // Insertar nuevos resultados
       for (const result of results) {
-        await prisma.comparativaOferta.create({
+        await prisma.comparativa_ofertas.create({
           data: {
             comparativaId,
             tarifaId: result.tarifaId,

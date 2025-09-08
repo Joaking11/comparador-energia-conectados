@@ -14,12 +14,12 @@ export async function GET(
     const comparativa = await prisma.comparativas.findUnique({
       where: { id: params.id },
       include: {
-        cliente: true,
-        ofertas: {
+        clientes: true,
+        comparativa_ofertas: {
           include: {
-            tarifa: {
+            tarifas: {
               include: {
-                comercializadora: true
+                comercializadoras: true
               }
             }
           },

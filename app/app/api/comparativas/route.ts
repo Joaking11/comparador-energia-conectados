@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 import { CalculationEngine } from '@/lib/calculation-engine';
 
 export const dynamic = 'force-dynamic';
@@ -58,6 +59,7 @@ export async function POST(request: Request) {
     if (!clienteRecord) {
       clienteRecord = await prisma.clientes.create({
         data: {
+          id: uuidv4(),
           razonSocial: cliente.razonSocial,
           cif: cliente.cif || undefined,
           direccion: cliente.direccion || undefined,
@@ -68,6 +70,7 @@ export async function POST(request: Request) {
           nifFirmante: cliente.nifFirmante || undefined,
           telefono: cliente.telefono || undefined,
           email: cliente.email || undefined,
+          updatedAt: new Date()
         }
       });
     }
@@ -92,6 +95,7 @@ export async function POST(request: Request) {
     try {
       comparativa = await prisma.comparativas.create({
       data: {
+        id: uuidv4(),
         clienteId: clienteRecord.id,
         titulo: datosComparativa.titulo || undefined,
         
@@ -168,6 +172,7 @@ export async function POST(request: Request) {
         totalFacturaGas: datosComparativa.totalFacturaGas || undefined,
         
         notas: datosComparativa.notas || undefined,
+        updatedAt: new Date()
       }
     });
     console.log('Comparativa creada exitosamente:', comparativa);

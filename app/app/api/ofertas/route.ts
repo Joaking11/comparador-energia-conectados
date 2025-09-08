@@ -1,6 +1,7 @@
 
 import { NextResponse } from 'next/server';
 import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 
 export const dynamic = 'force-dynamic';
 
@@ -92,7 +93,7 @@ export async function POST(request: Request) {
 
     const nuevaTarifa = await prisma.tarifas.create({
       data: {
-        id: `tarifa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+        id: uuidv4(),
         comercializadoraId,
         nombreOferta: nombreOferta.trim(),
         tarifa: tarifa || '2.0TD',
