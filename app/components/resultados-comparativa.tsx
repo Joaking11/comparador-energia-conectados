@@ -229,6 +229,10 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
     setResultadoSeleccionado(null);
   };
 
+  const handleDescargarPDF = () => {
+    window.print();
+  };
+
   return (
     <div className="space-y-6">
       {/* Header con información de la comparativa */}
@@ -260,7 +264,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
             <Share2 className="h-4 w-4 mr-2" />
             Compartir
           </Button>
-          <Button variant="outline">
+          <Button variant="outline" onClick={handleDescargarPDF}>
             <Download className="h-4 w-4 mr-2" />
             Descargar PDF
           </Button>

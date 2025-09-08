@@ -567,7 +567,7 @@ export default function InformeDetalladoComparativa({
         </div>
 
         {/* Footer de navegación */}
-        <div className="border-t p-4 flex justify-between items-center">
+        <div className="border-t p-4 flex justify-between items-center print-hidden">
           <div className="text-sm text-gray-500">
             Página {paginaActual} de 2
           </div>
@@ -594,5 +594,6 @@ export default function InformeDetalladoComparativa({
         </div>
       </div>
     </div>
+    </>
   );
 }
