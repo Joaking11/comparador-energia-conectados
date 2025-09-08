@@ -1,8 +1,7 @@
 
 import { PrismaClient, tarifas, comisiones, comparativas } from '@prisma/client';
 import { v4 as uuidv4 } from 'uuid';
-
-const prisma = new PrismaClient();
+import { prisma } from './db';
 
 export interface CalculationResult {
   tarifaId: string;
@@ -168,7 +167,7 @@ export class CalculationEngine {
 
       return {
         tarifaId: tarifa.id,
-        comercializadora: tarifa.comercializadora.nombre,
+        comercializadora: tarifa.comercializadoras.nombre,
         nombreOferta: tarifa.nombreOferta,
         tarifa: tarifa.tarifa,
         tipoOferta: tarifa.tipoOferta,
