@@ -33,23 +33,22 @@ interface Comercializadora {
   id: string;
   nombre: string;
   activa: boolean;
-  ofertas: Oferta[];
+  tarifas: Tarifa[];
 }
 
-interface Oferta {
+interface Tarifa {
   id: string;
   comercializadoraId: string;
-  nombre: string;
+  nombreOferta: string;
   tarifa: string;
-  tipo: string;
-  precioEnergia: number;
-  precioTermino: number;
-  descripcion?: string;
+  tipoOferta: string;
+  energiaP1: number;
+  potenciaP1?: number | null;
+  zona: string;
+  rango: string;
+  rangoDesde: number;
+  rangoHasta?: number | null;
   activa: boolean;
-  comisionTipo: string;
-  comisionMinimo: number;
-  comisionMaximo?: number;
-  comisionValor: number;
 }
 
 export default function AdminComercializadorasCompleto() {
@@ -267,19 +266,19 @@ export default function AdminComercializadorasCompleto() {
       // Preparar datos para exportar
       const datos: any[] = [];
       comercializadoras.forEach(comercializadora => {
-        comercializadora.ofertas.forEach(oferta => {
+        comercializadora.tarifas?.forEach(tarifa => {
           datos.push({
             'Comercializadora': comercializadora.nombre,
-            'Oferta': oferta.nombre,
-            'Tarifa': oferta.tarifa,
-            'Tipo': oferta.tipo,
-            'Precio Energía (€/kWh)': oferta.precioEnergia,
-            'Término Potencia (€/kW mes)': oferta.precioTermino,
-            'Descripción': oferta.descripcion || '',
-            'Comisión Tipo': oferta.comisionTipo,
-            'Comisión Valor': oferta.comisionValor,
-            'Comisión Mínimo': oferta.comisionMinimo,
-            'Comisión Máximo': oferta.comisionMaximo || ''
+            'Oferta': tarifa.nombreOferta,
+            'Tarifa': tarifa.tarifa,
+            'Tipo': tarifa.tipoOferta,
+            'Precio Energía P1 (€/kWh)': tarifa.energiaP1,
+            'Precio Potencia P1 (€/kW mes)': tarifa.potenciaP1 || 0,
+            'Zona': tarifa.zona,
+            'Rango': tarifa.rango,
+            'Rango Desde': tarifa.rangoDesde,
+            'Rango Hasta': tarifa.rangoHasta || '',
+            'Activa': tarifa.activa ? 'Sí' : 'No'
           });
         });
       });
@@ -368,7 +367,7 @@ export default function AdminComercializadorasCompleto() {
       console.error('Error descargando plantilla:', error);
       toast({
         title: "❌ Error",
-        description: `No se pudo descargar la plantilla: ${error.message}`,
+        description: `No se pudo descargar la plantilla: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         variant: "destructive",
       });
     }
@@ -404,9 +403,9 @@ export default function AdminComercializadorasCompleto() {
     }
   };
 
-  const totalOfertas = comercializadoras.reduce((acc, c) => acc + c.ofertas.length, 0);
+  const totalOfertas = comercializadoras.reduce((acc, c) => acc + (c.tarifas?.length || 0), 0);
   const ofertasActivas = comercializadoras.reduce((acc, c) => 
-    acc + c.ofertas.filter(o => o.activa).length, 0);
+    acc + (c.tarifas?.filter(o => o.activa).length || 0), 0);
 
   if (loading) {
     return (
@@ -538,7 +537,7 @@ export default function AdminComercializadorasCompleto() {
                   <div>
                     <CardTitle className="text-xl">{comercializadora.nombre}</CardTitle>
                     <CardDescription>
-                      {comercializadora.ofertas.length} ofertas disponibles
+                      {comercializadora.tarifas?.length || 0} tarifas disponibles
                     </CardDescription>
                   </div>
                 </div>
@@ -556,7 +555,7 @@ export default function AdminComercializadorasCompleto() {
             </CardHeader>
             
             <CardContent className="p-0">
-              {comercializadora.ofertas.length > 0 ? (
+              {(comercializadora.tarifas?.length || 0) > 0 ? (
                 <div className="divide-y">
                   {comercializadora.ofertas.map((oferta) => (
                     <div key={oferta.id} className="p-6 hover:bg-gray-50 transition-colors">

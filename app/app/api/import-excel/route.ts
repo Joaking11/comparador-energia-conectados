@@ -138,7 +138,7 @@ export async function POST(request: NextRequest) {
         const tarifaExistente = await prisma.tarifa.findFirst({
           where: {
             comercializadoraId: comercializadora.id,
-            nombre: nombreOferta.toString().trim()
+            nombreOferta: nombreOferta.toString().trim()
           }
         });
 
@@ -148,14 +148,12 @@ export async function POST(request: NextRequest) {
             where: { id: tarifaExistente.id },
             data: {
               tarifa: tarifa.toString(),
-              tipo: tipo.toString(),
-              precioEnergia,
-              precioTermino,
-              descripcion: descripcion.toString() || null,
-              comisionTipo: comisionTipo.toString() === 'P' ? 'P' : 'E',
-              comisionValor,
-              comisionMinimo,
-              comisionMaximo
+              tipoOferta: tipo.toString(),
+              energiaP1: precioEnergia,
+              potenciaP1: precioTermino,
+              rango: comisionTipo.toString() === 'P' ? 'P' : 'E',
+              rangoDesde: comisionMinimo || 0,
+              rangoHasta: comisionMaximo || null
             }
           });
         } else {
@@ -163,17 +161,16 @@ export async function POST(request: NextRequest) {
           await prisma.tarifa.create({
             data: {
               comercializadoraId: comercializadora.id,
-              nombre: nombreOferta.toString().trim(),
+              nombreOferta: nombreOferta.toString().trim(),
               tarifa: tarifa.toString(),
-              tipo: tipo.toString(),
-              precioEnergia,
-              precioTermino,
-              descripcion: descripcion.toString() || null,
-              activa: true,
-              comisionTipo: comisionTipo.toString() === 'P' ? 'P' : 'E',
-              comisionValor,
-              comisionMinimo,
-              comisionMaximo
+              tipoOferta: tipo.toString(),
+              zona: 'PENINSULA',
+              rango: comisionTipo.toString() === 'P' ? 'P' : 'E',
+              rangoDesde: comisionMinimo || 0,
+              rangoHasta: comisionMaximo || null,
+              energiaP1: precioEnergia,
+              potenciaP1: precioTermino,
+              activa: true
             }
           });
         }

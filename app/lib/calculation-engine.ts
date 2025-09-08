@@ -136,7 +136,7 @@ export class CalculationEngine {
    */
   private static async calculateSingleTarifa(
     comparativa: Comparativa, 
-    tarifa: Tarifa & { comercializadora: any }
+    tarifa: any
   ): Promise<CalculationResult | null> {
     try {
       // PASO 1: Calcular coste energía
@@ -297,7 +297,7 @@ export class CalculationEngine {
    */
   private static async findMatchingComision(
     comparativa: Comparativa, 
-    tarifa: Tarifa & { comercializadora: any }
+    tarifa: any
   ): Promise<number> {
     try {
       const consumoAnual = comparativa.consumoAnualElectricidad;

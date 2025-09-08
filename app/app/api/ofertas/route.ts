@@ -25,7 +25,7 @@ export async function GET(request: Request) {
     }
     
     if (tipo) {
-      whereClause.tipo = tipo;
+      whereClause.tipoOferta = tipo;
     }
 
     const ofertas = await prisma.tarifa.findMany({
@@ -35,7 +35,7 @@ export async function GET(request: Request) {
       },
       orderBy: [
         { comercializadora: { nombre: 'asc' } },
-        { precioEnergia: 'asc' }
+        { energiaP1: 'asc' }
       ]
     });
 
@@ -79,17 +79,16 @@ export async function POST(request: Request) {
     const oferta = await prisma.tarifa.create({
       data: {
         comercializadoraId,
-        nombre: nombre.trim(),
+        nombreOferta: nombre.trim(),
         tarifa: tarifa || '2.0TD',
-        tipo: tipo || 'Fija',
-        precioEnergia: parseFloat(precioEnergia) || 0,
-        precioTermino: parseFloat(precioTermino) || 0,
-        descripcion: descripcion?.trim() || null,
-        activa,
-        comisionTipo: comisionTipo || 'E',
-        comisionMinimo: parseFloat(comisionMinimo) || 0,
-        comisionMaximo: comisionMaximo ? parseFloat(comisionMaximo) : null,
-        comisionValor: parseFloat(comisionValor) || 0
+        tipoOferta: tipo || 'Fijo',
+        zona: 'PENINSULA',
+        rango: comisionTipo || 'E',
+        rangoDesde: parseFloat(comisionMinimo) || 0,
+        rangoHasta: comisionMaximo ? parseFloat(comisionMaximo) : null,
+        energiaP1: parseFloat(precioEnergia) || 0,
+        potenciaP1: parseFloat(precioTermino) || null,
+        activa
       },
       include: {
         comercializadora: true
@@ -136,17 +135,15 @@ export async function PUT(request: Request) {
 
     const updateData: any = {};
     if (comercializadoraId) updateData.comercializadoraId = comercializadoraId;
-    if (nombre !== undefined) updateData.nombre = nombre.trim();
+    if (nombre !== undefined) updateData.nombreOferta = nombre.trim();
     if (tarifa !== undefined) updateData.tarifa = tarifa;
-    if (tipo !== undefined) updateData.tipo = tipo;
-    if (precioEnergia !== undefined) updateData.precioEnergia = parseFloat(precioEnergia);
-    if (precioTermino !== undefined) updateData.precioTermino = parseFloat(precioTermino);
-    if (descripcion !== undefined) updateData.descripcion = descripcion?.trim() || null;
+    if (tipo !== undefined) updateData.tipoOferta = tipo;
+    if (precioEnergia !== undefined) updateData.energiaP1 = parseFloat(precioEnergia);
+    if (precioTermino !== undefined) updateData.potenciaP1 = parseFloat(precioTermino);
     if (activa !== undefined) updateData.activa = activa;
-    if (comisionTipo !== undefined) updateData.comisionTipo = comisionTipo;
-    if (comisionMinimo !== undefined) updateData.comisionMinimo = parseFloat(comisionMinimo);
-    if (comisionMaximo !== undefined) updateData.comisionMaximo = comisionMaximo ? parseFloat(comisionMaximo) : null;
-    if (comisionValor !== undefined) updateData.comisionValor = parseFloat(comisionValor);
+    if (comisionTipo !== undefined) updateData.rango = comisionTipo;
+    if (comisionMinimo !== undefined) updateData.rangoDesde = parseFloat(comisionMinimo);
+    if (comisionMaximo !== undefined) updateData.rangoHasta = comisionMaximo ? parseFloat(comisionMaximo) : null;
 
     const oferta = await prisma.tarifa.update({
       where: { id },
@@ -180,7 +177,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.oferta.delete({
+    await prisma.tarifa.delete({
       where: { id }
     });
 

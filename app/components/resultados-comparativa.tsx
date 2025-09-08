@@ -128,7 +128,11 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
       });
       
       // Recargar los datos
-      await fetchData();
+      const response2 = await fetch(`/api/comparativas/${comparativaId}`);
+      if (response2.ok) {
+        const comparativa = await response2.json();
+        setData(comparativa);
+      }
       
     } catch (error) {
       console.error('Error recalculando:', error);

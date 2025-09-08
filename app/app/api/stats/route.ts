@@ -17,7 +17,7 @@ export async function GET() {
     ] = await Promise.all([
       prisma.comparativa.count(),
       prisma.comercializadora.count({ where: { activa: true } }),
-      prisma.oferta.count({ where: { activa: true } }),
+      prisma.tarifa.count({ where: { activa: true } }),
       prisma.comparativa.findMany({
         include: {
           ofertas: true
@@ -28,8 +28,8 @@ export async function GET() {
     // Calcular ahorro promedio
     let ahorroPromedio = 0;
     if (comparativas.length > 0) {
-      const totalAhorro = comparativas.reduce((sum, comp) => {
-        const maxAhorro = Math.max(...comp.ofertas.map(o => o.ahorroAnual), 0);
+      const totalAhorro = comparativas.reduce((sum: number, comp: any) => {
+        const maxAhorro = Math.max(...comp.ofertas.map((o: any) => o.ahorroAnual), 0);
         return sum + maxAhorro;
       }, 0);
       ahorroPromedio = totalAhorro / comparativas.length;
