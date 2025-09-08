@@ -23,9 +23,12 @@ import {
   Euro,
   Loader2,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  Eye,
+  FileText
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
+import InformeDetalladoComparativa from './informe-detallado-comparativa';
 
 interface ComparativaData {
   id: string;
@@ -74,6 +77,8 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   const [filtroTipo, setFiltroTipo] = useState('todos');
   const [busqueda, setBusqueda] = useState('');
   const [recalculando, setRecalculando] = useState(false);
+  const [mostrarInformeDetallado, setMostrarInformeDetallado] = useState(false);
+  const [resultadoSeleccionado, setResultadoSeleccionado] = useState<any>(null);
   const { toast } = useToast();
 
   useEffect(() => {
@@ -212,6 +217,16 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
     } catch (error) {
       console.error('Error sharing:', error);
     }
+  };
+
+  const handleVerDetalle = (resultado: any) => {
+    setResultadoSeleccionado(resultado);
+    setMostrarInformeDetallado(true);
+  };
+
+  const handleCerrarInforme = () => {
+    setMostrarInformeDetallado(false);
+    setResultadoSeleccionado(null);
   };
 
   return (
@@ -420,6 +435,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                       <th className="text-right py-3 px-4 font-medium text-gray-700">Coste Anual</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-700">Ahorro</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-700">Comisión</th>
+                      <th className="text-center py-3 px-4 font-medium text-gray-700">Acciones</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -473,6 +489,17 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                             <div className="text-sm text-gray-500">
                               Comisión
                             </div>
+                          </td>
+                          <td className="py-3 px-4 text-center">
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              onClick={() => handleVerDetalle(resultado)}
+                              className="text-xs"
+                            >
+                              <Eye className="h-4 w-4 mr-1" />
+                              Ver Detalle
+                            </Button>
                           </td>
                         </tr>
                       );
@@ -554,6 +581,15 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
             </div>
           </CardContent>
         </Card>
+      )}
+      
+      {/* Modal del informe detallado */}
+      {mostrarInformeDetallado && resultadoSeleccionado && data && (
+        <InformeDetalladoComparativa
+          resultado={resultadoSeleccionado}
+          comparativa={data}
+          onClose={handleCerrarInforme}
+        />
       )}
     </div>
   );
