@@ -224,6 +224,40 @@ export default function ManagePage() {
     }
   };
 
+  const copiarURL = async (tipo: 'tarifas' | 'comisiones') => {
+    try {
+      const endpoint = activeTab === 'comisiones' 
+        ? '/api/plantilla-comisiones' 
+        : '/api/plantilla-excel';
+      
+      const urlCompleta = `${window.location.origin}${endpoint}`;
+      
+      // Copiar al portapapeles
+      await navigator.clipboard.writeText(urlCompleta);
+      
+      toast({
+        title: 'URL copiada',
+        description: `URL completa copiada: ${urlCompleta.substring(0, 50)}...`
+      });
+      
+    } catch (error) {
+      // Fallback si no funciona el clipboard API
+      const endpoint = activeTab === 'comisiones' 
+        ? '/api/plantilla-comisiones' 
+        : '/api/plantilla-excel';
+      
+      const urlCompleta = `${window.location.origin}${endpoint}`;
+      
+      toast({
+        title: 'Copia esta URL',
+        description: urlCompleta,
+        variant: 'default'
+      });
+      
+      console.log('URL para copiar manualmente:', urlCompleta);
+    }
+  };
+
   const eliminar = async (id: string) => {
     if (!confirm('¿Estás seguro de que quieres eliminar este elemento?')) return;
 
@@ -375,6 +409,14 @@ export default function ManagePage() {
                   title="Método alternativo si no funciona la descarga normal"
                 >
                   ⬇️ Descarga Directa
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => copiarURL(activeTab === 'comisiones' ? 'comisiones' : 'tarifas')}
+                  className="bg-purple-50 border-purple-200 text-purple-800 hover:bg-purple-100"
+                  title="Copia la URL completa al portapapeles"
+                >
+                  📋 Copiar URL
                 </Button>
                 <Button 
                   variant="outline"
@@ -696,18 +738,19 @@ export default function ManagePage() {
             <div>
               <h4 className="font-semibold mb-2">📋 Instrucciones de Uso</h4>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• 📥 <strong>Plantilla Excel</strong>: Descarga formato correcto</li>
-                <li>• ⬇️ <strong>Descarga Directa</strong>: Método alternativo de descarga</li>
+                <li>• 📥 <strong>Plantilla Excel</strong>: Descarga formato correcto (método principal)</li>
+                <li>• ⬇️ <strong>Descarga Directa</strong>: Abre URL en nueva ventana</li>
+                <li>• 📋 <strong>Copiar URL</strong>: Copia URL completa al portapapeles</li>
                 <li>• 📤 <strong>Importar Excel</strong>: Sube archivos masivos</li>
                 <li>• ✏️ <strong>Editar</strong>: Clic en botón azul para modificar</li>
                 <li>• 👁️ <strong>Activar/Desactivar</strong>: Clic en ojo</li>
                 <li>• 🗑️ <strong>Eliminar</strong>: Botón rojo con confirmación</li>
                 <li>• 🔍 <strong>Buscar</strong>: Filtrado en tiempo real</li>
                 <li className="mt-2 pt-2 border-t border-gray-300">
-                  <strong>URLs Directas (copia y pega en navegador):</strong>
+                  <strong>📋 Si nada funciona, copia estas URLs completas:</strong>
                 </li>
-                <li>• Tarifas: <code className="bg-gray-100 px-1 rounded text-xs">/api/plantilla-excel</code></li>
-                <li>• Comisiones: <code className="bg-gray-100 px-1 rounded text-xs">/api/plantilla-comisiones</code></li>
+                <li>• Tarifas: <code className="bg-gray-100 px-1 rounded text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/api/plantilla-excel</code></li>
+                <li>• Comisiones: <code className="bg-gray-100 px-1 rounded text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/api/plantilla-comisiones</code></li>
               </ul>
             </div>
           </div>
