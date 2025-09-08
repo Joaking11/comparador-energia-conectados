@@ -17,13 +17,23 @@ export function FormularioConOCR() {
 
   const handleDatosExtraidos = (datos: any) => {
     if (datos) {
+      // Priorizar consumo anual calculado del gráfico si está disponible
+      if (datos.historicoConsumo?.tieneGrafico && datos.historicoConsumo?.consumoAnualCalculado > 0) {
+        datos.electricidad.consumoAnualElectricidad = datos.historicoConsumo.consumoAnualCalculado;
+        console.log(`📊 Usando consumo anual del gráfico: ${datos.historicoConsumo.consumoAnualCalculado} kWh (basado en ${datos.historicoConsumo.mesesDetectados} meses)`);
+      }
+      
       setDatosOCR(datos);
       setFacturaProcessed(true);
       setMetodoSeleccionado('manual'); // Cambiar a manual para revisar/editar
       
+      const mensajeExtra = datos.historicoConsumo?.tieneGrafico 
+        ? ` - Consumo anual calculado automáticamente desde gráfico (${datos.historicoConsumo.mesesDetectados} meses)`
+        : '';
+      
       toast({
         title: '✅ Datos extraídos',
-        description: 'Revisa y edita los datos extraídos antes de calcular la comparativa',
+        description: `Revisa y edita los datos extraídos antes de calcular la comparativa${mensajeExtra}`,
       });
     } else {
       // Usuario eligió completar manualmente

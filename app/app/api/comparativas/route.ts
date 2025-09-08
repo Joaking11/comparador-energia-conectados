@@ -111,6 +111,13 @@ export async function POST(request: Request) {
         ahorroMinimo: datosComparativa.ahorroMinimo,
         distribuidoraElectrica: datosComparativa.distribuidoraElectrica || undefined,
         
+        // Histórico de consumo (si viene de OCR con gráfico)
+        historicoTieneGrafico: datosComparativa.historicoTieneGrafico || false,
+        historicoMesesDetectados: datosComparativa.historicoMesesDetectados || undefined,
+        historicoConsumosMensuales: datosComparativa.historicoConsumosMensuales || undefined,
+        historicoPeriodoAnalizado: datosComparativa.historicoPeriodoAnalizado || undefined,
+        historicoConsumoCalculado: datosComparativa.historicoConsumoCalculado || undefined,
+        
         // Gas
         contrataGas: datosComparativa.contrataGas,
         multipuntoGas: datosComparativa.multipuntoGas,

@@ -50,9 +50,16 @@ ESTRUCTURA JSON REQUERIDA:
     "contrataElectricidad": true,
     "tarifaAccesoElectricidad": "2.0TD|3.0TD|6.1TD|6.2TD",
     "cupsElectricidad": "Código CUPS completo",
-    "consumoAnualElectricidad": "Consumo anual en kWh (número)",
+    "consumoAnualElectricidad": "Consumo anual en kWh (número) - CALCULADO AUTOMÁTICAMENTE",
     "comercializadoraActual": "Nombre de la comercializadora",
     "distribuidoraElectrica": "Distribuidora eléctrica (si aparece)"
+  },
+  "historicoConsumo": {
+    "tieneGrafico": "true si hay gráfico de barras de consumo mensual, false si no",
+    "mesesDetectados": "Número de meses/barras detectadas en el gráfico (número)",
+    "consumosMensuales": "Array de consumos mensuales en kWh detectados en el gráfico",
+    "periodoAnalizado": "Descripción del período (ej: 'Últimos 12 meses', 'Enero-Diciembre 2023')",
+    "consumoAnualCalculado": "Suma total de consumos mensuales en kWh (número)"
   },
   "potencias": {
     "potenciaP1": "Potencia período 1 en kW (número)",
@@ -101,14 +108,22 @@ ESTRUCTURA JSON REQUERIDA:
 INSTRUCCIONES ESPECÍFICAS:
 1. Busca TODOS los períodos de potencia y consumo (P1, P2, P3, P4, P5, P6)
 2. OBLIGATORIO: Extrae las fechas del período de facturación (desde/hasta) y calcula los días
-3. Extrae términos fijo y variable por separado
-4. Identifica correctamente impuestos de electricidad vs IVA
-5. Si es factura dual (luz+gas), extrae ambos
-6. Si hay datos que no encuentras, usa null
-7. Las fechas deben estar en formato YYYY-MM-DD
-8. Calcula los días del período (fecha final - fecha inicial + 1)
-9. Sé muy preciso con los números, incluye decimales
-10. La confianza debe ser realista basada en calidad del texto
+3. ⭐ ANÁLISIS DE GRÁFICO DE CONSUMO (PRIORIDAD ALTA):
+   - Busca gráficos de barras con consumo mensual (típicamente en kWh)
+   - Cuenta exactamente cuántas barras/meses aparecen
+   - Lee los valores de cada barra (consumo en kWh por mes)
+   - Suma todos los consumos mensuales para obtener el total anual
+   - Si encuentras gráfico, usa ese valor como "consumoAnualElectricidad"
+   - Si no hay gráfico, busca el consumo anual en el texto
+4. Extrae términos fijo y variable por separado
+5. Identifica correctamente impuestos de electricidad vs IVA
+6. Si es factura dual (luz+gas), extrae ambos
+7. Si hay datos que no encuentras, usa null
+8. Las fechas deben estar en formato YYYY-MM-DD
+9. Calcula los días del período (fecha final - fecha inicial + 1)
+10. Sé muy preciso con los números, incluye decimales
+11. La confianza debe ser realista basada en calidad del texto
+12. PRIORIZA el análisis visual de gráficos sobre texto para el consumo anual
 
 Responde únicamente con JSON limpio, sin markdown ni explicaciones.
 `;

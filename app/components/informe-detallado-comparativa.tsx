@@ -492,8 +492,8 @@ export default function InformeDetalladoComparativa({
                   comparado con su facturación actual.
                 </p>
                 <p className="text-gray-700 mt-2">
-                  Los cálculos mostrados incluyen todos los conceptos y están basados en su consumo histórico 
-                  y las condiciones específicas de su suministro.
+                  El cálculo del consumo anual se ha estimado en base a los datos aportados en su última factura{comparativa.historicoTieneGrafico ? `, el historial de los últimos ${comparativa.historicoMesesDetectados || 12} meses mostrado en el gráfico de consumo` : ''}. 
+                  Los cálculos incluyen todos los conceptos y están basados en las condiciones específicas de su suministro.
                 </p>
               </div>
             ) : (
@@ -504,6 +504,9 @@ export default function InformeDetalladoComparativa({
                 <p className="text-gray-700">
                   Esta oferta supondría un incremento anual de <strong>{Math.abs(ahorroAnual * 12).toFixed(0)}€</strong> 
                   comparado con la facturación actual. Se recomienda evaluar otras opciones disponibles.
+                </p>
+                <p className="text-gray-700 mt-2">
+                  El cálculo del consumo anual se ha estimado en base a los datos aportados en su última factura{comparativa.historicoTieneGrafico ? `, el historial de los últimos ${comparativa.historicoMesesDetectados || 12} meses mostrado en el gráfico de consumo` : ''}.
                 </p>
               </div>
             )}

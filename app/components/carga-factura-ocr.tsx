@@ -40,6 +40,13 @@ interface DatosExtraidos {
     comercializadoraActual: string;
     distribuidoraElectrica?: string;
   };
+  historicoConsumo?: {
+    tieneGrafico: boolean;
+    mesesDetectados: number;
+    consumosMensuales: number[];
+    periodoAnalizado: string;
+    consumoAnualCalculado: number;
+  };
   potencias: {
     potenciaP1: number;
     potenciaP2?: number;

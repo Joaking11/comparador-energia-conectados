@@ -203,6 +203,13 @@ model Comparativa {
   ahorroMinimo              Float   @default(0.1)
   distribuidoraElectrica    String?
   
+  // HISTÓRICO DE CONSUMO (del gráfico de la factura)
+  historicoTieneGrafico     Boolean? @default(false)
+  historicoMesesDetectados  Int?     
+  historicoConsumosMensuales String? // JSON array de consumos mensuales
+  historicoPeriodoAnalizado String?  // Descripción del período
+  historicoConsumoCalculado Float?   // Consumo anual calculado del gráfico
+  
   // GAS
   contrataGas           Boolean @default(false)
   multipuntoGas         Boolean @default(false)

@@ -52,6 +52,13 @@ interface FormDataCompleto {
     ahorroMinimo: number | string;
     distribuidoraElectrica: string;
   };
+  historicoConsumo?: {
+    tieneGrafico: boolean;
+    mesesDetectados: number;
+    consumosMensuales: number[];
+    periodoAnalizado: string;
+    consumoAnualCalculado: number;
+  };
   gas: {
     contrataGas: boolean;
     multipuntoGas: boolean;
@@ -150,6 +157,13 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
         ahorroMinimo: 0.1,
         distribuidoraElectrica: datosOCR.electricidad?.distribuidoraElectrica || ''
       },
+      historicoConsumo: datosOCR.historicoConsumo ? {
+        tieneGrafico: datosOCR.historicoConsumo.tieneGrafico,
+        mesesDetectados: datosOCR.historicoConsumo.mesesDetectados,
+        consumosMensuales: datosOCR.historicoConsumo.consumosMensuales,
+        periodoAnalizado: datosOCR.historicoConsumo.periodoAnalizado,
+        consumoAnualCalculado: datosOCR.historicoConsumo.consumoAnualCalculado
+      } : undefined,
       gas: {
         contrataGas: datosOCR.gas?.contrataGas || false,
         multipuntoGas: false,
@@ -401,6 +415,13 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
           comercializadoraActual: formData.electricidad.comercializadoraActual,
           ahorroMinimo: parseFloatSafe(formData.electricidad.ahorroMinimo),
           distribuidoraElectrica: formData.electricidad.distribuidoraElectrica || undefined,
+          
+          // Histórico de consumo (si está disponible)
+          historicoTieneGrafico: formData.historicoConsumo?.tieneGrafico || false,
+          historicoMesesDetectados: formData.historicoConsumo?.mesesDetectados || undefined,
+          historicoConsumosMensuales: formData.historicoConsumo?.consumosMensuales ? JSON.stringify(formData.historicoConsumo.consumosMensuales) : undefined,
+          historicoPeriodoAnalizado: formData.historicoConsumo?.periodoAnalizado || undefined,
+          historicoConsumoCalculado: formData.historicoConsumo?.consumoAnualCalculado || undefined,
           
           // Gas
           contrataGas: formData.gas.contrataGas,
