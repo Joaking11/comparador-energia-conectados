@@ -9,14 +9,14 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    const comparativas = await prisma.comparativa.findMany({
+    const comparativas = await prisma.comparativas.findMany({
       include: {
-        cliente: true,
-        ofertas: {
+        clientes: true,
+        comparativa_ofertas: {
           include: {
-            tarifa: {
+            tarifas: {
               include: {
-                comercializadora: true
+                comercializadoras: true
               }
             }
           }
@@ -45,7 +45,7 @@ export async function POST(request: Request) {
     const { cliente, comparativa: datosComparativa } = body;
 
     // Crear o encontrar cliente
-    let clienteRecord = await prisma.cliente.findFirst({
+    let clienteRecord = await prisma.clientes.findFirst({
       where: { 
         OR: [
           { razonSocial: cliente.razonSocial },
@@ -56,7 +56,7 @@ export async function POST(request: Request) {
     });
 
     if (!clienteRecord) {
-      clienteRecord = await prisma.cliente.create({
+      clienteRecord = await prisma.clientes.create({
         data: {
           razonSocial: cliente.razonSocial,
           cif: cliente.cif || undefined,
@@ -90,7 +90,7 @@ export async function POST(request: Request) {
     
     let comparativa;
     try {
-      comparativa = await prisma.comparativa.create({
+      comparativa = await prisma.comparativas.create({
       data: {
         clienteId: clienteRecord.id,
         titulo: datosComparativa.titulo || undefined,
@@ -184,15 +184,15 @@ export async function POST(request: Request) {
     console.log(`✅ Motor de cálculo completado: ${resultados.length} ofertas procesadas`);
 
     // Devolver la comparativa completa con resultados
-    const comparativaCompleta = await prisma.comparativa.findUnique({
+    const comparativaCompleta = await prisma.comparativas.findUnique({
       where: { id: comparativa.id },
       include: {
-        cliente: true,
-        ofertas: {
+        clientes: true,
+        comparativa_ofertas: {
           include: {
-            tarifa: {
+            tarifas: {
               include: {
-                comercializadora: true
+                comercializadoras: true
               }
             }
           },

@@ -121,12 +121,12 @@ export async function POST(request: NextRequest) {
         }
 
         // Buscar o crear comercializadora
-        let comercializadora = await prisma.comercializadora.findUnique({
+        let comercializadora = await prisma.comercializadoras.findUnique({
           where: { nombre: nombreComercializadora.toString().trim() }
         });
 
         if (!comercializadora) {
-          comercializadora = await prisma.comercializadora.create({
+          comercializadora = await prisma.comercializadoras.create({
             data: {
               nombre: nombreComercializadora.toString().trim(),
               activa: true
@@ -135,7 +135,7 @@ export async function POST(request: NextRequest) {
         }
 
         // Verificar si la oferta ya existe
-        const tarifaExistente = await prisma.tarifa.findFirst({
+        const tarifaExistente = await prisma.tarifas.findFirst({
           where: {
             comercializadoraId: comercializadora.id,
             nombreOferta: nombreOferta.toString().trim()
@@ -144,7 +144,7 @@ export async function POST(request: NextRequest) {
 
         if (tarifaExistente) {
           // Actualizar tarifa existente
-          await prisma.tarifa.update({
+          await prisma.tarifas.update({
             where: { id: tarifaExistente.id },
             data: {
               tarifa: tarifa.toString(),
@@ -158,7 +158,7 @@ export async function POST(request: NextRequest) {
           });
         } else {
           // Crear nueva tarifa
-          await prisma.tarifa.create({
+          await prisma.tarifas.create({
             data: {
               comercializadoraId: comercializadora.id,
               nombreOferta: nombreOferta.toString().trim(),

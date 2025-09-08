@@ -120,7 +120,7 @@ export async function POST(request: Request) {
         feeEnergiaMaximo: feeEnergiaMaximo ? parseFloat(feeEnergiaMaximo) : null,
         feePotenciaMinimo: feePotenciaMinimo ? parseFloat(feePotenciaMinimo) : null,
         feePotenciaMaximo: feePotenciaMaximo ? parseFloat(feePotenciaMaximo) : null,
-        costeGestion: costeGestion ? parseFloat(costeGestion) : null,
+        costeGestion: costeGestion ? parseFloat(costeGestion) : 0,
         activa: activa !== undefined ? Boolean(activa) : true,
         updatedAt: new Date()
       },
@@ -179,11 +179,11 @@ export async function PUT(request: Request) {
     if (comisionMinimo !== undefined) updateData.rangoDesde = parseFloat(comisionMinimo);
     if (comisionMaximo !== undefined) updateData.rangoHasta = comisionMaximo ? parseFloat(comisionMaximo) : null;
 
-    const oferta = await prisma.tarifa.update({
+    const oferta = await prisma.tarifas.update({
       where: { id },
       data: updateData,
       include: {
-        comercializadora: true
+        comercializadoras: true
       }
     });
 
@@ -211,7 +211,7 @@ export async function DELETE(request: Request) {
       );
     }
 
-    await prisma.tarifa.delete({
+    await prisma.tarifas.delete({
       where: { id }
     });
 

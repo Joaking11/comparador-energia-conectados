@@ -11,7 +11,7 @@ export async function GET(
   { params }: { params: { id: string } }
 ) {
   try {
-    const comparativa = await prisma.comparativa.findUnique({
+    const comparativa = await prisma.comparativas.findUnique({
       where: { id: params.id },
       include: {
         cliente: true,
@@ -54,7 +54,7 @@ export async function DELETE(
 ) {
   try {
     // Eliminar comparativa (cascade eliminará las ofertas relacionadas)
-    await prisma.comparativa.delete({
+    await prisma.comparativas.delete({
       where: { id: params.id }
     });
 

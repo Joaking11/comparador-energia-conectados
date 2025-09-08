@@ -1,5 +1,7 @@
 
 import { PrismaClient } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
+import bcrypt from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
@@ -7,147 +9,99 @@ async function main() {
   console.log('🌱 Iniciando seed de la base de datos...');
 
   // Limpiar datos existentes
-  await prisma.comparativaOferta.deleteMany();
-  await prisma.comparativa.deleteMany();
-  await prisma.cliente.deleteMany();
-  await prisma.tarifa.deleteMany();
-  await prisma.comercializadora.deleteMany();
+  await prisma.comparativa_ofertas.deleteMany();
+  await prisma.comparativas.deleteMany();
+  await prisma.clientes.deleteMany();
+  await prisma.tarifas.deleteMany();
+  await prisma.comercializadoras.deleteMany();
+  await prisma.users.deleteMany();
+
+  console.log('✅ Datos existentes eliminados');
 
   // Crear comercializadoras
-  const comercializadoras = await Promise.all([
-    prisma.comercializadora.create({
-      data: {
-        nombre: 'Iberdrola',
-        activa: true,
-      }
-    }),
-    prisma.comercializadora.create({
-      data: {
-        nombre: 'Endesa',
-        activa: true,
-      }
-    }),
-    prisma.comercializadora.create({
-      data: {
-        nombre: 'Naturgy',
-        activa: true,
-      }
-    }),
-    prisma.comercializadora.create({
-      data: {
-        nombre: 'Repsol',
-        activa: true,
-      }
-    }),
-    prisma.comercializadora.create({
-      data: {
-        nombre: 'TotalEnergies',
-        activa: true,
-      }
-    }),
-    prisma.comercializadora.create({
-      data: {
-        nombre: 'EDP',
-        activa: true,
-      }
-    }),
-    prisma.comercializadora.create({
-      data: {
-        nombre: 'Viesgo',
-        activa: true,
-      }
-    }),
-    prisma.comercializadora.create({
-      data: {
-        nombre: 'Holaluz',
-        activa: true,
-      }
-    })
-  ]);
-
-  console.log('✅ Comercializadoras creadas');
-
-  // Crear tarifas básicas de ejemplo
-  const tarifasData = [
-    {
-      comercializadoraId: comercializadoras[0].id, // Iberdrola
-      nombreOferta: 'Tarifa Fija',
-      tarifa: '2.0TD',
-      tipoOferta: 'Fijo',
-      zona: 'PENINSULA',
-      rango: 'E',
-      rangoDesde: 0,
-      rangoHasta: 10000,
-      energiaP1: 0.18,
-      potenciaP1: 3.45,
-      activa: true
-    },
-    {
-      comercializadoraId: comercializadoras[1].id, // Endesa
-      nombreOferta: 'Tempo Happy',
-      tarifa: '2.0TD',
-      tipoOferta: 'Fijo',
-      zona: 'PENINSULA',
-      rango: 'E',
-      rangoDesde: 0,
-      rangoHasta: 8000,
-      energiaP1: 0.17,
-      potenciaP1: 3.35,
-      activa: true
-    },
-    
+  const comercializadorasData = [
+    'Iberdrola', 'Endesa', 'Naturgy', 'Repsol', 'TotalEnergies', 'Holaluz', 'Lucera', 'Axpo'
   ];
 
-  // Insertar todas las tarifas
-  for (const tarifaData of tarifasData) {
-    await prisma.tarifa.create({
-      data: tarifaData
+  const comercializadoras = [];
+  for (const nombre of comercializadorasData) {
+    const comercializadora = await prisma.comercializadoras.create({
+      data: {
+        id: uuidv4(),
+        nombre,
+        activa: true,
+        updatedAt: new Date()
+      }
     });
+    comercializadoras.push(comercializadora);
   }
 
-  console.log('✅ Ofertas creadas');
+  console.log(`✅ Creadas ${comercializadoras.length} comercializadoras`);
 
-  // Crear cliente de ejemplo
-  const clienteEjemplo = await prisma.cliente.create({
+  // Crear una tarifa de ejemplo para cada comercializadora
+  const tarifas = [];
+  for (let i = 0; i < comercializadoras.length; i++) {
+    const comercializadora = comercializadoras[i];
+    const tarifa = await prisma.tarifas.create({
+      data: {
+        id: uuidv4(),
+        comercializadoraId: comercializadora.id,
+        nombreOferta: `Oferta Básica ${comercializadora.nombre}`,
+        tarifa: '2.0TD',
+        tipoOferta: 'Estándar',
+        zona: 'Peninsula',
+        rango: 'Anual',
+        rangoDesde: 3000,
+        rangoHasta: 15000,
+        energiaP1: 0.12 + (i * 0.005), // Precios ligeramente diferentes
+        potenciaP1: 30.65 + (i * 0.5),
+        activa: true,
+        updatedAt: new Date()
+      }
+    });
+    tarifas.push(tarifa);
+  }
+
+  console.log(`✅ Creadas ${tarifas.length} tarifas`);
+
+  // Crear un cliente de ejemplo
+  const clienteEjemplo = await prisma.clientes.create({
     data: {
-      razonSocial: 'Juan Pérez García',
-      cif: '12345678Z',
+      id: uuidv4(),
+      razonSocial: 'Empresa Ejemplo S.L.',
+      cif: 'B12345678',
       direccion: 'Calle Ejemplo 123',
       localidad: 'Madrid',
       provincia: 'Madrid',
       codigoPostal: '28001',
-      telefono: '666123456',
-      email: 'juan.perez@email.com'
+      telefono: '912345678',
+      email: 'contacto@empresaejemplo.com',
+      updatedAt: new Date()
     }
   });
 
-  console.log('✅ Cliente de ejemplo creado');
+  console.log('✅ Creado cliente de ejemplo');
 
-  // Crear usuario demo para autenticación
-  const bcryptjs = require('bcryptjs');
-  const hashedPassword = await bcryptjs.hash('demo123', 12);
-  
-  const userDemo = await prisma.user.create({
+  // Crear usuario demo
+  const hashedPassword = await bcrypt.hash('admin123', 12);
+  const userDemo = await prisma.users.create({
     data: {
-      email: 'demo@energia.com',
+      id: uuidv4(),
+      email: 'demo@conectados.energy',
       name: 'Usuario Demo',
       password: hashedPassword
     }
   });
 
-  console.log('✅ Usuario demo creado');
+  console.log('✅ Creado usuario demo (email: demo@conectados.energy, password: admin123)');
   console.log('🎉 Seed completado exitosamente!');
-  console.log(`📊 Comercializadoras: ${comercializadoras.length}`);
-  console.log(`📋 Tarifas: ${tarifasData.length}`);
-  console.log(`👤 Clientes: 1`);
-  console.log(`🔐 Usuario demo: demo@energia.com / demo123`);
 }
 
 main()
   .catch((e) => {
-    console.error('❌ Error en seed:', e);
+    console.error(e);
     process.exit(1);
   })
   .finally(async () => {
-    await prisma.$disconnect();
+    await prisma.$disconnect()
   });

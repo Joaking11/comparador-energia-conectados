@@ -38,8 +38,8 @@ async function importExcelData() {
 
   // PASO 0: Limpiar datos existentes (excepto usuarios)
   console.log('🧹 Limpiando datos existentes...');
-  await prisma.comision.deleteMany({});
-  await prisma.tarifa.deleteMany({});
+  await prisma.comisiones.deleteMany({});
+  await prisma.tarifas.deleteMany({});
   console.log('✅ Datos limpiados');
 
   // PASO 1: Extraer comercializadoras únicas desde la hoja "TARIFAS2"
@@ -67,7 +67,7 @@ async function importExcelData() {
   
   // Crear o actualizar cada comercializadora
   for (const nombre of nombresComercializadoras) {
-    const comercializadora = await prisma.comercializadora.upsert({
+    const comercializadora = await prisma.comercializadoras.upsert({
       where: { nombre },
       update: { activa: true },
       create: { nombre, activa: true }
@@ -106,7 +106,7 @@ async function importExcelData() {
     }
     
     try {
-      await prisma.tarifa.create({
+      await prisma.tarifas.create({
         data: {
           comercializadoraId: comercializadora.id,
           nombreOferta: row[1]?.toString().trim() || '', // Columna 1: Oferta
@@ -183,7 +183,7 @@ async function importExcelData() {
     }
     
     try {
-      await prisma.comision.create({
+      await prisma.comisiones.create({
         data: {
           comercializadoraId: comercializadora.id,
           nombreOferta: row[1]?.toString().trim() || 'Sin nombre', // Columna 1: Oferta
@@ -212,7 +212,7 @@ async function importExcelData() {
   const hashedPassword = await bcryptjs.hash('demo123', 12);
   
   try {
-    const userDemo = await prisma.user.create({
+    const userDemo = await prisma.users.create({
       data: {
         email: 'demo@energia.com',
         name: 'Usuario Demo',

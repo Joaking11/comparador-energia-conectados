@@ -94,7 +94,7 @@ export async function PUT(request: Request) {
     if (nombre !== undefined) updateData.nombre = nombre.trim();
     if (activa !== undefined) updateData.activa = activa;
 
-    const comercializadora = await prisma.comercializadora.update({
+    const comercializadora = await prisma.comercializadoras.update({
       where: { id },
       data: updateData
     });
