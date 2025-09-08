@@ -104,21 +104,7 @@ export default function InformeDetalladoComparativa({
     return [0.25, 0.20, 0.20, 0.15, 0.10, 0.10];
   };
   
-  const getDistribucionPotencia = (tipoTarifa: string, numPeriodos: number) => {
-    if (tipoTarifa === '2.0TD') {
-      // Para 2.0TD: típicamente 2 períodos de potencia
-      if (numPeriodos === 1) return [1.0];
-      if (numPeriodos === 2) return [0.6, 0.4]; // P1: punta, P2: valle
-      return [0.6, 0.4]; // por defecto
-    }
-    // Para otras tarifas
-    if (numPeriodos <= 2) return [0.6, 0.4];
-    if (numPeriodos <= 3) return [0.5, 0.3, 0.2];
-    return [0.4, 0.25, 0.15, 0.10, 0.06, 0.04];
-  };
-  
   const distribucionConsumo = getDistribucionConsumo(resultado.tarifa.tarifa, periodosEnergia.length);
-  const distribucionPotencia = getDistribucionPotencia(resultado.tarifa.tarifa, periodosPotencia.length);
   
   // Cálculos por período usando datos reales
   const calculosPorPeriodo: any = {};
@@ -134,10 +120,11 @@ export default function InformeDetalladoComparativa({
   
   // Calcular costos de potencia
   periodosPotencia.forEach((periodoP, index) => {
-    const potenciaPeriodo = potenciaContratada * distribucionPotencia[index];
+    // La potencia contratada es la misma para todos los períodos en España
+    // Solo cambian los precios por período, no la potencia
     if (!calculosPorPeriodo[periodoP.periodo]) calculosPorPeriodo[periodoP.periodo] = {};
-    calculosPorPeriodo[periodoP.periodo].costoPotencia = (periodoP.precio * potenciaPeriodo * diasFacturacion) / 30;
-    calculosPorPeriodo[periodoP.periodo].potencia = potenciaPeriodo;
+    calculosPorPeriodo[periodoP.periodo].costoPotencia = (periodoP.precio * potenciaContratada * diasFacturacion) / 30;
+    calculosPorPeriodo[periodoP.periodo].potencia = potenciaContratada;
     calculosPorPeriodo[periodoP.periodo].precioPotencia = periodoP.precio;
   });
   
@@ -245,6 +232,8 @@ export default function InformeDetalladoComparativa({
           <div className="space-y-2">
             <div><span className="font-bold text-green-700">CUPS Electricidad:</span><br/><span className="text-xs font-mono">{comparativa.cupsElectricidad || 'N/A'}</span></div>
             <div><span className="font-bold text-green-700">Tarifa Acceso Electricidad:</span> <span className="bg-green-200 px-2 py-1 rounded font-bold">{comparativa.tarifaAccesoElectricidad}</span></div>
+            <div><span className="font-bold text-green-700">Potencia Contratada:</span> <span className="bg-green-200 px-2 py-1 rounded font-bold">{potenciaContratada} kW</span></div>
+            <div><span className="font-bold text-green-700">Consumo Anual:</span> <span className="bg-green-200 px-2 py-1 rounded font-bold">{consumoAnual?.toLocaleString()} kWh</span></div>
           </div>
         </div>
       </div>
