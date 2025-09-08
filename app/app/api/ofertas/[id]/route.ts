@@ -46,7 +46,10 @@ export async function PUT(
       nombreOferta,
       tarifa: tarifa || '2.0TD',
       tipoOferta: tipoOferta || 'Fijo',
-      zona: zona || 'Peninsula',
+      zona: zona || 'PENINSULA',
+      rango: 'E',
+      rangoDesde: 0,
+      rangoHasta: null,
       energiaP1: parseFloat(energiaP1) || 0,
       energiaP2: energiaP2 ? parseFloat(energiaP2) : null,
       energiaP3: energiaP3 ? parseFloat(energiaP3) : null,
@@ -60,21 +63,22 @@ export async function PUT(
       potenciaP5: potenciaP5 ? parseFloat(potenciaP5) : null,
       potenciaP6: potenciaP6 ? parseFloat(potenciaP6) : null,
       tieneFee: Boolean(tieneFee),
-      feeEnergia: feeEnergia ? parseFloat(feeEnergia) : 0,
-      feePotencia: feePotencia ? parseFloat(feePotencia) : 0,
+      feeEnergia: feeEnergia ? parseFloat(feeEnergia) : null,
+      feePotencia: feePotencia ? parseFloat(feePotencia) : null,
       feeEnergiaMinimo: feeEnergiaMinimo ? parseFloat(feeEnergiaMinimo) : null,
       feeEnergiaMaximo: feeEnergiaMaximo ? parseFloat(feeEnergiaMaximo) : null,
       feePotenciaMinimo: feePotenciaMinimo ? parseFloat(feePotenciaMinimo) : null,
       feePotenciaMaximo: feePotenciaMaximo ? parseFloat(feePotenciaMaximo) : null,
-      costeGestion: costeGestion ? parseFloat(costeGestion) : 0,
-      activa: activa !== undefined ? Boolean(activa) : true
+      costeGestion: costeGestion ? parseFloat(costeGestion) : null,
+      activa: activa !== undefined ? Boolean(activa) : true,
+      updatedAt: new Date()
     };
 
-    const tarifaActualizada = await prisma.tarifa.update({
+    const tarifaActualizada = await prisma.tarifas.update({
       where: { id },
       data: updateData,
       include: {
-        comercializadora: true
+        comercializadoras: true
       }
     });
 
@@ -98,7 +102,7 @@ export async function DELETE(
     const { id } = params;
 
     // Verificar si la tarifa está siendo usada en alguna comparativa
-    const resultadosVinculados = await prisma.resultadoComparativa.count({
+    const resultadosVinculados = await prisma.comparativa_ofertas.count({
       where: { tarifaId: id }
     });
 
@@ -109,7 +113,7 @@ export async function DELETE(
       );
     }
 
-    await prisma.tarifa.delete({
+    await prisma.tarifas.delete({
       where: { id }
     });
 

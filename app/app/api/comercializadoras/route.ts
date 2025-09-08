@@ -8,7 +8,7 @@ const prisma = new PrismaClient();
 
 export async function GET() {
   try {
-    const comercializadoras = await prisma.comercializadora.findMany({
+    const comercializadoras = await prisma.comercializadoras.findMany({
       include: {
         tarifas: {
           orderBy: {
@@ -46,7 +46,7 @@ export async function POST(request: Request) {
     }
 
     // Verificar si ya existe
-    const existente = await prisma.comercializadora.findUnique({
+    const existente = await prisma.comercializadoras.findUnique({
       where: { nombre: nombre.trim() }
     });
 
@@ -57,10 +57,12 @@ export async function POST(request: Request) {
       );
     }
 
-    const comercializadora = await prisma.comercializadora.create({
+    const comercializadora = await prisma.comercializadoras.create({
       data: {
+        id: `comercializadora_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         nombre: nombre.trim(),
-        activa
+        activa,
+        updatedAt: new Date()
       }
     });
 

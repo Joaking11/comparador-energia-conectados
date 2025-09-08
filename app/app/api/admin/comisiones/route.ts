@@ -75,6 +75,7 @@ export async function POST(request: NextRequest) {
 
     const nuevaComision = await prisma.comisiones.create({
       data: {
+        id: `comision_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         comercializadoraId,
         nombreOferta: nombreOferta || 'Comisión General',
         tarifa: tarifa || '2.0TD',
@@ -86,7 +87,8 @@ export async function POST(request: NextRequest) {
         comision: comisionEnergia ? parseFloat(comisionEnergia) : 0,
         tieneFee: Boolean(comisionFija && parseFloat(comisionFija) > 0),
         porcentajeFeeEnergia: comisionEnergia ? parseFloat(comisionEnergia) : null,
-        porcentajeFeePotencia: comisionPotencia ? parseFloat(comisionPotencia) : null
+        porcentajeFeePotencia: comisionPotencia ? parseFloat(comisionPotencia) : null,
+        updatedAt: new Date()
       },
       include: {
         comercializadoras: true

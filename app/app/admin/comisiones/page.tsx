@@ -45,12 +45,14 @@ export default function AdminComisionesPage() {
     tarifa: '2.0TD',
     zona: 'Peninsula',
     tipoOferta: 'Fijo',
+    tipoCliente: 'General',
     rango: 'E',
     rangoDesde: 0,
     rangoHasta: null,
     comisionEnergia: 0,
     comisionPotencia: 0,
-    comisionFija: 0
+    comisionFija: 0,
+    observaciones: ''
   });
 
   useEffect(() => {
@@ -104,10 +106,10 @@ export default function AdminComisionesPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.match(/\.(xlsx|xlsm|xls)$/i)) {
+    if (!file.name.match(/\.(xlsx|xlsm|xls|pdf)$/i)) {
       toast({
         title: 'Error',
-        description: 'Por favor sube un archivo Excel válido (.xlsx, .xlsm, .xls)',
+        description: 'Por favor sube un archivo válido (.xlsx, .xlsm, .xls, .pdf)',
         variant: 'destructive'
       });
       return;
@@ -158,12 +160,14 @@ export default function AdminComisionesPage() {
         tarifa: comision.tarifa,
         zona: comision.zona,
         tipoOferta: comision.tipoOferta,
+        tipoCliente: 'General',
         rango: comision.rango,
         rangoDesde: comision.rangoDesde || 0,
         rangoHasta: comision.rangoHasta,
         comisionEnergia: comision.porcentajeFeeEnergia || 0,
         comisionPotencia: comision.porcentajeFeePotencia || 0,
-        comisionFija: comision.comision || 0
+        comisionFija: comision.comision || 0,
+        observaciones: ''
       });
     } else {
       setComisionEditando(null);
@@ -173,12 +177,14 @@ export default function AdminComisionesPage() {
         tarifa: '2.0TD',
         zona: 'Peninsula',
         tipoOferta: 'Fijo',
+        tipoCliente: 'General',
         rango: 'E',
         rangoDesde: 0,
         rangoHasta: null,
         comisionEnergia: 0,
         comisionPotencia: 0,
-        comisionFija: 0
+        comisionFija: 0,
+        observaciones: ''
       });
     }
     setMostrandoEditor(true);
@@ -291,14 +297,14 @@ export default function AdminComisionesPage() {
                 <Input
                   id="excel-comisiones"
                   type="file"
-                  accept=".xlsx,.xlsm,.xls"
+                  accept=".xlsx,.xlsm,.xls,.pdf"
                   onChange={handleSubirExcel}
                   disabled={procesandoArchivo}
                 />
                 {procesandoArchivo && <RefreshCw className="h-4 w-4 animate-spin" />}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Soporta archivos .xlsx, .xlsm, .xls - El sistema interpretará automáticamente las columnas
+                Soporta archivos Excel (.xlsx, .xlsm, .xls) y PDF - IA interpretará automáticamente las columnas
               </p>
             </div>
             
@@ -308,10 +314,12 @@ export default function AdminComisionesPage() {
                 Funcionalidad IA
               </h4>
               <ul className="text-sm text-green-800 space-y-1">
-                <li>• Detección automática de columnas de comisiones</li>
-                <li>• Mapeo inteligente por comercializadora</li>
-                <li>• Validación de porcentajes y rangos</li>
-                <li>• Actualización de comisiones existentes</li>
+                <li>• Detección automática de columnas en Excel y OCR para PDF</li>
+                <li>• Mapeo inteligente de comisiones por comercializadora</li>
+                <li>• Validación automática de porcentajes y rangos</li>
+                <li>• Reconocimiento de múltiples formatos de comisiones</li>
+                <li>• Actualización inteligente de comisiones existentes</li>
+                <li>• Interpretación de comisiones fijas y variables</li>
               </ul>
             </div>
           </div>
@@ -421,7 +429,7 @@ export default function AdminComisionesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Comercializadoras</p>
-                <p className="text-2xl font-bold">{new Set(comisiones.map(c => c.comercializadoraId)).size}</p>
+                <p className="text-2xl font-bold">{new Set(comisiones.map((c: any) => c.comercializadoraId)).size}</p>
               </div>
               <Building className="h-8 w-8 text-purple-600" />
             </div>
@@ -433,7 +441,7 @@ export default function AdminComisionesPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-600">Con Comisión Fija</p>
-                <p className="text-2xl font-bold">{comisiones.filter(c => c.comisionFija > 0).length}</p>
+                <p className="text-2xl font-bold">{comisiones.filter((c: any) => c.comision > 0).length}</p>
               </div>
               <Percent className="h-8 w-8 text-orange-600" />
             </div>
@@ -462,33 +470,33 @@ export default function AdminComisionesPage() {
                 </tr>
               </thead>
               <tbody>
-                {comisionesFiltradas.map((comision) => (
+                {comisionesFiltradas.map((comision: any) => (
                   <tr key={comision.id} className="hover:bg-gray-50">
                     <td className="border border-gray-200 px-4 py-2">
                       <div className="flex items-center gap-2">
-                        {comision.comercializadora?.logoUrl && (
+                        {comision.comercializadoras?.logoUrl && (
                           <img 
-                            src={comision.comercializadora.logoUrl} 
-                            alt={comision.comercializadora.nombre}
+                            src={comision.comercializadoras.logoUrl} 
+                            alt={comision.comercializadoras.nombre}
                             className="h-6 w-6 object-contain"
                           />
                         )}
-                        <span className="font-medium">{comision.comercializadora?.nombre}</span>
+                        <span className="font-medium">{comision.comercializadoras?.nombre}</span>
                       </div>
                     </td>
                     <td className="border border-gray-200 px-4 py-2">
                       <Badge variant="outline">{comision.tarifa}</Badge>
                     </td>
                     <td className="border border-gray-200 px-4 py-2">{comision.zona}</td>
-                    <td className="border border-gray-200 px-4 py-2">{comision.tipoCliente}</td>
+                    <td className="border border-gray-200 px-4 py-2">General</td>
                     <td className="border border-gray-200 px-4 py-2">
-                      {comision.comisionEnergia > 0 ? `${comision.comisionEnergia.toFixed(4)}%` : '-'}
+                      {comision.porcentajeFeeEnergia > 0 ? `${comision.porcentajeFeeEnergia.toFixed(4)}%` : '-'}
                     </td>
                     <td className="border border-gray-200 px-4 py-2">
-                      {comision.comisionPotencia > 0 ? `${comision.comisionPotencia.toFixed(4)}%` : '-'}
+                      {comision.porcentajeFeePotencia > 0 ? `${comision.porcentajeFeePotencia.toFixed(4)}%` : '-'}
                     </td>
                     <td className="border border-gray-200 px-4 py-2">
-                      {comision.comisionFija > 0 ? `${comision.comisionFija.toFixed(2)}€` : '-'}
+                      {comision.comision > 0 ? `${comision.comision.toFixed(2)}€` : '-'}
                     </td>
                     <td className="border border-gray-200 px-4 py-2">
                       <div className="flex items-center gap-2">

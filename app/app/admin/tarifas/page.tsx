@@ -89,13 +89,13 @@ export default function AdminTarifasPage() {
     }
   };
 
-  const tarifasFiltradas = tarifas.filter(tarifa => {
+  const tarifasFiltradas = tarifas.filter((tarifa: any) => {
     const matchComercializadora = filtroComercializadora === 'todas' || 
-      tarifa.comercializadora?.id === filtroComercializadora;
+      tarifa.comercializadoraId === filtroComercializadora;
     const matchTarifa = filtroTarifa === 'todas' || tarifa.tarifa === filtroTarifa;
     const matchBusqueda = !busqueda || 
       tarifa.nombreOferta?.toLowerCase().includes(busqueda.toLowerCase()) ||
-      tarifa.comercializadora?.nombre?.toLowerCase().includes(busqueda.toLowerCase());
+      tarifa.comercializadoras?.nombre?.toLowerCase().includes(busqueda.toLowerCase());
     
     return matchComercializadora && matchTarifa && matchBusqueda;
   });
@@ -104,10 +104,10 @@ export default function AdminTarifasPage() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    if (!file.name.match(/\.(xlsx|xlsm|xls)$/i)) {
+    if (!file.name.match(/\.(xlsx|xlsm|xls|pdf)$/i)) {
       toast({
         title: 'Error',
-        description: 'Por favor sube un archivo Excel válido (.xlsx, .xlsm, .xls)',
+        description: 'Por favor sube un archivo válido (.xlsx, .xlsm, .xls, .pdf)',
         variant: 'destructive'
       });
       return;
@@ -149,15 +149,15 @@ export default function AdminTarifasPage() {
     }
   };
 
-  const abrirEditor = (tarifa = null) => {
+  const abrirEditor = (tarifa: any = null) => {
     if (tarifa) {
       setTarifaEditando(tarifa);
       setFormData({
-        comercializadoraId: tarifa.comercializadoraId,
-        nombreOferta: tarifa.nombreOferta,
-        tarifa: tarifa.tarifa,
-        tipoOferta: tarifa.tipoOferta,
-        zona: tarifa.zona,
+        comercializadoraId: tarifa.comercializadoraId || '',
+        nombreOferta: tarifa.nombreOferta || '',
+        tarifa: tarifa.tarifa || '2.0TD',
+        tipoOferta: tarifa.tipoOferta || 'Fijo',
+        zona: tarifa.zona || 'Peninsula',
         energiaP1: tarifa.energiaP1 || 0,
         energiaP2: tarifa.energiaP2 || 0,
         energiaP3: tarifa.energiaP3 || 0,
@@ -297,14 +297,14 @@ export default function AdminTarifasPage() {
                 <Input
                   id="excel-upload"
                   type="file"
-                  accept=".xlsx,.xlsm,.xls"
+                  accept=".xlsx,.xlsm,.xls,.pdf"
                   onChange={handleSubirExcel}
                   disabled={procesandoArchivo}
                 />
                 {procesandoArchivo && <RefreshCw className="h-4 w-4 animate-spin" />}
               </div>
               <p className="text-xs text-gray-500 mt-2">
-                Soporta archivos .xlsx, .xlsm, .xls - El sistema interpretará automáticamente las columnas
+                Soporta archivos Excel (.xlsx, .xlsm, .xls) y PDF - IA interpretará automáticamente las columnas
               </p>
             </div>
             
@@ -314,10 +314,12 @@ export default function AdminTarifasPage() {
                 Funcionalidad IA
               </h4>
               <ul className="text-sm text-blue-800 space-y-1">
-                <li>• Detección automática de columnas</li>
-                <li>• Mapeo inteligente de campos</li>
-                <li>• Validación de datos</li>
-                <li>• Reemplazo o actualización de tarifas existentes</li>
+                <li>• Detección automática de columnas en Excel y OCR para PDF</li>
+                <li>• Mapeo inteligente con patrones avanzados</li>
+                <li>• Validación automática de precios y formatos</li>
+                <li>• Actualización inteligente de tarifas existentes</li>
+                <li>• Reconocimiento de nombres de comercializadoras</li>
+                <li>• Interpretación de múltiples formatos de datos</li>
               </ul>
             </div>
           </div>
@@ -453,18 +455,18 @@ export default function AdminTarifasPage() {
                 </tr>
               </thead>
               <tbody>
-                {tarifasFiltradas.map((tarifa) => (
+                {tarifasFiltradas.map((tarifa: any) => (
                   <tr key={tarifa.id} className="hover:bg-gray-50">
                     <td className="border border-gray-200 px-4 py-2">
                       <div className="flex items-center gap-2">
-                        {tarifa.comercializadora?.logoUrl && (
+                        {tarifa.comercializadoras?.logoUrl && (
                           <img 
-                            src={tarifa.comercializadora.logoUrl} 
-                            alt={tarifa.comercializadora.nombre}
+                            src={tarifa.comercializadoras.logoUrl} 
+                            alt={tarifa.comercializadoras.nombre}
                             className="h-6 w-6 object-contain"
                           />
                         )}
-                        <span className="font-medium">{tarifa.comercializadora?.nombre}</span>
+                        <span className="font-medium">{tarifa.comercializadoras?.nombre}</span>
                       </div>
                     </td>
                     <td className="border border-gray-200 px-4 py-2">{tarifa.nombreOferta}</td>
@@ -610,7 +612,88 @@ export default function AdminTarifasPage() {
                   />
                 </div>
 
-                {/* Más campos según sea necesario */}
+                <div>
+                  <Label htmlFor="energiaP2">Precio Energía P2 (€/kWh)</Label>
+                  <Input
+                    id="energiaP2"
+                    type="number"
+                    step="0.000001"
+                    value={formData.energiaP2}
+                    onChange={(e) => setFormData(prev => ({...prev, energiaP2: parseFloat(e.target.value) || 0}))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="potenciaP2">Precio Potencia P2 (€/kW)</Label>
+                  <Input
+                    id="potenciaP2"
+                    type="number"
+                    step="0.000001"
+                    value={formData.potenciaP2}
+                    onChange={(e) => setFormData(prev => ({...prev, potenciaP2: parseFloat(e.target.value) || 0}))}
+                  />
+                </div>
+
+                <div>
+                  <Label htmlFor="energiaP3">Precio Energía P3 (€/kWh)</Label>
+                  <Input
+                    id="energiaP3"
+                    type="number"
+                    step="0.000001"
+                    value={formData.energiaP3}
+                    onChange={(e) => setFormData(prev => ({...prev, energiaP3: parseFloat(e.target.value) || 0}))}
+                  />
+                </div>
+
+                <div className="md:col-span-2">
+                  <div className="flex items-center space-x-2">
+                    <input
+                      type="checkbox"
+                      id="tieneFee"
+                      checked={formData.tieneFee}
+                      onChange={(e) => setFormData(prev => ({...prev, tieneFee: e.target.checked}))}
+                      className="rounded border-gray-300"
+                    />
+                    <Label htmlFor="tieneFee">Esta tarifa tiene Fee/Comisiones</Label>
+                  </div>
+                </div>
+
+                {formData.tieneFee && (
+                  <>
+                    <div>
+                      <Label htmlFor="feeEnergia">Fee Energía (%)</Label>
+                      <Input
+                        id="feeEnergia"
+                        type="number"
+                        step="0.01"
+                        value={formData.feeEnergia}
+                        onChange={(e) => setFormData(prev => ({...prev, feeEnergia: parseFloat(e.target.value) || 0}))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="feePotencia">Fee Potencia (%)</Label>
+                      <Input
+                        id="feePotencia"
+                        type="number"
+                        step="0.01"
+                        value={formData.feePotencia}
+                        onChange={(e) => setFormData(prev => ({...prev, feePotencia: parseFloat(e.target.value) || 0}))}
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="costeGestion">Coste Gestión (€/mes)</Label>
+                      <Input
+                        id="costeGestion"
+                        type="number"
+                        step="0.01"
+                        value={formData.costeGestion}
+                        onChange={(e) => setFormData(prev => ({...prev, costeGestion: parseFloat(e.target.value) || 0}))}
+                      />
+                    </div>
+                  </>
+                )}
               </div>
 
               <div className="flex justify-end space-x-3 mt-6">

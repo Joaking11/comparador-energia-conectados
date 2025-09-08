@@ -30,7 +30,7 @@ export async function PUT(
       comercializadoraId,
       nombreOferta: nombreOferta || 'Comisión General',
       tarifa: tarifa || '2.0TD',
-      zona: zona,
+      zona: zona || 'PENINSULA',
       tipoOferta: tipoOferta || 'Fijo',
       rango: rango || 'E',
       rangoDesde: rangoDesde ? parseFloat(rangoDesde) : 0,
@@ -38,7 +38,8 @@ export async function PUT(
       comision: comisionEnergia ? parseFloat(comisionEnergia) : 0,
       tieneFee: Boolean(comisionFija && parseFloat(comisionFija) > 0),
       porcentajeFeeEnergia: comisionEnergia ? parseFloat(comisionEnergia) : null,
-      porcentajeFeePotencia: comisionPotencia ? parseFloat(comisionPotencia) : null
+      porcentajeFeePotencia: comisionPotencia ? parseFloat(comisionPotencia) : null,
+      updatedAt: new Date()
     };
 
     const comisionActualizada = await prisma.comisiones.update({

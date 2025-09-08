@@ -60,6 +60,18 @@ export function Header() {
             </DropdownMenuTrigger>
             <DropdownMenuContent>
               <DropdownMenuItem asChild>
+                <Link href="/admin/upload-smart" className="flex items-center w-full">
+                  <Settings className="h-4 w-4 mr-2" />
+                  🤖 Importación IA
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
+                <Link href="/admin/manage" className="flex items-center w-full">
+                  <Building className="h-4 w-4 mr-2" />
+                  Gestión Manual
+                </Link>
+              </DropdownMenuItem>
+              <DropdownMenuItem asChild>
                 <Link href="/admin/comercializadoras" className="flex items-center w-full">
                   <Building className="h-4 w-4 mr-2" />
                   Comercializadoras
@@ -68,13 +80,13 @@ export function Header() {
               <DropdownMenuItem asChild>
                 <Link href="/admin/tarifas" className="flex items-center w-full">
                   <Zap className="h-4 w-4 mr-2" />
-                  Tarifas
+                  Tarifas Avanzado
                 </Link>
               </DropdownMenuItem>
               <DropdownMenuItem asChild>
                 <Link href="/admin/comisiones" className="flex items-center w-full">
                   <DollarSign className="h-4 w-4 mr-2" />
-                  Comisiones
+                  Comisiones Avanzado
                 </Link>
               </DropdownMenuItem>
             </DropdownMenuContent>

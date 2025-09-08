@@ -92,6 +92,7 @@ export async function POST(request: Request) {
 
     const nuevaTarifa = await prisma.tarifas.create({
       data: {
+        id: `tarifa_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
         comercializadoraId,
         nombreOferta: nombreOferta.trim(),
         tarifa: tarifa || '2.0TD',
@@ -120,7 +121,8 @@ export async function POST(request: Request) {
         feePotenciaMinimo: feePotenciaMinimo ? parseFloat(feePotenciaMinimo) : null,
         feePotenciaMaximo: feePotenciaMaximo ? parseFloat(feePotenciaMaximo) : null,
         costeGestion: costeGestion ? parseFloat(costeGestion) : null,
-        activa: activa !== undefined ? Boolean(activa) : true
+        activa: activa !== undefined ? Boolean(activa) : true,
+        updatedAt: new Date()
       },
       include: {
         comercializadoras: true
