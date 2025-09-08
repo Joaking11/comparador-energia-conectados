@@ -120,10 +120,9 @@ export default function InformeDetalladoComparativa({
   
   // Calcular costos de potencia
   periodosPotencia.forEach((periodoP, index) => {
-    // La potencia contratada es la misma para todos los períodos en España
-    // Solo cambian los precios por período, no la potencia
+    // Fórmula correcta: kW contratados × precio × días de facturación
     if (!calculosPorPeriodo[periodoP.periodo]) calculosPorPeriodo[periodoP.periodo] = {};
-    calculosPorPeriodo[periodoP.periodo].costoPotencia = (periodoP.precio * potenciaContratada * diasFacturacion) / 30;
+    calculosPorPeriodo[periodoP.periodo].costoPotencia = potenciaContratada * periodoP.precio * diasFacturacion;
     calculosPorPeriodo[periodoP.periodo].potencia = potenciaContratada;
     calculosPorPeriodo[periodoP.periodo].precioPotencia = periodoP.precio;
   });

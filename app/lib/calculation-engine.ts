@@ -26,7 +26,7 @@ export class CalculationEngine {
   /**
    * Calcula todas las ofertas disponibles para una comparativa específica
    */
-  static async calculateOffers(comparativaId: string): Promise<CalculationResult[]> {
+  static async calculateOffers(comparativaId: string, parametrosPersonalizados?: any): Promise<CalculationResult[]> {
     try {
       console.log('🔢 Iniciando cálculo de ofertas para comparativa:', comparativaId);
       
@@ -61,7 +61,7 @@ export class CalculationEngine {
       
       for (const tarifa of tarifasAplicables) {
         try {
-          const resultado = await this.calculateSingleTarifa(comparativa, tarifa);
+          const resultado = await this.calculateSingleTarifa(comparativa, tarifa, parametrosPersonalizados);
           if (resultado) {
             resultados.push(resultado);
           }
@@ -136,14 +136,15 @@ export class CalculationEngine {
    */
   private static async calculateSingleTarifa(
     comparativa: Comparativa, 
-    tarifa: any
+    tarifa: any,
+    parametrosPersonalizados?: any
   ): Promise<CalculationResult | null> {
     try {
       // PASO 1: Calcular coste energía
-      const totalEnergia = this.calculateEnergiaCost(comparativa, tarifa);
+      const totalEnergia = this.calculateEnergiaCost(comparativa, tarifa, parametrosPersonalizados);
 
       // PASO 2: Calcular coste potencia
-      const totalPotencia = this.calculatePotenciaCost(comparativa, tarifa);
+      const totalPotencia = this.calculatePotenciaCost(comparativa, tarifa, parametrosPersonalizados);
 
       // PASO 3: Calcular base imponible
       const totalBase = totalEnergia + totalPotencia + tarifa.costeGestion;
@@ -192,7 +193,7 @@ export class CalculationEngine {
   /**
    * Calcula el coste de energía según los períodos
    */
-  private static calculateEnergiaCost(comparativa: Comparativa, tarifa: Tarifa): number {
+  private static calculateEnergiaCost(comparativa: Comparativa, tarifa: Tarifa, parametrosPersonalizados?: any): number {
     let totalEnergia = 0;
 
     // Calcular para cada período (P1-P6)
@@ -211,19 +212,27 @@ export class CalculationEngine {
       }
     }
 
-    // Aplicar FEE de energía si está configurado
-    if (tarifa.tieneFee && tarifa.feeEnergia) {
-      let feeAplicar = tarifa.feeEnergia;
+    // Aplicar FEE de energía - usar parámetros personalizados si están disponibles
+    let feeEnergia = parametrosPersonalizados?.feeEnergia ?? tarifa.feeEnergia ?? 0;
+    let feeEnergiaMinimo = parametrosPersonalizados?.feeEnergiaMinimo ?? tarifa.feeEnergiaMinimo;
+    let feeEnergiaMaximo = parametrosPersonalizados?.feeEnergiaMaximo ?? tarifa.feeEnergiaMaximo;
+    
+    if ((parametrosPersonalizados && feeEnergia > 0) || (tarifa.tieneFee && tarifa.feeEnergia)) {
+      let feeAplicar = feeEnergia;
       
       // Aplicar límites de FEE
-      if (tarifa.feeEnergiaMinimo && feeAplicar < tarifa.feeEnergiaMinimo) {
-        feeAplicar = tarifa.feeEnergiaMinimo;
+      if (feeEnergiaMinimo && feeAplicar < feeEnergiaMinimo) {
+        feeAplicar = feeEnergiaMinimo;
       }
-      if (tarifa.feeEnergiaMaximo && feeAplicar > tarifa.feeEnergiaMaximo) {
-        feeAplicar = tarifa.feeEnergiaMaximo;
+      if (feeEnergiaMaximo && feeAplicar > feeEnergiaMaximo) {
+        feeAplicar = feeEnergiaMaximo;
       }
       
       totalEnergia += comparativa.consumoAnualElectricidad * feeAplicar;
+      
+      if (parametrosPersonalizados) {
+        console.log('🎯 Aplicado fee energía personalizado:', feeAplicar, '€/kWh');
+      }
     }
 
     // Aplicar descuento si existe
@@ -237,7 +246,7 @@ export class CalculationEngine {
   /**
    * Calcula el coste de potencia según los períodos
    */
-  private static calculatePotenciaCost(comparativa: Comparativa, tarifa: Tarifa): number {
+  private static calculatePotenciaCost(comparativa: Comparativa, tarifa: Tarifa, parametrosPersonalizados?: any): number {
     let totalPotencia = 0;
 
     // Calcular para cada período (P1-P6)
@@ -257,16 +266,20 @@ export class CalculationEngine {
       }
     }
 
-    // Aplicar FEE de potencia si está configurado
-    if (tarifa.tieneFee && tarifa.feePotencia) {
-      let feeAplicar = tarifa.feePotencia;
+    // Aplicar FEE de potencia - usar parámetros personalizados si están disponibles
+    let feePotencia = parametrosPersonalizados?.feePotencia ?? tarifa.feePotencia ?? 0;
+    let feePotenciaMinimo = parametrosPersonalizados?.feePotenciaMinimo ?? tarifa.feePotenciaMinimo;
+    let feePotenciaMaximo = parametrosPersonalizados?.feePotenciaMaximo ?? tarifa.feePotenciaMaximo;
+    
+    if ((parametrosPersonalizados && feePotencia > 0) || (tarifa.tieneFee && tarifa.feePotencia)) {
+      let feeAplicar = feePotencia;
       
       // Aplicar límites de FEE
-      if (tarifa.feePotenciaMinimo && feeAplicar < tarifa.feePotenciaMinimo) {
-        feeAplicar = tarifa.feePotenciaMinimo;
+      if (feePotenciaMinimo && feeAplicar < feePotenciaMinimo) {
+        feeAplicar = feePotenciaMinimo;
       }
-      if (tarifa.feePotenciaMaximo && feeAplicar > tarifa.feePotenciaMaximo) {
-        feeAplicar = tarifa.feePotenciaMaximo;
+      if (feePotenciaMaximo && feeAplicar > feePotenciaMaximo) {
+        feeAplicar = feePotenciaMaximo;
       }
       
       const potenciaMaxima = Math.max(
@@ -279,6 +292,10 @@ export class CalculationEngine {
       );
       
       totalPotencia += potenciaMaxima * feeAplicar * 12; // €/kW año
+      
+      if (parametrosPersonalizados) {
+        console.log('🎯 Aplicado fee potencia personalizado:', feeAplicar, '€/kW·día');
+      }
     }
 
     // Aplicar descuento si existe
@@ -391,8 +408,8 @@ export class CalculationEngine {
   /**
    * Función principal: calcular y guardar
    */
-  static async calculateAndSave(comparativaId: string): Promise<CalculationResult[]> {
-    const results = await this.calculateOffers(comparativaId);
+  static async calculateAndSave(comparativaId: string, parametrosPersonalizados?: any): Promise<CalculationResult[]> {
+    const results = await this.calculateOffers(comparativaId, parametrosPersonalizados);
     await this.saveCalculationResults(comparativaId, results);
     return results;
   }

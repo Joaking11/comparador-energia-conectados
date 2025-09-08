@@ -28,7 +28,8 @@ import {
   AlertCircle,
   Eye,
   FileText,
-  Grid3X3
+  Grid3X3,
+  X
 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import InformeDetalladoComparativa from './informe-detallado-comparativa';
@@ -86,6 +87,22 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   const [mostrarInformeDetallado, setMostrarInformeDetallado] = useState(false);
   const [resultadoSeleccionado, setResultadoSeleccionado] = useState<any>(null);
   const [vistaActiva, setVistaActiva] = useState<'lista' | 'matriz'>('lista');
+  const [mostrandoEdicion, setMostrandoEdicion] = useState(false);
+  const [parametrosEdicion, setParametrosEdicion] = useState<{
+    feeEnergia: number;
+    feeEnergiaMinimo: number | null;
+    feeEnergiaMaximo: number | null;
+    feePotencia: number;
+    feePotenciaMinimo: number | null;
+    feePotenciaMaximo: number | null;
+  }>({
+    feeEnergia: 0.0,
+    feeEnergiaMinimo: null,
+    feeEnergiaMaximo: null,
+    feePotencia: 0.0,
+    feePotenciaMinimo: null,
+    feePotenciaMaximo: null
+  });
   const { toast } = useToast();
 
   useEffect(() => {
@@ -101,6 +118,16 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
         const comparativa = await response.json();
         console.log('Datos recibidos:', comparativa);
         setData(comparativa);
+        
+        // Cargar parámetros actuales para edición
+        setParametrosEdicion({
+          feeEnergia: comparativa.feeEnergia || 0.0,
+          feeEnergiaMinimo: comparativa.feeEnergiaMinimo || null,
+          feeEnergiaMaximo: comparativa.feeEnergiaMaximo || null,
+          feePotencia: comparativa.feePotencia || 0.0,
+          feePotenciaMinimo: comparativa.feePotenciaMinimo || null,
+          feePotenciaMaximo: comparativa.feePotenciaMaximo || null
+        });
         
       } catch (error) {
         console.error('Error cargando comparativa:', error);
@@ -119,13 +146,21 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
     }
   }, [comparativaId, toast]);
 
-  const handleRecalcular = async () => {
+  const handleRecalcular = () => {
+    // Abrir panel de edición de parámetros
+    setMostrandoEdicion(true);
+  };
+
+  const handleEjecutarRecalculo = async () => {
     try {
       setRecalculando(true);
       
       const response = await fetch(`/api/comparativas/${comparativaId}/calculate`, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' }
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          parametros: parametrosEdicion
+        })
       });
       
       if (!response.ok) {
@@ -145,6 +180,8 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
         const comparativa = await response2.json();
         setData(comparativa);
       }
+      
+      setMostrandoEdicion(false);
       
     } catch (error) {
       console.error('Error recalculando:', error);
@@ -666,6 +703,178 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
           comparativa={data}
           onClose={handleCerrarInforme}
         />
+      )}
+
+      {/* Modal de edición de parámetros para recálculo */}
+      {mostrandoEdicion && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-xl max-w-2xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="p-6">
+              <div className="flex items-center justify-between mb-6">
+                <h2 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+                  <Calculator className="h-6 w-6" />
+                  Ajustar Parámetros de Cálculo
+                </h2>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setMostrandoEdicion(false)}
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              <div className="space-y-6">
+                <div className="bg-blue-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-blue-900 mb-4 flex items-center gap-2">
+                    <Zap className="h-5 w-5" />
+                    Fee de Energía
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="feeEnergia" className="text-sm font-medium">
+                        Fee Base (€/kWh)
+                      </Label>
+                      <Input
+                        id="feeEnergia"
+                        type="number"
+                        step="0.0001"
+                        value={parametrosEdicion.feeEnergia}
+                        onChange={(e) => setParametrosEdicion(prev => ({
+                          ...prev,
+                          feeEnergia: parseFloat(e.target.value) || 0
+                        }))}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="feeEnergiaMinimo" className="text-sm font-medium">
+                        Fee Mínimo (€/mes)
+                      </Label>
+                      <Input
+                        id="feeEnergiaMinimo"
+                        type="number"
+                        step="0.01"
+                        value={parametrosEdicion.feeEnergiaMinimo || ''}
+                        onChange={(e) => setParametrosEdicion(prev => ({
+                          ...prev,
+                          feeEnergiaMinimo: e.target.value ? parseFloat(e.target.value) : null
+                        }))}
+                        className="mt-1"
+                        placeholder="Opcional"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="feeEnergiaMaximo" className="text-sm font-medium">
+                        Fee Máximo (€/mes)
+                      </Label>
+                      <Input
+                        id="feeEnergiaMaximo"
+                        type="number"
+                        step="0.01"
+                        value={parametrosEdicion.feeEnergiaMaximo || ''}
+                        onChange={(e) => setParametrosEdicion(prev => ({
+                          ...prev,
+                          feeEnergiaMaximo: e.target.value ? parseFloat(e.target.value) : null
+                        }))}
+                        className="mt-1"
+                        placeholder="Opcional"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-green-50 p-4 rounded-lg">
+                  <h3 className="font-semibold text-green-900 mb-4 flex items-center gap-2">
+                    <Target className="h-5 w-5" />
+                    Fee de Potencia
+                  </h3>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    <div>
+                      <Label htmlFor="feePotencia" className="text-sm font-medium">
+                        Fee Base (€/kW·día)
+                      </Label>
+                      <Input
+                        id="feePotencia"
+                        type="number"
+                        step="0.0001"
+                        value={parametrosEdicion.feePotencia}
+                        onChange={(e) => setParametrosEdicion(prev => ({
+                          ...prev,
+                          feePotencia: parseFloat(e.target.value) || 0
+                        }))}
+                        className="mt-1"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="feePotenciaMinimo" className="text-sm font-medium">
+                        Fee Mínimo (€/mes)
+                      </Label>
+                      <Input
+                        id="feePotenciaMinimo"
+                        type="number"
+                        step="0.01"
+                        value={parametrosEdicion.feePotenciaMinimo || ''}
+                        onChange={(e) => setParametrosEdicion(prev => ({
+                          ...prev,
+                          feePotenciaMinimo: e.target.value ? parseFloat(e.target.value) : null
+                        }))}
+                        className="mt-1"
+                        placeholder="Opcional"
+                      />
+                    </div>
+                    <div>
+                      <Label htmlFor="feePotenciaMaximo" className="text-sm font-medium">
+                        Fee Máximo (€/mes)
+                      </Label>
+                      <Input
+                        id="feePotenciaMaximo"
+                        type="number"
+                        step="0.01"
+                        value={parametrosEdicion.feePotenciaMaximo || ''}
+                        onChange={(e) => setParametrosEdicion(prev => ({
+                          ...prev,
+                          feePotenciaMaximo: e.target.value ? parseFloat(e.target.value) : null
+                        }))}
+                        className="mt-1"
+                        placeholder="Opcional"
+                      />
+                    </div>
+                  </div>
+                </div>
+
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <div className="text-sm text-gray-600">
+                    <strong>Nota:</strong> Los fees se aplicarán a las tarifas que los admitan. 
+                    Los límites mínimo y máximo son opcionales y se aplicarán cuando estén definidos.
+                  </div>
+                </div>
+
+                <div className="flex justify-end space-x-3 pt-4 border-t">
+                  <Button
+                    variant="outline"
+                    onClick={() => setMostrandoEdicion(false)}
+                    disabled={recalculando}
+                  >
+                    Cancelar
+                  </Button>
+                  <Button
+                    onClick={handleEjecutarRecalculo}
+                    disabled={recalculando}
+                    className="flex items-center gap-2"
+                  >
+                    {recalculando ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Calculator className="h-4 w-4" />
+                    )}
+                    {recalculando ? 'Recalculando...' : 'Recalcular'}
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
       )}
     </div>
   );

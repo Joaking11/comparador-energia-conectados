@@ -11,8 +11,16 @@ export async function POST(
   try {
     console.log('🔢 Iniciando recálculo para comparativa:', params.id);
 
-    // Ejecutar el motor de cálculo real
-    const results = await CalculationEngine.calculateAndSave(params.id);
+    // Leer parámetros de personalización del body si están disponibles
+    const body = await request.json().catch(() => ({}));
+    const parametrosPersonalizados = body.parametros;
+
+    if (parametrosPersonalizados) {
+      console.log('📝 Aplicando parámetros personalizados:', parametrosPersonalizados);
+    }
+
+    // Ejecutar el motor de cálculo real con parámetros personalizados
+    const results = await CalculationEngine.calculateAndSave(params.id, parametrosPersonalizados);
 
     console.log(`✅ Recálculo completado: ${results.length} ofertas procesadas`);
 
