@@ -43,19 +43,19 @@ interface ComparativaData {
   tarifaAccesoElectricidad: string;
   totalFacturaElectricidad: number;
   comercializadoraActual: string;
-  cliente: {
+  clientes: {
     razonSocial: string;
     cif?: string | null;
     direccion?: string | null;
     localidad?: string | null;
     provincia?: string | null;
   };
-  ofertas: Array<{
+  comparativa_ofertas: Array<{
     id: string;
     importeCalculado: number;
     ahorroAnual: number;
     comisionGanada: number;
-    tarifa: {
+    tarifas: {
       id: string;
       nombreOferta: string;
       tipoOferta: string;
@@ -63,7 +63,7 @@ interface ComparativaData {
       energiaP1: number;
       potenciaP1: number | null;
       zona: string;
-      comercializadora: {
+      comercializadoras: {
         id: string;
         nombre: string;
         color?: string;
@@ -220,7 +220,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   }
 
   // Calcular estadísticas con los nombres de campos correctos
-  const ofertas = data.ofertas || [];
+  const ofertas = data.comparativa_ofertas || [];
   const mejorOferta = ofertas.reduce((mejor, actual) => 
     actual.ahorroAnual > mejor.ahorroAnual ? actual : mejor, 
     ofertas[0]
@@ -228,17 +228,17 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   
   const ahorroTotal = mejorOferta?.ahorroAnual || 0;
   const comisionTotal = ofertas.reduce((sum, o) => sum + o.comisionGanada, 0);
-  const comercializadoras = [...new Set(ofertas.map(o => o.tarifa.comercializadora.nombre))];
+  const comercializadoras = [...new Set(ofertas.map(o => o.tarifas.comercializadoras.nombre))];
   
   // Aplicar filtros
   const ofertasFiltradas = ofertas.filter(oferta => {
     const matchComercializadora = filtroComercializadora === 'todas' || 
-      oferta.tarifa.comercializadora.nombre === filtroComercializadora;
+      oferta.tarifas.comercializadoras.nombre === filtroComercializadora;
     const matchTipo = filtroTipo === 'todos' || 
-      oferta.tarifa.tipoOferta.toLowerCase() === filtroTipo.toLowerCase();
+      oferta.tarifas.tipoOferta.toLowerCase() === filtroTipo.toLowerCase();
     const matchBusqueda = busqueda === '' ||
-      oferta.tarifa.nombreOferta.toLowerCase().includes(busqueda.toLowerCase()) ||
-      oferta.tarifa.comercializadora.nombre.toLowerCase().includes(busqueda.toLowerCase());
+      oferta.tarifas.nombreOferta.toLowerCase().includes(busqueda.toLowerCase()) ||
+      oferta.tarifas.comercializadoras.nombre.toLowerCase().includes(busqueda.toLowerCase());
     
     return matchComercializadora && matchTipo && matchBusqueda;
   });
@@ -247,7 +247,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `Comparativa: ${data.titulo || data.cliente.razonSocial}`,
+          title: `Comparativa: ${data.titulo || data.clientes.razonSocial}`,
           text: `Resultados de comparativa energética - Ahorro potencial: ${ahorroTotal.toFixed(0)}€`,
           url: window.location.href,
         });
@@ -283,10 +283,10 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-2xl font-bold text-gray-900">
-            {data.titulo || `Comparativa - ${data.cliente.razonSocial}`}
+            {data.titulo || `Comparativa - ${data.clientes.razonSocial}`}
           </h1>
           <p className="text-gray-600">
-            Cliente: {data.cliente.razonSocial} | 
+            Cliente: {data.clientes.razonSocial} | 
             Consumo: {data.consumoAnualElectricidad?.toLocaleString()} kWh | 
             Potencia: {data.potenciaP1} kW
           </p>
@@ -346,7 +346,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
               {ahorroTotal > 0 ? `${ahorroTotal.toFixed(0)}€` : 'Sin ahorro'}
             </div>
             <p className="text-xs text-gray-500">
-              {mejorOferta ? mejorOferta.tarifa.comercializadora.nombre : 'N/A'}
+              {mejorOferta ? mejorOferta.tarifas.comercializadoras.nombre : 'N/A'}
             </p>
           </CardContent>
         </Card>
@@ -478,18 +478,18 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
           resultados={ofertasFiltradas.map(resultado => ({
             id: resultado.id,
             tarifa: {
-              id: resultado.tarifa.id,
-              nombre: resultado.tarifa.nombreOferta,
+              id: resultado.tarifas.id,
+              nombre: resultado.tarifas.nombreOferta,
               comercializadora: {
-                id: resultado.tarifa.comercializadora.id,
-                nombre: resultado.tarifa.comercializadora.nombre,
-                color: resultado.tarifa.comercializadora.color,
-                logoUrl: resultado.tarifa.comercializadora.logoUrl,
+                id: resultado.tarifas.comercializadoras.id,
+                nombre: resultado.tarifas.comercializadoras.nombre,
+                color: resultado.tarifas.comercializadoras.color,
+                logoUrl: resultado.tarifas.comercializadoras.logoUrl,
                 activa: true // Default value, adjust if needed
               }
             },
-            precioEnergia: resultado.tarifa.energiaP1,
-            precioPotencia: resultado.tarifa.potenciaP1 || 0,
+            precioEnergia: resultado.tarifas.energiaP1,
+            precioPotencia: resultado.tarifas.potenciaP1 || 0,
             costoMensual: resultado.importeCalculado,
             ahorroMensual: data.totalFacturaElectricidad - resultado.importeCalculado,
             comisionEnergia: 0, // Will be calculated by matriz component
@@ -555,27 +555,27 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                             <div className="flex items-center gap-2">
                               <div 
                                 className="w-3 h-3 rounded-full flex-shrink-0"
-                                style={{ backgroundColor: resultado.tarifa.comercializadora.color || '#6366F1' }}
+                                style={{ backgroundColor: resultado.tarifas.comercializadoras.color || '#6366F1' }}
                               />
                               <div className="font-medium text-gray-900">
-                                {resultado.tarifa.comercializadora.nombre}
+                                {resultado.tarifas.comercializadoras.nombre}
                               </div>
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <div className="font-medium text-gray-900">
-                              {resultado.tarifa.nombreOferta}
+                              {resultado.tarifas.nombreOferta}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {resultado.tarifa.tipoOferta} - {resultado.tarifa.tarifa}
+                              {resultado.tarifas.tipoOferta} - {resultado.tarifas.tarifa}
                             </div>
                           </td>
                           <td className="py-3 px-4">
                             <Badge 
-                              variant={resultado.tarifa.tipoOferta === 'Fijo' ? 'default' : 'secondary'}
-                              className={resultado.tarifa.tipoOferta === 'Fijo' ? 'bg-primary' : 'bg-secondary'}
+                              variant={resultado.tarifas.tipoOferta === 'Fijo' ? 'default' : 'secondary'}
+                              className={resultado.tarifas.tipoOferta === 'Fijo' ? 'bg-primary' : 'bg-secondary'}
                             >
-                              {resultado.tarifa.tipoOferta}
+                              {resultado.tarifas.tipoOferta}
                             </Badge>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -583,7 +583,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                               {resultado.importeCalculado.toFixed(2)}€
                             </div>
                             <div className="text-sm text-gray-500">
-                              {resultado.tarifa.energiaP1.toFixed(4)}€/kWh + {resultado.tarifa.potenciaP1 ? resultado.tarifa.potenciaP1.toFixed(2) : '0'}€/kW
+                              {resultado.tarifas.energiaP1.toFixed(4)}€/kWh + {resultado.tarifas.potenciaP1 ? resultado.tarifas.potenciaP1.toFixed(2) : '0'}€/kW
                             </div>
                           </td>
                           <td className="py-3 px-4 text-right">
@@ -637,12 +637,12 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
               <h3 className="font-medium text-gray-900">Razón Social</h3>
-              <p className="text-gray-600">{data.cliente.razonSocial}</p>
+              <p className="text-gray-600">{data.clientes.razonSocial}</p>
             </div>
-            {data.cliente.cif && (
+            {data.clientes.cif && (
               <div>
                 <h3 className="font-medium text-gray-900">CIF</h3>
-                <p className="text-gray-600">{data.cliente.cif}</p>
+                <p className="text-gray-600">{data.clientes.cif}</p>
               </div>
             )}
             <div>
@@ -670,13 +670,13 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <h3 className="font-medium text-gray-900">
-                  {mejorOferta.tarifa.comercializadora.nombre}
+                  {mejorOferta.tarifas.comercializadoras.nombre}
                 </h3>
                 <p className="text-lg font-semibold text-secondary">
-                  {mejorOferta.tarifa.nombreOferta}
+                  {mejorOferta.tarifas.nombreOferta}
                 </p>
                 <p className="text-sm text-gray-600">
-                  {mejorOferta.tarifa.tipoOferta} - {mejorOferta.tarifa.tarifa}
+                  {mejorOferta.tarifas.tipoOferta} - {mejorOferta.tarifas.tarifa}
                 </p>
               </div>
               <div className="text-center">

@@ -29,8 +29,12 @@ export async function GET() {
     let ahorroPromedio = 0;
     if (comparativas.length > 0) {
       const totalAhorro = comparativas.reduce((sum: number, comp: any) => {
-        const maxAhorro = Math.max(...comp.ofertas.map((o: any) => o.ahorroAnual), 0);
-        return sum + maxAhorro;
+        const ofertas = comp.comparativa_ofertas || [];
+        if (ofertas.length > 0) {
+          const maxAhorro = Math.max(...ofertas.map((o: any) => o.ahorroAnual || 0));
+          return sum + maxAhorro;
+        }
+        return sum;
       }, 0);
       ahorroPromedio = totalAhorro / comparativas.length;
     }

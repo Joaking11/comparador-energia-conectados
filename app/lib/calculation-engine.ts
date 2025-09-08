@@ -1,5 +1,6 @@
 
 import { PrismaClient, tarifas, comisiones, comparativas } from '@prisma/client';
+import { v4 as uuidv4 } from 'uuid';
 
 const prisma = new PrismaClient();
 
@@ -388,6 +389,7 @@ export class CalculationEngine {
       for (const result of results) {
         await prisma.comparativa_ofertas.create({
           data: {
+            id: uuidv4(),
             comparativaId,
             tarifaId: result.tarifaId,
             importeCalculado: result.importeCalculado,

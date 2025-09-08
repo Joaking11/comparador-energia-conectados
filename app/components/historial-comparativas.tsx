@@ -28,11 +28,11 @@ interface ComparativaHistorial {
   potenciaP1: number;
   totalFacturaElectricidad: number;
   createdAt: string;
-  cliente: {
+  clientes: {
     razonSocial: string;
     cif?: string;
   };
-  ofertas: Array<{
+  comparativa_ofertas: Array<{
     ahorroAnual: number;
     comisionGanada: number;
   }>;
@@ -102,9 +102,9 @@ export function HistorialComparativas() {
   const comparativasFiltradas = comparativas.filter(comp => {
     const searchTerm = busqueda.toLowerCase();
     return (
-      comp.cliente.razonSocial?.toLowerCase().includes(searchTerm) ||
+      comp.clientes.razonSocial?.toLowerCase().includes(searchTerm) ||
       comp.titulo?.toLowerCase().includes(searchTerm) ||
-      comp.cliente.cif?.toLowerCase().includes(searchTerm)
+      comp.clientes.cif?.toLowerCase().includes(searchTerm)
     );
   });
 
@@ -170,8 +170,8 @@ export function HistorialComparativas() {
       ) : (
         <div className="grid gap-4">
           {comparativasFiltradas.map((comparativa) => {
-            const mejorAhorro = Math.max(...comparativa.ofertas.map(o => o.ahorroAnual), 0);
-            const mejorComision = Math.max(...comparativa.ofertas.map(o => o.comisionGanada), 0);
+            const mejorAhorro = Math.max(...comparativa.comparativa_ofertas.map(o => o.ahorroAnual), 0);
+            const mejorComision = Math.max(...comparativa.comparativa_ofertas.map(o => o.comisionGanada), 0);
             const fecha = new Date(comparativa.createdAt).toLocaleDateString('es-ES', {
               year: 'numeric',
               month: 'short',
@@ -187,16 +187,16 @@ export function HistorialComparativas() {
                       <div className="flex items-start justify-between">
                         <div>
                           <h3 className="text-lg font-semibold text-gray-900">
-                            {comparativa.titulo || `Comparativa ${comparativa.cliente.razonSocial}`}
+                            {comparativa.titulo || `Comparativa ${comparativa.clientes.razonSocial}`}
                           </h3>
                           <div className="flex items-center text-gray-600 text-sm mt-1">
                             <User className="h-4 w-4 mr-1" />
-                            {comparativa.cliente.razonSocial}
-                            {comparativa.cliente.cif && (
+                            {comparativa.clientes.razonSocial}
+                            {comparativa.clientes.cif && (
                               <>
                                 <span className="mx-2">•</span>
                                 <Building className="h-4 w-4 mr-1" />
-                                {comparativa.cliente.cif}
+                                {comparativa.clientes.cif}
                               </>
                             )}
                           </div>
@@ -219,7 +219,7 @@ export function HistorialComparativas() {
                           <strong>Factura actual:</strong> {comparativa.totalFacturaElectricidad.toFixed(0)}€
                         </span>
                         <span>
-                          <strong>Ofertas analizadas:</strong> {comparativa.ofertas.length}
+                          <strong>Ofertas analizadas:</strong> {comparativa.comparativa_ofertas.length}
                         </span>
                       </div>
                     </div>
@@ -261,7 +261,7 @@ export function HistorialComparativas() {
                         variant="outline"
                         onClick={() => handleDelete(
                           comparativa.id, 
-                          comparativa.titulo || comparativa.cliente.razonSocial
+                          comparativa.titulo || comparativa.clientes.razonSocial
                         )}
                         className="text-red-600 hover:text-red-700 hover:bg-red-50"
                       >
