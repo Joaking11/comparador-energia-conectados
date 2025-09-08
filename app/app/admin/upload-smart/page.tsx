@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import Link from 'next/link';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -16,7 +17,9 @@ import {
   DollarSign,
   Brain,
   CheckCircle,
-  AlertCircle
+  AlertCircle,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 
 export default function UploadSmartPage() {
@@ -90,6 +93,24 @@ export default function UploadSmartPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-6xl">
+      {/* Navegación superior */}
+      <div className="flex items-center gap-4 mb-6">
+        <Link href="/admin">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Volver a Admin
+          </Button>
+        </Link>
+        <Link href="/">
+          <Button variant="ghost" className="flex items-center gap-2">
+            <Home className="h-4 w-4" />
+            Inicio
+          </Button>
+        </Link>
+        <div className="h-4 border-l border-gray-300"></div>
+        <p className="text-sm text-gray-600">Importación Inteligente IA</p>
+      </div>
+
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
           <Brain className="h-8 w-8 text-primary" />

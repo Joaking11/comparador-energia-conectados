@@ -22,7 +22,9 @@ import {
   TrendingUp,
   Database,
   Cpu,
-  Users
+  Users,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -66,6 +68,28 @@ export default function AdminDashboardPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Navegación superior */}
+      <div className="flex items-center gap-4 mb-6">
+        <Link href="/">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Volver al Inicio
+          </Button>
+        </Link>
+        <Link href="/nueva-comparativa">
+          <Button variant="ghost" className="flex items-center gap-2">
+            Nueva Comparativa
+          </Button>
+        </Link>
+        <Link href="/historial">
+          <Button variant="ghost" className="flex items-center gap-2">
+            Ver Historial
+          </Button>
+        </Link>
+        <div className="h-4 border-l border-gray-300"></div>
+        <p className="text-sm text-gray-600">Panel de Administración</p>
+      </div>
+
       {/* Header */}
       <div className="mb-8">
         <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">

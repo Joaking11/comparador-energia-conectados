@@ -9,6 +9,7 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Badge } from "@/components/ui/badge";
 import { useToast } from "@/hooks/use-toast";
+import Link from 'next/link';
 import { 
   Upload, 
   FileSpreadsheet, 
@@ -23,7 +24,9 @@ import {
   FileText,
   DollarSign,
   Building,
-  Percent
+  Percent,
+  ArrowLeft,
+  Home
 } from 'lucide-react';
 
 export default function AdminComisionesPage() {
@@ -260,6 +263,24 @@ export default function AdminComisionesPage() {
 
   return (
     <div className="container mx-auto px-4 py-8 max-w-7xl">
+      {/* Navegación superior */}
+      <div className="flex items-center gap-4 mb-6">
+        <Link href="/admin">
+          <Button variant="outline" className="flex items-center gap-2">
+            <ArrowLeft className="h-4 w-4" />
+            Volver a Admin
+          </Button>
+        </Link>
+        <Link href="/">
+          <Button variant="ghost" className="flex items-center gap-2">
+            <Home className="h-4 w-4" />
+            Inicio
+          </Button>
+        </Link>
+        <div className="h-4 border-l border-gray-300"></div>
+        <p className="text-sm text-gray-600">Gestión de Comisiones</p>
+      </div>
+
       <div className="flex items-center justify-between mb-8">
         <div>
           <h1 className="text-3xl font-bold text-gray-900 flex items-center gap-3">
