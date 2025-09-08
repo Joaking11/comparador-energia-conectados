@@ -9,22 +9,20 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
-// NextAuth models
 model Account {
   id                String  @id @default(cuid())
   userId            String
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.Text
-  access_token      String? @db.Text
+  refresh_token     String?
+  access_token      String?
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.Text
+  id_token          String?
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
   @@map("accounts")
@@ -47,9 +45,8 @@ model User {
   emailVerified DateTime?
   image         String?
   password      String?
-
-  accounts Account[]
-  sessions Session[]
+  accounts      Account[]
+  sessions      Session[]
 
   @@map("users")
 }
@@ -64,227 +61,185 @@ model VerificationToken {
 }
 
 model Comercializadora {
-  id          String   @id @default(cuid())
-  nombre      String   @unique
-  activa      Boolean  @default(true)
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
-  tarifas     Tarifa[]
-  comisiones  Comision[]
-  
+  id         String     @id @default(cuid())
+  nombre     String     @unique
+  color      String?    @default("#3B82F6")
+  logoUrl    String?
+  activa     Boolean    @default(true)
+  createdAt  DateTime   @default(now())
+  updatedAt  DateTime   @updatedAt
+  comisiones Comision[]
+  tarifas    Tarifa[]
+
   @@map("comercializadoras")
 }
 
-// Nueva tabla para las TARIFAS2
 model Tarifa {
-  id                    String   @id @default(cuid())
-  comercializadoraId    String
-  nombreOferta          String   // Nombre de la oferta
-  energiaVerde          Boolean  @default(false)
-  tarifa                String   // "2.0TD", "3.0TD", etc.
-  zona                  String   // "PENINSULA", etc.
-  tipoOferta            String   // "Fijo", "Indexada", etc.
-  rango                 String   // "E" para energía, "P" para potencia
-  rangoDesde            Float    // Valor mínimo del rango
-  rangoHasta            Float?   // Valor máximo del rango (null = infinito)
-  tieneFee              Boolean  @default(false)
-  
-  // Precios de energía por período (€/kWh)
-  energiaP1             Float    
-  energiaP2             Float?   
-  energiaP3             Float?   
-  energiaP4             Float?   
-  energiaP5             Float?   
-  energiaP6             Float?   
-  energiaDescuento      Float?   // Descuento en energía
-  
-  // Precios de potencia por período (€/kW mes)
-  potenciaP1            Float?   
-  potenciaP2            Float?   
-  potenciaP3            Float?   
-  potenciaP4            Float?   
-  potenciaP5            Float?   
-  potenciaP6            Float?   
-  potenciaDescuento     Float?   // Descuento en potencia
-  
-  // Configuración FEE
-  feeEnergia            Float?   // FEE energía
-  feeEnergiaMinimo      Float?   // FEE energía mínimo
-  feeEnergiaMaximo      Float?   // FEE energía máximo
-  feePotencia           Float?   // FEE potencia  
-  feePotenciaMinimo     Float?   // FEE potencia mínimo
-  feePotenciaMaximo     Float?   // FEE potencia máximo
-  
-  validaHasta           DateTime? // Fecha límite de la oferta
-  tipoCliente           String?   // "PAC", etc.
-  costeGestion          Float    @default(0)
-  costeTotal            Float    @default(0)
-  activa                Boolean  @default(true)
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
-  comercializadora      Comercializadora @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
-  comparativaOfertas    ComparativaOferta[]
-  
+  id                 String              @id @default(cuid())
+  comercializadoraId String
+  nombreOferta       String
+  energiaVerde       Boolean             @default(false)
+  tarifa             String
+  zona               String
+  tipoOferta         String
+  rango              String
+  rangoDesde         Float
+  rangoHasta         Float?
+  tieneFee           Boolean             @default(false)
+  energiaP1          Float
+  energiaP2          Float?
+  energiaP3          Float?
+  energiaP4          Float?
+  energiaP5          Float?
+  energiaP6          Float?
+  energiaDescuento   Float?
+  potenciaP1         Float?
+  potenciaP2         Float?
+  potenciaP3         Float?
+  potenciaP4         Float?
+  potenciaP5         Float?
+  potenciaP6         Float?
+  potenciaDescuento  Float?
+  feeEnergia         Float?
+  feeEnergiaMinimo   Float?
+  feeEnergiaMaximo   Float?
+  feePotencia        Float?
+  feePotenciaMinimo  Float?
+  feePotenciaMaximo  Float?
+  validaHasta        DateTime?
+  tipoCliente        String?
+  costeGestion       Float               @default(0)
+  costeTotal         Float               @default(0)
+  activa             Boolean             @default(true)
+  createdAt          DateTime            @default(now())
+  updatedAt          DateTime            @updatedAt
+  comparativaOfertas ComparativaOferta[]
+  comercializadora   Comercializadora    @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
+
   @@map("tarifas")
 }
 
-// Nueva tabla para las COMISIONES  
 model Comision {
-  id                    String   @id @default(cuid())
+  id                    String           @id @default(cuid())
   comercializadoraId    String
-  nombreOferta          String   // Debe coincidir con Tarifa.nombreOferta
-  energiaVerde          Boolean  @default(false)
-  tarifa                String   // Debe coincidir con Tarifa.tarifa
-  zona                  String?  // "PENINSULA", etc.
-  tipoOferta            String   // Debe coincidir con Tarifa.tipoOferta
-  rango                 String   // "E" para energía, "P" para potencia
-  rangoDesde            Float    // Valor mínimo del rango
-  rangoHasta            Float?   // Valor máximo del rango (null = infinito)
-  tieneFee              Boolean  @default(false)
-  
-  // Porcentajes FEE
-  porcentajeFeeEnergia  Float?   // % FEE energía
-  porcentajeFeePotencia Float?   // % FEE potencia
-  
-  // Valor de la comisión en euros
-  comision              Float    // Valor de la comisión en €
-  activa                Boolean  @default(true)
-  
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
+  nombreOferta          String
+  energiaVerde          Boolean          @default(false)
+  tarifa                String
+  zona                  String?
+  tipoOferta            String
+  rango                 String
+  rangoDesde            Float
+  rangoHasta            Float?
+  tieneFee              Boolean          @default(false)
+  porcentajeFeeEnergia  Float?
+  porcentajeFeePotencia Float?
+  comision              Float
+  activa                Boolean          @default(true)
+  createdAt             DateTime         @default(now())
+  updatedAt             DateTime         @updatedAt
   comercializadora      Comercializadora @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
-  
+
   @@map("comisiones")
 }
 
 model Cliente {
-  id              String   @id @default(cuid())
-  razonSocial     String
-  cif             String?
-  direccion       String?
-  localidad       String?
-  provincia       String?
-  codigoPostal    String?
-  nombreFirmante  String?
-  nifFirmante     String?
-  telefono        String?
-  email           String?
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
-  comparativas Comparativa[]
-  
+  id             String        @id @default(cuid())
+  razonSocial    String
+  cif            String?
+  direccion      String?
+  localidad      String?
+  provincia      String?
+  codigoPostal   String?
+  nombreFirmante String?
+  nifFirmante    String?
+  telefono       String?
+  email          String?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+  comparativas   Comparativa[]
+
   @@map("clientes")
 }
 
 model Comparativa {
-  id                    String   @id @default(cuid())
-  clienteId             String
-  titulo                String?
-  fechaOferta           DateTime @default(now())
-  
-  // PERIODO DE FACTURACIÓN
-  fechaInicialFactura   DateTime?
-  fechaFinalFactura     DateTime?
-  diasPeriodoFactura    Int      @default(30)
-  
-  // ELECTRICIDAD
-  contrataElectricidad      Boolean @default(true)
-  multipuntoElectricidad    Boolean @default(false)
-  tarifaAccesoElectricidad  String  // "2.0TD", "3.0TD", "6.1TD", "6.2TD"
-  cupsElectricidad          String?
-  consumoAnualElectricidad  Float   // kWh/año
-  duracionContratoElectricidad Int  @default(12)
-  comercializadoraActual    String
-  ahorroMinimo              Float   @default(0.1)
-  distribuidoraElectrica    String?
-  
-  // HISTÓRICO DE CONSUMO (del gráfico de la factura)
-  historicoTieneGrafico     Boolean? @default(false)
-  historicoMesesDetectados  Int?     
-  historicoConsumosMensuales String? // JSON array de consumos mensuales
-  historicoPeriodoAnalizado String?  // Descripción del período
-  historicoConsumoCalculado Float?   // Consumo anual calculado del gráfico
-  
-  // GAS
-  contrataGas           Boolean @default(false)
-  multipuntoGas         Boolean @default(false)
-  tarifaAccesoGas       String?
-  cupsGas               String?
-  consumoAnualGas       Float?
-  duracionContratoGas   Int?
-  
-  // CONFIGURACIÓN FEE
-  feeEnergia            Float   @default(0.0)
-  feeEnergiaMinimo      Float?
-  feeEnergiaMaximo      Float?
-  feePotencia           Float   @default(0.0)
-  feePotenciaMinimo     Float?
-  feePotenciaMaximo     Float?
-  energiaFijo           Boolean @default(false)
-  potenciaFijo          Boolean @default(false)
-  
-  // POTENCIAS CONTRATADAS por período (kW)
-  potenciaP1            Float
-  potenciaP2            Float?
-  potenciaP3            Float?
-  potenciaP4            Float?
-  potenciaP5            Float?
-  potenciaP6            Float?
-  
-  // CONSUMOS FACTURADOS por período (kWh)
-  consumoP1             Float
-  consumoP2             Float?
-  consumoP3             Float?
-  consumoP4             Float?
-  consumoP5             Float?
-  consumoP6             Float?
-  
-  // FACTURA ACTUAL - ELECTRICIDAD
-  terminoFijoElectricidad     Float
-  terminoVariableElectricidad Float
-  excesoPotencia              Float   @default(0.0)
-  impuestoElectricidad        Float
-  ivaElectricidad            Float
-  totalFacturaElectricidad   Float
-  
-  // FACTURA ACTUAL - GAS
-  terminoFijoGas      Float?
-  terminoVariableGas  Float?
-  impuestoGas         Float?
-  ivaGas              Float?
-  totalFacturaGas     Float?
-  
-  // Metadatos
-  notas               String?
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
-  
-  cliente             Cliente @relation(fields: [clienteId], references: [id], onDelete: Cascade)
-  ofertas             ComparativaOferta[]
-  
+  id                           String              @id @default(cuid())
+  clienteId                    String
+  titulo                       String?
+  fechaOferta                  DateTime            @default(now())
+  fechaInicialFactura          DateTime?
+  fechaFinalFactura            DateTime?
+  diasPeriodoFactura           Int                 @default(30)
+  contrataElectricidad         Boolean             @default(true)
+  multipuntoElectricidad       Boolean             @default(false)
+  tarifaAccesoElectricidad     String
+  cupsElectricidad             String?
+  consumoAnualElectricidad     Float
+  duracionContratoElectricidad Int                 @default(12)
+  comercializadoraActual       String
+  ahorroMinimo                 Float               @default(0.1)
+  distribuidoraElectrica       String?
+  historicoTieneGrafico        Boolean?            @default(false)
+  historicoMesesDetectados     Int?
+  historicoConsumosMensuales   String?
+  historicoPeriodoAnalizado    String?
+  historicoConsumoCalculado    Float?
+  contrataGas                  Boolean             @default(false)
+  multipuntoGas                Boolean             @default(false)
+  tarifaAccesoGas              String?
+  cupsGas                      String?
+  consumoAnualGas              Float?
+  duracionContratoGas          Int?
+  feeEnergia                   Float               @default(0.0)
+  feeEnergiaMinimo             Float?
+  feeEnergiaMaximo             Float?
+  feePotencia                  Float               @default(0.0)
+  feePotenciaMinimo            Float?
+  feePotenciaMaximo            Float?
+  energiaFijo                  Boolean             @default(false)
+  potenciaFijo                 Boolean             @default(false)
+  potenciaP1                   Float
+  potenciaP2                   Float?
+  potenciaP3                   Float?
+  potenciaP4                   Float?
+  potenciaP5                   Float?
+  potenciaP6                   Float?
+  consumoP1                    Float
+  consumoP2                    Float?
+  consumoP3                    Float?
+  consumoP4                    Float?
+  consumoP5                    Float?
+  consumoP6                    Float?
+  terminoFijoElectricidad      Float
+  terminoVariableElectricidad  Float
+  excesoPotencia               Float               @default(0.0)
+  impuestoElectricidad         Float
+  ivaElectricidad              Float
+  totalFacturaElectricidad     Float
+  terminoFijoGas               Float?
+  terminoVariableGas           Float?
+  impuestoGas                  Float?
+  ivaGas                       Float?
+  totalFacturaGas              Float?
+  notas                        String?
+  createdAt                    DateTime            @default(now())
+  updatedAt                    DateTime            @updatedAt
+  ofertas                      ComparativaOferta[]
+  cliente                      Cliente             @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+
   @@map("comparativas")
 }
 
 model ComparativaOferta {
-  id              String   @id @default(cuid())
-  comparativaId   String
-  tarifaId        String   // Ahora referencia a Tarifa en lugar de Oferta
-  
-  // Resultados calculados
-  importeCalculado Float   // € calculado para esta tarifa
-  ahorroAnual     Float   // € ahorro vs factura actual
-  comisionGanada  Float   // € comisión para el consultor
-  
-  createdAt       DateTime @default(now())
-  
-  comparativa     Comparativa @relation(fields: [comparativaId], references: [id], onDelete: Cascade)
-  tarifa          Tarifa @relation(fields: [tarifaId], references: [id], onDelete: Cascade)
-  
+  id               String      @id @default(cuid())
+  comparativaId    String
+  tarifaId         String
+  importeCalculado Float
+  ahorroAnual      Float
+  comisionGanada   Float
+  createdAt        DateTime    @default(now())
+  comparativa      Comparativa @relation(fields: [comparativaId], references: [id], onDelete: Cascade)
+  tarifa           Tarifa      @relation(fields: [tarifaId], references: [id], onDelete: Cascade)
+
   @@unique([comparativaId, tarifaId])
   @@map("comparativa_ofertas")
 }

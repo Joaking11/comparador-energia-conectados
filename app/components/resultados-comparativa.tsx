@@ -65,6 +65,8 @@ interface ComparativaData {
       comercializadora: {
         id: string;
         nombre: string;
+        color?: string;
+        logoUrl?: string;
       };
     };
   }>;
@@ -444,6 +446,8 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
               comercializadora: {
                 id: resultado.tarifa.comercializadora.id,
                 nombre: resultado.tarifa.comercializadora.nombre,
+                color: resultado.tarifa.comercializadora.color,
+                logoUrl: resultado.tarifa.comercializadora.logoUrl,
                 activa: true // Default value, adjust if needed
               }
             },
@@ -511,8 +515,14 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                       return (
                         <tr key={resultado.id} className="border-b hover:bg-gray-50">
                           <td className="py-3 px-4">
-                            <div className="font-medium text-gray-900">
-                              {resultado.tarifa.comercializadora.nombre}
+                            <div className="flex items-center gap-2">
+                              <div 
+                                className="w-3 h-3 rounded-full flex-shrink-0"
+                                style={{ backgroundColor: resultado.tarifa.comercializadora.color || '#6366F1' }}
+                              />
+                              <div className="font-medium text-gray-900">
+                                {resultado.tarifa.comercializadora.nombre}
+                              </div>
                             </div>
                           </td>
                           <td className="py-3 px-4">

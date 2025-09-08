@@ -41,6 +41,8 @@ interface ComparativaResultado {
     comercializadora: {
       id: string;
       nombre: string;
+      color?: string;
+      logoUrl?: string;
       activa: boolean;
     };
   };
@@ -62,24 +64,8 @@ interface MatrizInteractivaProps {
 type CriterioOrden = 'precio' | 'ahorro' | 'comision' | 'puntuacion';
 type DireccionOrden = 'asc' | 'desc';
 
-// Paleta de colores para comercializadoras
-const COLORES_COMERCIALIZADORAS = [
-  '#FF6384', // Rosa
-  '#36A2EB', // Azul
-  '#FFCE56', // Amarillo
-  '#4BC0C0', // Turquesa
-  '#9966FF', // Púrpura
-  '#FF9F40', // Naranja
-  '#FF6B9D', // Rosa claro
-  '#C9CBCF', // Gris
-  '#4ECDC4', // Verde agua
-  '#FF5E5B', // Coral
-  '#45B7D1', // Azul cielo
-  '#FFA07A', // Dorado
-  '#98D8C8', // Verde menta
-  '#F7DC6F', // Amarillo claro
-  '#BB8FCE', // Lavanda
-];
+// Color por defecto si no está definido en la base de datos
+const COLOR_POR_DEFECTO = '#6366F1';
 
 export default function MatrizInteractivaResultados({ 
   resultados, 
@@ -90,20 +76,20 @@ export default function MatrizInteractivaResultados({
   const [direccionOrden, setDireccionOrden] = useState<DireccionOrden>('desc');
   const [mostrarSoloPositivos, setMostrarSoloPositivos] = useState(false);
 
-  // Obtener comercializadoras únicas y asignarles colores
+  // Obtener comercializadoras únicas con sus colores de la BD
   const comercializadorasConColor = useMemo(() => {
     const uniqueComercializadoras = new Map();
     resultados.forEach(resultado => {
       const com = resultado.tarifa.comercializadora;
       if (!uniqueComercializadoras.has(com.id)) {
-        uniqueComercializadoras.set(com.id, com);
+        uniqueComercializadoras.set(com.id, {
+          ...com,
+          color: com.color || COLOR_POR_DEFECTO // Usar color de BD o por defecto
+        });
       }
     });
     
-    return Array.from(uniqueComercializadoras.values()).map((comercializadora, index) => ({
-      ...comercializadora,
-      color: COLORES_COMERCIALIZADORAS[index % COLORES_COMERCIALIZADORAS.length]
-    }));
+    return Array.from(uniqueComercializadoras.values());
   }, [resultados]);
 
   // Preparar datos para el scatter plot
@@ -328,16 +314,24 @@ export default function MatrizInteractivaResultados({
                       : comercializadora.color + '20'
                   }}
                 >
-                  <div 
-                    className="w-3 h-3 rounded-full"
-                    style={{ backgroundColor: comercializadora.color }}
-                  />
+                  {comercializadora.logoUrl ? (
+                    <img 
+                      src={comercializadora.logoUrl} 
+                      alt={comercializadora.nombre}
+                      className="w-4 h-4 rounded object-contain"
+                    />
+                  ) : (
+                    <div 
+                      className="w-3 h-3 rounded-full"
+                      style={{ backgroundColor: comercializadora.color }}
+                    />
+                  )}
                   {comercializadorasOcultas.has(comercializadora.id) ? (
                     <EyeOff className="h-3 w-3" />
                   ) : (
                     <Eye className="h-3 w-3" />
                   )}
-                  {comercializadora.nombre}
+                  <span className="text-xs">{comercializadora.nombre}</span>
                 </Button>
               ))}
             </div>
@@ -449,10 +443,18 @@ export default function MatrizInteractivaResultados({
                         </td>
                         <td className="py-3 px-4">
                           <div className="flex items-center gap-2">
-                            <div 
-                              className="w-3 h-3 rounded-full"
-                              style={{ backgroundColor: comercializadora?.color || '#666' }}
-                            />
+                            {comercializadora?.logoUrl ? (
+                              <img 
+                                src={comercializadora.logoUrl} 
+                                alt={comercializadora.nombre}
+                                className="w-4 h-4 rounded object-contain"
+                              />
+                            ) : (
+                              <div 
+                                className="w-3 h-3 rounded-full"
+                                style={{ backgroundColor: comercializadora?.color || '#666' }}
+                              />
+                            )}
                             <span className="font-medium">
                               {resultado.tarifa.comercializadora.nombre}
                             </span>
