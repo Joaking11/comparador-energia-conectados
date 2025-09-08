@@ -120,9 +120,9 @@ export default function InformeDetalladoComparativa({
   
   // Calcular costos de potencia
   periodosPotencia.forEach((periodoP, index) => {
-    // Fórmula correcta: kW contratados × precio (€/kW/mes) × (días / 30)
+    // Fórmula: kW contratados × precio (€/kW/día) × número de días
     if (!calculosPorPeriodo[periodoP.periodo]) calculosPorPeriodo[periodoP.periodo] = {};
-    calculosPorPeriodo[periodoP.periodo].costoPotencia = potenciaContratada * periodoP.precio * (diasFacturacion / 30);
+    calculosPorPeriodo[periodoP.periodo].costoPotencia = potenciaContratada * periodoP.precio * diasFacturacion;
     calculosPorPeriodo[periodoP.periodo].potencia = potenciaContratada;
     calculosPorPeriodo[periodoP.periodo].precioPotencia = periodoP.precio;
   });
@@ -267,7 +267,7 @@ export default function InformeDetalladoComparativa({
         {/* Info de debug de períodos y consumo histórico */}
         <div className="mt-3 text-xs text-yellow-700 bg-yellow-100 p-2 rounded">
           <div><strong>Períodos de Energía detectados:</strong> {periodosEnergia.map(p => `${p.periodo}(${p.precio.toFixed(4)}€/kWh)`).join(', ') || 'Ninguno'}</div>
-          <div><strong>Períodos de Potencia detectados:</strong> {periodosPotencia.map(p => `${p.periodo}(${p.precio.toFixed(4)}€/kW)`).join(', ') || 'Ninguno'}</div>
+          <div><strong>Períodos de Potencia detectados:</strong> {periodosPotencia.map(p => `${p.periodo}(${p.precio.toFixed(4)}€/kW·día)`).join(', ') || 'Ninguno'}</div>
           {comparativa.historicoTieneGrafico && (
             <div className="mt-2 border-t border-yellow-200 pt-2">
               <div><strong>Histórico del gráfico:</strong> {comparativa.historicoMesesDetectados} meses detectados</div>
@@ -298,7 +298,7 @@ export default function InformeDetalladoComparativa({
             return (
               <div key={periodoP.periodo} className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-purple-300">
                 <span className="text-purple-700">
-                  <span className="font-bold text-purple-800">{periodoP.periodo}:</span> {periodoP.precio.toFixed(6)} €/kW·mes × {calculo.potencia.toFixed(2)} kW × {(diasFacturacion/30).toFixed(2)} meses
+                  <span className="font-bold text-purple-800">{periodoP.periodo}:</span> {periodoP.precio.toFixed(6)} €/kW·día × {calculo.potencia.toFixed(2)} kW × {diasFacturacion} días
                 </span>
                 <span className="font-bold text-purple-800">{calculo.costoPotencia.toFixed(2)} €</span>
               </div>

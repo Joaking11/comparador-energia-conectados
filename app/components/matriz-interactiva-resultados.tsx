@@ -112,8 +112,8 @@ export default function MatrizInteractivaResultados({
       if (!uniqueComercializadoras.has(com.id)) {
         uniqueComercializadoras.set(com.id, {
           ...com,
-          // Usar color de BD si existe, sino asignar uno único
-          color: com.color || asignarColorComercializadora(colorIndex)
+          // SIEMPRE asignar color único para distinguir comercializadoras
+          color: asignarColorComercializadora(colorIndex)
         });
         colorIndex++;
       }
