@@ -331,40 +331,42 @@ export default function InformeDetalladoComparativa({
       </div>
 
       {/* RESUMEN FINAL */}
-      <div className="bg-gradient-to-r from-secondary to-secondary/90 text-white p-6 rounded-lg shadow-lg">
-        <div className="text-center mb-4">
-          <h3 className="font-bold text-xl flex items-center justify-center">
-            <Euro className="h-5 w-5 mr-2" />
+      <div className="bg-white border-2 border-gray-200 p-6 rounded-lg shadow-lg">
+        <div className="text-center mb-6">
+          <h3 className="font-bold text-2xl flex items-center justify-center text-gray-800">
+            <Euro className="h-6 w-6 mr-2 text-primary" />
             RESUMEN FINANCIERO
           </h3>
         </div>
         
         <div className="space-y-3">
-          <div className="flex justify-between font-bold bg-white/10 p-2 rounded">
-            <span>TOTAL BASE FACTURA:</span>
-            <span>{totalBase.toFixed(2)} €</span>
+          <div className="flex justify-between font-semibold p-3 rounded border border-gray-200 bg-gray-50">
+            <span className="text-gray-700">TOTAL BASE FACTURA:</span>
+            <span className="text-gray-900">{totalBase.toFixed(2)} €</span>
           </div>
-          <div className="flex justify-between bg-white/10 p-2 rounded">
-            <span>I.V.A (21% × {totalBase.toFixed(2)}):</span>
-            <span>{iva.toFixed(2)} €</span>
+          <div className="flex justify-between p-3 rounded border border-gray-200 bg-gray-50">
+            <span className="text-gray-700">I.V.A (21% × {totalBase.toFixed(2)}):</span>
+            <span className="text-gray-900">{iva.toFixed(2)} €</span>
           </div>
-          <div className="flex justify-between font-bold text-lg bg-white/20 p-3 rounded border-2 border-white/30">
-            <span>TOTAL FACTURA OFERTA:</span>
-            <span>{totalFactura.toFixed(2)} €</span>
+          <div className="flex justify-between font-bold text-lg p-3 rounded border-2 border-primary bg-primary/5">
+            <span className="text-primary">TOTAL FACTURA OFERTA:</span>
+            <span className="text-primary">{totalFactura.toFixed(2)} €</span>
           </div>
-          <div className="flex justify-between bg-white/10 p-2 rounded">
-            <span>PAGA ACTUALMENTE:</span>
-            <span>{facturaActual.toFixed(2)} €</span>
+          <div className="flex justify-between p-3 rounded border border-gray-200 bg-gray-50">
+            <span className="text-gray-700">PAGA ACTUALMENTE:</span>
+            <span className="text-gray-900">{facturaActual.toFixed(2)} €</span>
           </div>
-          <div className={`flex justify-between font-bold text-lg p-3 rounded border-2 ${ahorroAnual > 0 ? 'bg-green-500 border-green-300' : 'bg-red-500 border-red-300'}`}>
+          
+          {/* LAS DOS LÍNEAS MÁS DESTACADAS */}
+          <div className={`flex justify-between font-bold text-xl p-4 rounded-lg shadow-md border-2 ${ahorroAnual > 0 ? 'bg-gradient-to-r from-green-500 to-green-600 text-white border-green-400' : 'bg-gradient-to-r from-red-500 to-red-600 text-white border-red-400'}`}>
             <span>AHORRO EN FACTURA: {porcentajeAhorro.toFixed(2)}%</span>
-            <span>
+            <span className="font-extrabold">
               {ahorroAnual.toFixed(2)} €
             </span>
           </div>
-          <div className={`flex justify-between font-bold text-2xl p-4 rounded-lg shadow-inner ${ahorroAnual > 0 ? 'bg-green-600 text-green-100' : 'bg-red-600 text-red-100'}`}>
+          <div className={`flex justify-between font-bold text-2xl p-5 rounded-lg shadow-lg border-3 ${ahorroAnual > 0 ? 'bg-gradient-to-r from-green-600 to-green-700 text-green-50 border-green-500' : 'bg-gradient-to-r from-red-600 to-red-700 text-red-50 border-red-500'} transform hover:scale-[1.02] transition-transform`}>
             <span>AHORRO ANUAL ESTIMADO:</span>
-            <span>
+            <span className="font-black text-3xl">
               {(ahorroAnual * 12).toFixed(2)} €
             </span>
           </div>
