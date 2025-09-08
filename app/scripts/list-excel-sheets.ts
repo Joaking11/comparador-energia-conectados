@@ -1,8 +1,9 @@
 
 import * as XLSX from 'xlsx';
 import * as fs from 'fs';
+import * as path from 'path';
 
-const excelPath = '/home/ubuntu/Uploads/COMPARATIVAS_2Septiembre.xlsm';
+const excelPath = process.env.EXCEL_FILE_PATH || path.join(process.cwd(), '..', '..', 'Uploads', 'COMPARATIVAS_2Septiembre.xlsm');
 
 console.log('📖 Leyendo archivo Excel...');
 const workbook = XLSX.readFile(excelPath);

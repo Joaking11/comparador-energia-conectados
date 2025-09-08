@@ -26,7 +26,7 @@ async function importExcelData() {
   console.log('📊 Iniciando importación de datos del Excel...');
 
   // Ruta al archivo Excel
-  const excelPath = '/home/ubuntu/Uploads/COMPARATIVAS_2Septiembre.xlsm';
+  const excelPath = process.env.EXCEL_FILE_PATH || path.join(process.cwd(), '..', '..', 'Uploads', 'COMPARATIVAS_2Septiembre.xlsm');
   
   if (!fs.existsSync(excelPath)) {
     throw new Error(`No se encuentra el archivo Excel en: ${excelPath}`);
@@ -36,31 +36,42 @@ async function importExcelData() {
   console.log('📖 Leyendo archivo Excel...');
   const workbook = XLSX.readFile(excelPath);
 
-  // PASO 1: Importar comercializadoras desde la hoja "comercializadora"
-  console.log('🏢 Importando comercializadoras...');
+  // PASO 0: Limpiar datos existentes (excepto usuarios)
+  console.log('🧹 Limpiando datos existentes...');
+  await prisma.comision.deleteMany({});
+  await prisma.tarifa.deleteMany({});
+  console.log('✅ Datos limpiados');
+
+  // PASO 1: Extraer comercializadoras únicas desde la hoja "TARIFAS2"
+  console.log('🏢 Extrayendo comercializadoras de TARIFAS2...');
   
-  if (!workbook.SheetNames.includes('comercializadora')) {
-    throw new Error('No se encontró la hoja "comercializadora"');
+  if (!workbook.SheetNames.includes('TARIFAS2')) {
+    throw new Error('No se encontró la hoja "TARIFAS2"');
   }
 
-  const comercializadorasSheet = workbook.Sheets['comercializadora'];
-  const comercializadorasData = XLSX.utils.sheet_to_json(comercializadorasSheet, { header: 1 });
+  const tarifasSheetTemp = workbook.Sheets['TARIFAS2'];
+  const tarifasDataTemp = XLSX.utils.sheet_to_json(tarifasSheetTemp, { header: 1 });
+  
+  // Extraer nombres únicos de comercializadoras (columna 0)
+  const nombresComercializadoras = new Set<string>();
+  for (let i = 1; i < tarifasDataTemp.length; i++) {
+    const row = tarifasDataTemp[i] as any[];
+    if (row[0] && row[0].toString().trim()) {
+      nombresComercializadoras.add(row[0].toString().trim());
+    }
+  }
+  
+  console.log(`📝 Encontradas ${nombresComercializadoras.size} comercializadoras únicas`);
   
   const comercializadorasCreadas = [];
   
-  // Asumir que la primera fila tiene headers, empezar desde la segunda
-  for (let i = 1; i < comercializadorasData.length; i++) {
-    const row = comercializadorasData[i] as any[];
-    
-    if (!row[0]) continue; // Saltar filas vacías
-    
-    const comercializadora = await prisma.comercializadora.create({
-      data: {
-        nombre: row[0].toString().trim(),
-        activa: true
-      }
+  // Crear o actualizar cada comercializadora
+  for (const nombre of nombresComercializadoras) {
+    const comercializadora = await prisma.comercializadora.upsert({
+      where: { nombre },
+      update: { activa: true },
+      create: { nombre, activa: true }
     });
-    
     comercializadorasCreadas.push(comercializadora);
   }
 
@@ -125,11 +136,11 @@ async function importExcelData() {
   // PASO 3: Importar comisiones desde la hoja "comisiones"
   console.log('💼 Importando comisiones...');
   
-  if (!workbook.SheetNames.includes('comisiones')) {
-    throw new Error('No se encontró la hoja "comisiones"');
+  if (!workbook.SheetNames.includes('COMISIONES')) {
+    throw new Error('No se encontró la hoja "COMISIONES"');
   }
 
-  const comisionesSheet = workbook.Sheets['comisiones'];
+  const comisionesSheet = workbook.Sheets['COMISIONES'];
   const comisionesData = XLSX.utils.sheet_to_json(comisionesSheet, { header: 1 });
   
   let comisionesCreadas = 0;
@@ -154,13 +165,15 @@ async function importExcelData() {
       await prisma.comision.create({
         data: {
           comercializadoraId: comercializadora.id,
-          zona: row[1]?.toString().trim() || '',
-          rango: row[2]?.toString().trim() || '',
-          rangoDesde: parseExcelValue(row[3]) || 0,
-          rangoHasta: parseExcelValue(row[4]) || 999999,
-          tipo: row[5]?.toString().trim() || '',
-          comisionEnergia: parseExcelValue(row[6]) || 0,
-          comisionPotencia: parseExcelValue(row[7]) || 0
+          nombreOferta: row[1]?.toString().trim() || 'Sin nombre', // Columna 1: Oferta
+          energiaVerde: row[2]?.toString().toLowerCase() === 'si' || false, // Columna 2: ¿Energía verde?
+          tarifa: row[3]?.toString().trim() || '', // Columna 3: Tarifa
+          zona: row[4]?.toString().trim() || '', // Columna 4: Zona
+          tipoOferta: row[5]?.toString().trim() || '', // Columna 5: Tipo oferta
+          rango: row[6]?.toString().trim() || '', // Columna 6: Rango
+          rangoDesde: parseExcelValue(row[7]) || 0, // Columna 7: Desde
+          rangoHasta: parseExcelValue(row[8]) || null, // Columna 8: Hasta
+          comision: parseExcelValue(row[12]) || 0 // Columna 12: COMISION (campo requerido)
         }
       });
       comisionesCreadas++;
