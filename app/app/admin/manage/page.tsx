@@ -142,28 +142,83 @@ export default function ManagePage() {
         ? '/api/plantilla-comisiones' 
         : '/api/plantilla-excel';
       
-      // Crear enlace temporal para descarga
-      const link = document.createElement('a');
-      link.href = endpoint;
-      link.download = activeTab === 'comisiones' 
+      const filename = activeTab === 'comisiones' 
         ? 'plantilla_comisiones.xlsx' 
         : 'plantilla_tarifas.xlsx';
       
-      // Añadir al DOM temporalmente y hacer clic
+      toast({
+        title: 'Descargando...',
+        description: `Preparando plantilla de ${activeTab}...`
+      });
+      
+      // Fetch para obtener el archivo
+      const response = await fetch(endpoint);
+      
+      if (!response.ok) {
+        throw new Error(`Error HTTP: ${response.status}`);
+      }
+      
+      // Convertir a blob
+      const blob = await response.blob();
+      
+      // Crear URL temporal del blob
+      const url = window.URL.createObjectURL(blob);
+      
+      // Crear enlace temporal
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = filename;
+      link.style.display = 'none';
+      
+      // Añadir al DOM, hacer clic y limpiar
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
       
+      // Liberar memoria del blob
+      window.URL.revokeObjectURL(url);
+      
       toast({
-        title: 'Descarga iniciada',
-        description: `Plantilla de ${activeTab} descargándose...`
+        title: 'Descarga completada',
+        description: `${filename} se ha descargado correctamente`
       });
       
     } catch (error) {
       console.error('Error descargando plantilla:', error);
       toast({
+        title: 'Error en la descarga',
+        description: 'Prueba con "Descarga Directa" si este método no funciona',
+        variant: 'destructive'
+      });
+    }
+  };
+
+  const descargarDirecto = (tipo: 'tarifas' | 'comisiones') => {
+    try {
+      const endpoint = activeTab === 'comisiones' 
+        ? '/api/plantilla-comisiones' 
+        : '/api/plantilla-excel';
+      
+      // Método alternativo: abrir en nueva ventana que debe descargar automáticamente
+      const newWindow = window.open(endpoint, '_blank');
+      
+      // Si se bloquea el popup, usar location.href
+      setTimeout(() => {
+        if (newWindow && newWindow.closed) {
+          window.location.href = endpoint;
+        }
+      }, 100);
+      
+      toast({
+        title: 'Descarga iniciada',
+        description: 'Método directo activado. Si no se descarga, revisa los popups bloqueados.'
+      });
+      
+    } catch (error) {
+      console.error('Error en descarga directa:', error);
+      toast({
         title: 'Error',
-        description: 'No se pudo descargar la plantilla',
+        description: 'Prueba copiando y pegando la URL directamente en el navegador',
         variant: 'destructive'
       });
     }
@@ -312,6 +367,14 @@ export default function ManagePage() {
                   className="bg-green-50 border-green-200 text-green-800 hover:bg-green-100"
                 >
                   📥 Plantilla {activeTab === 'comisiones' ? 'Comisiones' : 'Tarifas'}
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => descargarDirecto(activeTab === 'comisiones' ? 'comisiones' : 'tarifas')}
+                  className="bg-yellow-50 border-yellow-200 text-yellow-800 hover:bg-yellow-100"
+                  title="Método alternativo si no funciona la descarga normal"
+                >
+                  ⬇️ Descarga Directa
                 </Button>
                 <Button 
                   variant="outline"
@@ -634,11 +697,17 @@ export default function ManagePage() {
               <h4 className="font-semibold mb-2">📋 Instrucciones de Uso</h4>
               <ul className="text-sm text-gray-600 space-y-1">
                 <li>• 📥 <strong>Plantilla Excel</strong>: Descarga formato correcto</li>
+                <li>• ⬇️ <strong>Descarga Directa</strong>: Método alternativo de descarga</li>
                 <li>• 📤 <strong>Importar Excel</strong>: Sube archivos masivos</li>
                 <li>• ✏️ <strong>Editar</strong>: Clic en botón azul para modificar</li>
                 <li>• 👁️ <strong>Activar/Desactivar</strong>: Clic en ojo</li>
                 <li>• 🗑️ <strong>Eliminar</strong>: Botón rojo con confirmación</li>
                 <li>• 🔍 <strong>Buscar</strong>: Filtrado en tiempo real</li>
+                <li className="mt-2 pt-2 border-t border-gray-300">
+                  <strong>URLs Directas (copia y pega en navegador):</strong>
+                </li>
+                <li>• Tarifas: <code className="bg-gray-100 px-1 rounded text-xs">/api/plantilla-excel</code></li>
+                <li>• Comisiones: <code className="bg-gray-100 px-1 rounded text-xs">/api/plantilla-comisiones</code></li>
               </ul>
             </div>
           </div>
