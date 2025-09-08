@@ -64,8 +64,34 @@ interface MatrizInteractivaProps {
 type CriterioOrden = 'precio' | 'ahorro' | 'comision' | 'puntuacion';
 type DireccionOrden = 'asc' | 'desc';
 
-// Color por defecto si no está definido en la base de datos
-const COLOR_POR_DEFECTO = '#6366F1';
+// Paleta de colores distintos para comercializadoras
+const COLORES_COMERCIALIZADORAS = [
+  '#EF4444', // Rojo
+  '#10B981', // Verde
+  '#3B82F6', // Azul
+  '#F59E0B', // Amarillo
+  '#8B5CF6', // Púrpura
+  '#EC4899', // Rosa
+  '#14B8A6', // Teal
+  '#F97316', // Naranja
+  '#6366F1', // Índigo
+  '#84CC16', // Lima
+  '#06B6D4', // Cyan
+  '#DC2626', // Rojo oscuro
+  '#059669', // Esmeralda
+  '#7C3AED', // Violeta
+  '#DB2777', // Rosa fuerte
+  '#0891B2', // Cielo
+  '#CA8A04', // Ámbar
+  '#BE123C', // Granate
+  '#047857', // Verde esmeralda
+  '#7C2D12'  // Naranja oscuro
+];
+
+// Función para asignar color único a comercializadora
+const asignarColorComercializadora = (index: number) => {
+  return COLORES_COMERCIALIZADORAS[index % COLORES_COMERCIALIZADORAS.length];
+};
 
 export default function MatrizInteractivaResultados({ 
   resultados, 
@@ -76,16 +102,20 @@ export default function MatrizInteractivaResultados({
   const [direccionOrden, setDireccionOrden] = useState<DireccionOrden>('desc');
   const [mostrarSoloPositivos, setMostrarSoloPositivos] = useState(false);
 
-  // Obtener comercializadoras únicas con sus colores de la BD
+  // Obtener comercializadoras únicas con sus colores únicos
   const comercializadorasConColor = useMemo(() => {
     const uniqueComercializadoras = new Map();
+    let colorIndex = 0;
+    
     resultados.forEach(resultado => {
       const com = resultado.tarifa.comercializadora;
       if (!uniqueComercializadoras.has(com.id)) {
         uniqueComercializadoras.set(com.id, {
           ...com,
-          color: com.color || COLOR_POR_DEFECTO // Usar color de BD o por defecto
+          // Usar color de BD si existe, sino asignar uno único
+          color: com.color || asignarColorComercializadora(colorIndex)
         });
+        colorIndex++;
       }
     });
     
@@ -129,10 +159,12 @@ export default function MatrizInteractivaResultados({
       title: {
         display: true,
         text: 'Matriz de Comparación: Coste vs Comisión',
+        color: '#111827',
         font: {
-          size: 16,
+          size: 18,
           weight: 'bold'
-        }
+        },
+        padding: 20
       },
       legend: {
         position: 'top' as const,
@@ -144,13 +176,15 @@ export default function MatrizInteractivaResultados({
           }
         },
         labels: {
-          color: '#374151', // Color gris oscuro para mejor contraste
+          color: '#111827', // Color muy oscuro para máximo contraste
           font: {
-            size: 12,
+            size: 13,
             weight: 'bold' as const
           },
-          padding: 15,
-          usePointStyle: true
+          padding: 20,
+          usePointStyle: true,
+          boxWidth: 12,
+          boxHeight: 12
         }
       },
       tooltip: {
@@ -201,13 +235,16 @@ export default function MatrizInteractivaResultados({
           }
         },
         ticks: {
-          color: '#374151',
+          color: '#1F2937',
           font: {
-            size: 11
-          }
+            size: 12,
+            weight: 'bold'
+          },
+          padding: 8
         },
         grid: {
-          color: 'rgba(156, 163, 175, 0.3)'
+          color: 'rgba(75, 85, 99, 0.2)',
+          lineWidth: 1
         }
       },
       y: {
@@ -223,13 +260,16 @@ export default function MatrizInteractivaResultados({
           }
         },
         ticks: {
-          color: '#374151',
+          color: '#1F2937',
           font: {
-            size: 11
-          }
+            size: 12,
+            weight: 'bold'
+          },
+          padding: 8
         },
         grid: {
-          color: 'rgba(156, 163, 175, 0.3)'
+          color: 'rgba(75, 85, 99, 0.2)',
+          lineWidth: 1
         }
       }
     },

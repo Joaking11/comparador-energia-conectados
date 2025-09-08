@@ -42,8 +42,8 @@ export default function InformeDetalladoComparativa({
     try {
       if (navigator.share) {
         await navigator.share({
-          title: `Comparativa - ${resultado.tarifa.nombreOferta}`,
-          text: `Informe de comparativa energética para ${comparativa.cliente.razonSocial}`,
+          title: `Comparativa - ${resultado.tarifas?.nombreOferta || 'Sin nombre'}`,
+          text: `Informe de comparativa energética para ${comparativa.clientes?.razonSocial || 'Cliente'}`,
           url: window.location.href
         });
       } else {
@@ -75,20 +75,20 @@ export default function InformeDetalladoComparativa({
   const periodosPotencia: Array<{periodo: string, precio: number}> = [];
   
   // Revisar qué períodos de energía están disponibles
-  if (resultado.tarifa.energiaP1) periodosEnergia.push({ periodo: 'P1', precio: resultado.tarifa.energiaP1 });
-  if (resultado.tarifa.energiaP2) periodosEnergia.push({ periodo: 'P2', precio: resultado.tarifa.energiaP2 });
-  if (resultado.tarifa.energiaP3) periodosEnergia.push({ periodo: 'P3', precio: resultado.tarifa.energiaP3 });
-  if (resultado.tarifa.energiaP4) periodosEnergia.push({ periodo: 'P4', precio: resultado.tarifa.energiaP4 });
-  if (resultado.tarifa.energiaP5) periodosEnergia.push({ periodo: 'P5', precio: resultado.tarifa.energiaP5 });
-  if (resultado.tarifa.energiaP6) periodosEnergia.push({ periodo: 'P6', precio: resultado.tarifa.energiaP6 });
+  if (resultado.tarifas?.energiaP1) periodosEnergia.push({ periodo: 'P1', precio: resultado.tarifas.energiaP1 });
+  if (resultado.tarifas?.energiaP2) periodosEnergia.push({ periodo: 'P2', precio: resultado.tarifas.energiaP2 });
+  if (resultado.tarifas?.energiaP3) periodosEnergia.push({ periodo: 'P3', precio: resultado.tarifas.energiaP3 });
+  if (resultado.tarifas?.energiaP4) periodosEnergia.push({ periodo: 'P4', precio: resultado.tarifas.energiaP4 });
+  if (resultado.tarifas?.energiaP5) periodosEnergia.push({ periodo: 'P5', precio: resultado.tarifas.energiaP5 });
+  if (resultado.tarifas?.energiaP6) periodosEnergia.push({ periodo: 'P6', precio: resultado.tarifas.energiaP6 });
   
   // Revisar qué períodos de potencia están disponibles
-  if (resultado.tarifa.potenciaP1) periodosPotencia.push({ periodo: 'P1', precio: resultado.tarifa.potenciaP1 });
-  if (resultado.tarifa.potenciaP2) periodosPotencia.push({ periodo: 'P2', precio: resultado.tarifa.potenciaP2 });
-  if (resultado.tarifa.potenciaP3) periodosPotencia.push({ periodo: 'P3', precio: resultado.tarifa.potenciaP3 });
-  if (resultado.tarifa.potenciaP4) periodosPotencia.push({ periodo: 'P4', precio: resultado.tarifa.potenciaP4 });
-  if (resultado.tarifa.potenciaP5) periodosPotencia.push({ periodo: 'P5', precio: resultado.tarifa.potenciaP5 });
-  if (resultado.tarifa.potenciaP6) periodosPotencia.push({ periodo: 'P6', precio: resultado.tarifa.potenciaP6 });
+  if (resultado.tarifas?.potenciaP1) periodosPotencia.push({ periodo: 'P1', precio: resultado.tarifas.potenciaP1 });
+  if (resultado.tarifas?.potenciaP2) periodosPotencia.push({ periodo: 'P2', precio: resultado.tarifas.potenciaP2 });
+  if (resultado.tarifas?.potenciaP3) periodosPotencia.push({ periodo: 'P3', precio: resultado.tarifas.potenciaP3 });
+  if (resultado.tarifas?.potenciaP4) periodosPotencia.push({ periodo: 'P4', precio: resultado.tarifas.potenciaP4 });
+  if (resultado.tarifas?.potenciaP5) periodosPotencia.push({ periodo: 'P5', precio: resultado.tarifas.potenciaP5 });
+  if (resultado.tarifas?.potenciaP6) periodosPotencia.push({ periodo: 'P6', precio: resultado.tarifas.potenciaP6 });
   
   // Distribución de consumo según el tipo de tarifa
   const getDistribucionConsumo = (tipoTarifa: string, numPeriodos: number) => {
@@ -104,7 +104,7 @@ export default function InformeDetalladoComparativa({
     return [0.25, 0.20, 0.20, 0.15, 0.10, 0.10];
   };
   
-  const distribucionConsumo = getDistribucionConsumo(resultado.tarifa.tarifa, periodosEnergia.length);
+  const distribucionConsumo = getDistribucionConsumo(resultado.tarifas?.tarifa || '2.0TD', periodosEnergia.length);
   
   // Cálculos por período usando datos reales
   const calculosPorPeriodo: any = {};
@@ -190,10 +190,10 @@ export default function InformeDetalladoComparativa({
       <div className="bg-gray-50 p-4 rounded-lg mb-4 border-l-4 border-primary">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="font-bold text-primary">Comercializadora:</span> {resultado.tarifa.comercializadora.nombre}
+            <span className="font-bold text-primary">Comercializadora:</span> {resultado.tarifas?.comercializadoras?.nombre || 'N/A'}
           </div>
           <div>
-            <span className="font-bold text-primary">Oferta:</span> {resultado.tarifa.nombreOferta}
+            <span className="font-bold text-primary">Oferta:</span> {resultado.tarifas?.nombreOferta || 'N/A'}
           </div>
         </div>
         
@@ -215,11 +215,11 @@ export default function InformeDetalladoComparativa({
             DATOS DEL CLIENTE
           </div>
           <div className="space-y-2">
-            <div><span className="font-bold text-blue-700">Razón Social:</span> {comparativa.cliente.razonSocial}</div>
-            <div><span className="font-bold text-blue-700">NIF / CIF:</span> {comparativa.cliente.cif || 'N/A'}</div>
-            <div><span className="font-bold text-blue-700">Dirección:</span> {comparativa.cliente.direccion || 'N/A'}</div>
-            <div><span className="font-bold text-blue-700">Localidad:</span> {comparativa.cliente.localidad || 'N/A'}</div>
-            <div><span className="font-bold text-blue-700">Provincia:</span> {comparativa.cliente.provincia || 'N/A'}</div>
+            <div><span className="font-bold text-blue-700">Razón Social:</span> {comparativa.clientes?.razonSocial || 'N/A'}</div>
+            <div><span className="font-bold text-blue-700">NIF / CIF:</span> {comparativa.clientes?.cif || 'N/A'}</div>
+            <div><span className="font-bold text-blue-700">Dirección:</span> {comparativa.clientes?.direccion || 'N/A'}</div>
+            <div><span className="font-bold text-blue-700">Localidad:</span> {comparativa.clientes?.localidad || 'N/A'}</div>
+            <div><span className="font-bold text-blue-700">Provincia:</span> {comparativa.clientes?.provincia || 'N/A'}</div>
           </div>
         </div>
         
@@ -248,10 +248,10 @@ export default function InformeDetalladoComparativa({
       <div className="bg-yellow-50 p-4 rounded-lg mb-4 border border-yellow-200">
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <span className="font-bold text-yellow-800">Tarifa Electricidad ofertada por:</span> <span className="text-yellow-900">{resultado.tarifa.comercializadora.nombre}</span>
+            <span className="font-bold text-yellow-800">Tarifa Electricidad ofertada por:</span> <span className="text-yellow-900">{resultado.tarifas?.comercializadoras?.nombre || 'N/A'}</span>
           </div>
           <div className="text-right">
-            <span className="bg-yellow-200 px-3 py-1 rounded font-bold text-yellow-800">{resultado.tarifa.tarifa}</span>
+            <span className="bg-yellow-200 px-3 py-1 rounded font-bold text-yellow-800">{resultado.tarifas?.tarifa || 'N/A'}</span>
           </div>
         </div>
         
@@ -485,7 +485,7 @@ export default function InformeDetalladoComparativa({
                   ✅ <strong>Recomendación: CAMBIO FAVORABLE</strong>
                 </p>
                 <p className="text-gray-700">
-                  Esta oferta de <strong>{resultado.tarifa.comercializadora.nombre}</strong> representa 
+                  Esta oferta de <strong>{resultado.tarifas?.comercializadoras?.nombre || 'N/A'}</strong> representa 
                   un ahorro anual de <strong>{(ahorroAnual * 12).toFixed(0)}€</strong> ({porcentajeAhorro.toFixed(1)}%) 
                   comparado con su facturación actual.
                 </p>
@@ -535,13 +535,13 @@ export default function InformeDetalladoComparativa({
         <CardContent>
           <div className="space-y-3 text-sm">
             <div>
-              <span className="font-semibold">Tarifa de Acceso:</span> {resultado.tarifa.tarifa}
+              <span className="font-semibold">Tarifa de Acceso:</span> {resultado.tarifas?.tarifa || 'N/A'}
             </div>
             <div>
-              <span className="font-semibold">Tipo de Oferta:</span> {resultado.tarifa.tipoOferta}
+              <span className="font-semibold">Tipo de Oferta:</span> {resultado.tarifas?.tipoOferta || 'N/A'}
             </div>
             <div>
-              <span className="font-semibold">Zona Tarifaria:</span> {resultado.tarifa.zona}
+              <span className="font-semibold">Zona Tarifaria:</span> {resultado.tarifas?.zona || 'N/A'}
             </div>
             <div>
               <span className="font-semibold">Período Analizado:</span> {diasFacturacion} días
@@ -586,7 +586,7 @@ export default function InformeDetalladoComparativa({
         <div className="sticky top-0 bg-white border-b p-4 flex items-center justify-between print-hidden">
           <div className="flex items-center space-x-4">
             <h2 className="text-xl font-bold text-gray-900">
-              Comparativa - {resultado.tarifa.nombreOferta}
+              Comparativa - {resultado.tarifas?.nombreOferta || 'Sin nombre'}
             </h2>
             <div className="flex items-center space-x-2">
               <Button
