@@ -109,19 +109,40 @@ async function importExcelData() {
       await prisma.tarifa.create({
         data: {
           comercializadoraId: comercializadora.id,
-          nombreOferta: row[1]?.toString().trim() || '',
-          tarifa: row[2]?.toString().trim() || '',
-          tipoOferta: row[3]?.toString().trim() || '',
-          zona: row[4]?.toString().trim() || '',
-          rango: row[5]?.toString().trim() || '',
-          rangoDesde: parseExcelValue(row[6]) || 0,
-          rangoHasta: parseExcelValue(row[7]) || 999999,
-          energiaP1: parseExcelValue(row[8]) || 0,
-          energiaP2: parseExcelValue(row[9]),
-          energiaP3: parseExcelValue(row[10]),
-          potenciaP1: parseExcelValue(row[11]),
-          potenciaP2: parseExcelValue(row[12]),
-          potenciaP3: parseExcelValue(row[13]),
+          nombreOferta: row[1]?.toString().trim() || '', // Columna 1: Oferta
+          energiaVerde: row[2]?.toString().toLowerCase() === 'si' || false, // Columna 2: ¿Energía verde?
+          tarifa: row[3]?.toString().trim() || '', // Columna 3: Tarifa (2.0TD, 3.0TD, etc.)
+          zona: row[4]?.toString().trim() || '', // Columna 4: Zona
+          tipoOferta: row[5]?.toString().trim() || '', // Columna 5: Tipo oferta
+          rango: row[6]?.toString().trim() || '', // Columna 6: Rango
+          rangoDesde: parseExcelValue(row[7]) || 0, // Columna 7: Desde
+          rangoHasta: parseExcelValue(row[8]) || null, // Columna 8: Hasta
+          tieneFee: row[9]?.toString().toLowerCase().includes('si') || false, // Columna 9: ¿FEE?
+          energiaP1: parseExcelValue(row[10]) || 0, // Columna 10: Energía P1
+          energiaP2: parseExcelValue(row[11]) || 0, // Columna 11: Energía P2
+          energiaP3: parseExcelValue(row[12]) || 0, // Columna 12: Energía P3
+          energiaP4: parseExcelValue(row[13]) || 0, // Columna 13: Energía P4
+          energiaP5: parseExcelValue(row[14]) || 0, // Columna 14: Energía P5
+          energiaP6: parseExcelValue(row[15]) || 0, // Columna 15: Energía P6
+          energiaDescuento: parseExcelValue(row[16]) || 0, // Columna 16: Energía dto.
+          potenciaP1: parseExcelValue(row[17]) || 0, // Columna 17: Potencia P1
+          potenciaP2: parseExcelValue(row[18]) || 0, // Columna 18: Potencia P2
+          potenciaP3: parseExcelValue(row[19]) || 0, // Columna 19: Potencia P3
+          potenciaP4: parseExcelValue(row[20]) || 0, // Columna 20: Potencia P4
+          potenciaP5: parseExcelValue(row[21]) || 0, // Columna 21: Potencia P5
+          potenciaP6: parseExcelValue(row[22]) || 0, // Columna 22: Potencia P6
+          potenciaDescuento: parseExcelValue(row[23]) || 0, // Columna 23: Potencia dto.
+          feeEnergia: parseExcelValue(row[24]) || 0, // Columna 24: FEE
+          feeEnergiaMinimo: parseExcelValue(row[25]) || 0, // Columna 25: FEE mínimo
+          feeEnergiaMaximo: parseExcelValue(row[26]) || 0, // Columna 26: FEE máximo
+          feePotencia: parseExcelValue(row[27]) || 0, // Columna 27: FEE (potencia)
+          feePotenciaMinimo: parseExcelValue(row[28]) || 0, // Columna 28: FEE mínimo (potencia)
+          feePotenciaMaximo: parseExcelValue(row[29]) || 0, // Columna 29: FEE máximo (potencia)
+          validaHasta: null, // Columna 30: Válida hasta (formato de fecha incompatible)
+          // comision: parseExcelValue(row[31]) || 0, // Columna 31: Comisión (se maneja en tabla separada)
+          costeGestion: parseExcelValue(row[32]) || 0, // Columna 32: Coste gestión
+          tipoCliente: row[33]?.toString().trim() || '', // Columna 33: Tipo cliente
+          costeTotal: parseExcelValue(row[34]) || 0, // Columna 34: Coste total
           activa: true
         }
       });
