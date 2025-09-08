@@ -120,9 +120,9 @@ export default function InformeDetalladoComparativa({
   
   // Calcular costos de potencia
   periodosPotencia.forEach((periodoP, index) => {
-    // Fórmula correcta: kW contratados × precio × días de facturación
+    // Fórmula correcta: kW contratados × precio (€/kW/mes) × (días / 30)
     if (!calculosPorPeriodo[periodoP.periodo]) calculosPorPeriodo[periodoP.periodo] = {};
-    calculosPorPeriodo[periodoP.periodo].costoPotencia = potenciaContratada * periodoP.precio * diasFacturacion;
+    calculosPorPeriodo[periodoP.periodo].costoPotencia = potenciaContratada * periodoP.precio * (diasFacturacion / 30);
     calculosPorPeriodo[periodoP.periodo].potencia = potenciaContratada;
     calculosPorPeriodo[periodoP.periodo].precioPotencia = periodoP.precio;
   });
@@ -298,7 +298,7 @@ export default function InformeDetalladoComparativa({
             return (
               <div key={periodoP.periodo} className="flex justify-between text-xs bg-white p-2 rounded border-l-2 border-purple-300">
                 <span className="text-purple-700">
-                  <span className="font-bold text-purple-800">{periodoP.periodo}:</span> {periodoP.precio.toFixed(6)} €/kW mes × {calculo.potencia.toFixed(2)} kW
+                  <span className="font-bold text-purple-800">{periodoP.periodo}:</span> {periodoP.precio.toFixed(6)} €/kW·mes × {calculo.potencia.toFixed(2)} kW × {(diasFacturacion/30).toFixed(2)} meses
                 </span>
                 <span className="font-bold text-purple-800">{calculo.costoPotencia.toFixed(2)} €</span>
               </div>

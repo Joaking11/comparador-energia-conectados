@@ -162,8 +162,8 @@ export class CalculationEngine {
       // PASO 7: Buscar comisión correspondiente
       const comisionGanada = await this.findMatchingComision(comparativa, tarifa);
 
-      // PASO 8: Calcular ahorro vs factura actual
-      const ahorroAnual = Math.max(0, comparativa.totalFacturaElectricidad - total);
+      // PASO 8: Calcular ahorro vs factura actual (permitir valores negativos)
+      const ahorroAnual = comparativa.totalFacturaElectricidad - total;
 
       return {
         tarifaId: tarifa.id,
