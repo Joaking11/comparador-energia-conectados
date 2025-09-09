@@ -12,6 +12,28 @@ export async function PUT(
     const { id } = params;
     const body = await request.json();
     
+    console.log('🔧 PUT Tarifa:', { id, body });
+    
+    // Si solo viene activa, es un toggle de estado
+    if (Object.keys(body).length === 1 && body.hasOwnProperty('activa')) {
+      console.log('👁️ Toggle estado tarifa:', { id, activa: body.activa });
+      
+      const tarifaActualizada = await prisma.tarifas.update({
+        where: { id },
+        data: { 
+          activa: Boolean(body.activa),
+          updatedAt: new Date()
+        },
+        include: {
+          comercializadoras: true
+        }
+      });
+
+      console.log('✅ Tarifa toggle completado:', tarifaActualizada.activa);
+      return NextResponse.json(tarifaActualizada);
+    }
+    
+    // Si vienen más campos, es una actualización completa
     const {
       comercializadoraId,
       nombreOferta,
@@ -40,6 +62,8 @@ export async function PUT(
       costeGestion,
       activa
     } = body;
+
+    console.log('📝 Actualización completa de tarifa');
 
     const updateData: any = {
       comercializadoraId,
@@ -84,7 +108,7 @@ export async function PUT(
 
     return NextResponse.json(tarifaActualizada);
   } catch (error) {
-    console.error('Error actualizando tarifa:', error);
+    console.error('❌ Error actualizando tarifa:', error);
     return NextResponse.json(
       { error: 'Error actualizando tarifa', details: error instanceof Error ? error.message : 'Error desconocido' },
       { status: 500 }

@@ -170,82 +170,35 @@ export default function ManagePage() {
     }
   };
 
-  const descargarPlantilla = async (tipo: 'tarifas' | 'comisiones') => {
+  const descargarPlantilla = (tipo: 'tarifas' | 'comisiones') => {
     try {
       const endpoint = tipo === 'comisiones' 
         ? '/api/plantilla-comisiones' 
         : '/api/plantilla-excel';
       
-      const filename = tipo === 'comisiones' 
-        ? 'COMISIONES_completas.xlsx' 
-        : 'TARIFAS_completas_P1-P6.xlsx';
-      
-      console.log('🎯 Iniciando descarga:', { endpoint, filename, tipo });
+      console.log('🎯 Descarga directa plantilla:', { endpoint, tipo });
       
       toast({
-        title: 'Descargando...',
-        description: `Preparando plantilla de ${tipo}...`
+        title: '⬇️ Descargando...',
+        description: `Iniciando descarga de ${tipo}. Si no funciona, usa "Copiar URL"`
       });
       
-      // Fetch para obtener el archivo con headers específicos
-      const response = await fetch(endpoint, {
-        method: 'GET',
-        headers: {
-          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-          'Cache-Control': 'no-cache'
-        }
-      });
+      // Método más directo: usar window.location.href
+      window.location.href = endpoint;
       
-      console.log('📡 Respuesta recibida:', {
-        status: response.status,
-        statusText: response.statusText,
-        headers: Object.fromEntries(response.headers.entries())
-      });
-      
-      if (!response.ok) {
-        const errorText = await response.text();
-        console.error('❌ Error en respuesta:', errorText);
-        throw new Error(`Error HTTP: ${response.status} - ${errorText}`);
-      }
-      
-      // Convertir a blob
-      const blob = await response.blob();
-      console.log('📁 Blob creado:', { size: blob.size, type: blob.type });
-      
-      // Verificar que el blob tiene contenido
-      if (blob.size === 0) {
-        throw new Error('El archivo descargado está vacío');
-      }
-      
-      // Crear URL temporal del blob
-      const url = window.URL.createObjectURL(blob);
-      
-      // Crear enlace temporal
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = filename;
-      link.style.display = 'none';
-      
-      // Añadir al DOM, hacer clic y limpiar
-      document.body.appendChild(link);
-      link.click();
-      
-      // Limpiar después de un breve retraso
+      // Alternativa: abrir en ventana nueva
       setTimeout(() => {
-        document.body.removeChild(link);
-        window.URL.revokeObjectURL(url);
-      }, 100);
-      
-      toast({
-        title: '✅ Descarga completada',
-        description: `${filename} se ha descargado correctamente`
-      });
+        const newWindow = window.open(endpoint, '_blank');
+        if (!newWindow) {
+          console.log('Popup bloqueado, usando método directo');
+        }
+      }, 500);
       
     } catch (error) {
-      console.error('❌ Error descargando plantilla:', error);
+      console.error('❌ Error descarga plantilla:', error);
       toast({
         title: 'Error en la descarga',
-        description: `Error: ${error instanceof Error ? error.message : 'Desconocido'}. Prueba con "Descarga Directa"`,
+        description: 'Usa el botón "Copiar URL" como alternativa',
         variant: 'destructive'
       });
     }
@@ -257,37 +210,39 @@ export default function ManagePage() {
         ? '/api/plantilla-comisiones' 
         : '/api/plantilla-excel';
       
-      console.log('🔗 Descarga directa:', { endpoint, tipo });
+      console.log('🔗 Descarga directa alternativa:', { endpoint, tipo });
       
-      // Crear un enlace temporal invisible que force la descarga
-      const link = document.createElement('a');
-      link.href = endpoint;
-      link.download = ''; // Esto debería forzar la descarga
-      link.target = '_blank';
-      link.style.display = 'none';
+      // Método 1: Usar iframe oculto (funciona mejor en algunos navegadores)
+      const iframe = document.createElement('iframe');
+      iframe.style.display = 'none';
+      iframe.src = endpoint;
+      document.body.appendChild(iframe);
       
-      // Añadir al DOM
-      document.body.appendChild(link);
-      
-      // Hacer clic programáticamente
-      link.click();
-      
-      // Limpiar después de un momento
+      // Limpiar el iframe después de un momento
       setTimeout(() => {
-        document.body.removeChild(link);
-      }, 100);
+        document.body.removeChild(iframe);
+      }, 3000);
       
       toast({
-        title: '⬇️ Descarga directa iniciada',
-        description: `Abriendo ${tipo} en nueva ventana. Si no funciona, usa "Copiar URL"`
+        title: '🔄 Método alternativo',
+        description: `Intentando descarga con iframe para ${tipo}. Si falla, usa "Copiar URL"`
       });
       
     } catch (error) {
       console.error('❌ Error en descarga directa:', error);
+      
+      // Fallback final: mostrar la URL directamente
+      const endpoint = tipo === 'comisiones' 
+        ? '/api/plantilla-comisiones' 
+        : '/api/plantilla-excel';
+      const urlCompleta = `${window.location.origin}${endpoint}`;
+      
+      alert(`Copia esta URL en tu navegador:\n\n${urlCompleta}`);
+      
       toast({
-        title: 'Error',
-        description: 'Prueba el botón "Copiar URL" para obtener el enlace directo',
-        variant: 'destructive'
+        title: 'URL de descarga',
+        description: 'Revisa la alerta con la URL para copiar',
+        variant: 'default'
       });
     }
   };
@@ -517,6 +472,32 @@ export default function ManagePage() {
                   title="Copia la URL completa al portapapeles"
                 >
                   📋 Copiar URL
+                </Button>
+                <Button 
+                  variant="outline"
+                  onClick={() => {
+                    const tipo = activeTab === 'comisiones' ? 'comisiones' : 'tarifas';
+                    const endpoint = tipo === 'comisiones' 
+                      ? '/api/plantilla-comisiones' 
+                      : '/api/plantilla-excel';
+                    const urlCompleta = `${window.location.origin}${endpoint}`;
+                    
+                    // Mostrar en un modal o alert para copiar fácilmente
+                    const mensaje = `📥 URL DE DESCARGA DIRECTA:\n\n${urlCompleta}\n\n✅ Copia y pega esta URL en una nueva pestaña del navegador para descargar directamente el Excel de ${tipo}.`;
+                    
+                    if (confirm(mensaje + "\n\n¿Quieres que se abra automáticamente?")) {
+                      window.open(urlCompleta, '_blank');
+                    }
+                    
+                    toast({
+                      title: '🔗 URL mostrada',
+                      description: `URL de ${tipo} lista para copiar de la ventana emergente`
+                    });
+                  }}
+                  className="bg-orange-50 border-orange-200 text-orange-800 hover:bg-orange-100"
+                  title="Muestra la URL en texto para copiar manualmente"
+                >
+                  🔗 Mostrar URL
                 </Button>
                 <Button 
                   variant="outline"
@@ -838,16 +819,23 @@ export default function ManagePage() {
             <div>
               <h4 className="font-semibold mb-2">📋 Instrucciones de Uso</h4>
               <ul className="text-sm text-gray-600 space-y-1">
-                <li>• 📥 <strong>Plantilla Excel</strong>: Descarga formato correcto (método principal)</li>
-                <li>• ⬇️ <strong>Descarga Directa</strong>: Abre URL en nueva ventana</li>
+                <li>• 📥 <strong>Plantilla Excel</strong>: Descarga directa usando window.location</li>
+                <li>• ⬇️ <strong>Descarga Directa</strong>: Método iframe alternativo</li>
                 <li>• 📋 <strong>Copiar URL</strong>: Copia URL completa al portapapeles</li>
+                <li>• 🔗 <strong>Mostrar URL</strong>: Ventana emergente con URL para copiar fácilmente</li>
                 <li>• 📤 <strong>Importar Excel</strong>: Sube archivos masivos</li>
                 <li>• ✏️ <strong>Editar</strong>: Clic en botón azul para modificar</li>
-                <li>• 👁️ <strong>Activar/Desactivar</strong>: Clic en ojo</li>
+                <li>• 👁️ <strong>Activar/Desactivar</strong>: Clic en ojo (ahora corregido para tarifas)</li>
                 <li>• 🗑️ <strong>Eliminar</strong>: Botón rojo con confirmación</li>
                 <li>• 🔍 <strong>Buscar</strong>: Filtrado en tiempo real</li>
                 <li className="mt-2 pt-2 border-t border-gray-300">
-                  <strong>📋 Si nada funciona, copia estas URLs completas:</strong>
+                  <strong>✨ Nuevo: Exportación de comisiones mejorada</strong>
+                </li>
+                <li>• Las tarifas con FEE ahora muestran porcentajes en lugar de comisión fija</li>
+                <li>• Columna "Tipo Comisión" indica si es "Fija" o "Porcentual (FEE)"</li>
+                <li>• Nueva columna "Energía Verde" para ofertas ecológicas</li>
+                <li className="mt-2 pt-2 border-t border-gray-300">
+                  <strong>📋 URLs de emergencia (copia y pega):</strong>
                 </li>
                 <li>• Tarifas: <code className="bg-gray-100 px-1 rounded text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/api/plantilla-excel</code></li>
                 <li>• Comisiones: <code className="bg-gray-100 px-1 rounded text-xs break-all">{typeof window !== 'undefined' ? window.location.origin : ''}/api/plantilla-comisiones</code></li>

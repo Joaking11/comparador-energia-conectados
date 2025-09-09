@@ -25,22 +25,41 @@ export async function GET() {
     console.log(`💰 ENDPOINT COMISIONES: Generando plantilla con ${comisionesReales.length} comisiones reales (NO tarifas)`);
 
     // Convertir las comisiones reales al formato Excel
-    const plantillaComisiones = comisionesReales.map((comision: any) => ({
-      'Comercializadora': comision.comercializadoras?.nombre || 'Sin nombre',
-      'Oferta': comision.nombreOferta || 'N/A',
-      'Tarifa': comision.tarifa || 'N/A',
-      'Zona': comision.zona || 'PENINSULA',
-      'Tipo Oferta': comision.tipoOferta || 'Empresas',
-      'Rango': comision.rango || 'Estándar',
-      'Desde (€)': Number(comision.rangoDesde || 0),
-      'Hasta (€)': Number(comision.rangoHasta || 0),
-      'Comisión (%)': Number(comision.comision || 0),
-      'Tiene Fee': comision.tieneFee ? 'SÍ' : 'NO',
-      'Fee Energía (%)': Number(comision.porcentajeFeeEnergia || 0),
-      'Fee Potencia (%)': Number(comision.porcentajeFeePotencia || 0),
-      'Activa': comision.activa ? 'SÍ' : 'NO',
-      'ID': comision.id
-    }));
+    const plantillaComisiones = comisionesReales.map((comision: any) => {
+      
+      // Lógica para mostrar correctamente las comisiones con/sin FEE
+      let tipoComision = 'Fija';
+      let valorComision = Number(comision.comision || 0);
+      let feeEnergia = Number(comision.porcentajeFeeEnergia || 0);  
+      let feePotencia = Number(comision.porcentajeFeePotencia || 0);
+      
+      // Si tiene FEE, priorizamos mostrar los porcentajes
+      if (comision.tieneFee && (feeEnergia > 0 || feePotencia > 0)) {
+        tipoComision = 'Porcentual (FEE)';
+      } else if (valorComision > 0) {
+        tipoComision = 'Fija';
+      }
+      
+      return {
+        'Comercializadora': comision.comercializadoras?.nombre || 'Sin nombre',
+        'Oferta': comision.nombreOferta || 'N/A',
+        'Tarifa': comision.tarifa || 'N/A',
+        'Zona': comision.zona || 'PENINSULA',
+        'Tipo Oferta': comision.tipoOferta || 'Empresas',
+        'Tipo Comisión': tipoComision,
+        'Rango': comision.rango || 'Estándar',
+        'Desde (€)': Number(comision.rangoDesde || 0),
+        'Hasta (€)': Number(comision.rangoHasta || 0),
+        'Comisión Fija (€)': comision.tieneFee ? 0 : valorComision, // Solo mostrar si no tiene FEE
+        'Fee Energía (%)': feeEnergia,
+        'Fee Potencia (%)': feePotencia,
+        'Tiene Fee': comision.tieneFee ? 'SÍ' : 'NO',
+        'Energía Verde': comision.energiaVerde ? 'SÍ' : 'NO',
+        'Activa': comision.activa ? 'SÍ' : 'NO',
+        'ID': comision.id,
+        'Fecha Actualización': new Date(comision.updatedAt).toLocaleDateString('es-ES')
+      };
+    });
 
     // Si no hay comisiones, crear mensaje informativo
     if (plantillaComisiones.length === 0) {
@@ -50,15 +69,18 @@ export async function GET() {
         'Tarifa': 'N/A',
         'Zona': 'N/A',
         'Tipo Oferta': 'N/A',
+        'Tipo Comisión': 'N/A',
         'Rango': 'N/A',
         'Desde (€)': 0,
         'Hasta (€)': 0,
-        'Comisión (%)': 0,
-        'Tiene Fee': 'NO',
+        'Comisión Fija (€)': 0,
         'Fee Energía (%)': 0,
         'Fee Potencia (%)': 0,
+        'Tiene Fee': 'NO',
+        'Energía Verde': 'NO',
         'Activa': 'NO',
-        'ID': 0
+        'ID': 0,
+        'Fecha Actualización': 'N/A'
       });
     }
 
@@ -66,22 +88,25 @@ export async function GET() {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(plantillaComisiones);
     
-    // Configurar anchos de columna para las nuevas columnas
+    // Configurar anchos de columna para todas las columnas
     const wscols = [
       { wch: 20 }, // Comercializadora
       { wch: 25 }, // Oferta
       { wch: 10 }, // Tarifa
       { wch: 12 }, // Zona
       { wch: 15 }, // Tipo Oferta
+      { wch: 18 }, // Tipo Comisión
       { wch: 15 }, // Rango
       { wch: 12 }, // Desde (€)
       { wch: 12 }, // Hasta (€)
-      { wch: 15 }, // Comisión (%)
+      { wch: 16 }, // Comisión Fija (€)
+      { wch: 16 }, // Fee Energía (%)
+      { wch: 16 }, // Fee Potencia (%)
       { wch: 12 }, // Tiene Fee
-      { wch: 15 }, // Fee Energía (%)
-      { wch: 15 }, // Fee Potencia (%)
+      { wch: 14 }, // Energía Verde
       { wch: 8 },  // Activa
-      { wch: 8 }   // ID
+      { wch: 8 },  // ID
+      { wch: 16 }  // Fecha Actualización
     ];
     ws['!cols'] = wscols;
 
@@ -97,16 +122,21 @@ export async function GET() {
       { 'INSTRUCCIONES': '' },
       { 'INSTRUCCIONES': '📋 Descripción de columnas:' },
       { 'INSTRUCCIONES': '• Comercializadora: Nombre de la empresa energética' },
+      { 'INSTRUCCIONES': '• Oferta: Nombre específico de la tarifa comercial' },
       { 'INSTRUCCIONES': '• Tarifa: Código oficial (2.0TD, 3.0TD, 6.1TD, etc.)' },
       { 'INSTRUCCIONES': '• Zona: PENINSULA, BALEARES, CANARIAS, CEUTA_MELILLA' },
-      { 'INSTRUCCIONES': '• Tipo Cliente: Residencial, Empresas, Industrial, etc.' },
-      { 'INSTRUCCIONES': '• Comisión Energía (%): Porcentaje sobre el coste de energía' },
-      { 'INSTRUCCIONES': '• Comisión Potencia (%): Porcentaje sobre el coste de potencia' },
-      { 'INSTRUCCIONES': '• Fee Fijo Energía (€/MWh): Comisión fija por MWh consumido' },
-      { 'INSTRUCCIONES': '• Fee Fijo Potencia (€/kW): Comisión fija por kW contratado' },
-      { 'INSTRUCCIONES': '• Mínimo/Máximo Energía/Potencia: Límites para aplicar comisiones' },
-      { 'INSTRUCCIONES': '• Observaciones: Condiciones especiales y notas' },
+      { 'INSTRUCCIONES': '• Tipo Oferta: Residencial, Empresas, Industrial, etc.' },
+      { 'INSTRUCCIONES': '• Tipo Comisión: "Fija" o "Porcentual (FEE)" según el tipo' },
+      { 'INSTRUCCIONES': '• Rango: Clasificación o segmento (E=Energía, P=Potencia)' },
+      { 'INSTRUCCIONES': '• Desde/Hasta (€): Rango de facturación para aplicar comisión' },
+      { 'INSTRUCCIONES': '• Comisión Fija (€): Importe fijo mensual (solo si no tiene FEE)' },
+      { 'INSTRUCCIONES': '• Fee Energía (%): Porcentaje sobre coste energía (tarifas FEE)' },
+      { 'INSTRUCCIONES': '• Fee Potencia (%): Porcentaje sobre coste potencia (tarifas FEE)' },
+      { 'INSTRUCCIONES': '• Tiene Fee: SÍ=usa porcentajes, NO=usa comisión fija' },
+      { 'INSTRUCCIONES': '• Energía Verde: SÍ si incluye certificados verdes' },
+      { 'INSTRUCCIONES': '• Activa: SÍ/NO - indica si la comisión está disponible' },
       { 'INSTRUCCIONES': '• ID: Identificador único interno' },
+      { 'INSTRUCCIONES': '• Fecha Actualización: Última modificación del registro' },
       { 'INSTRUCCIONES': '' },
       { 'INSTRUCCIONES': '💰 Tipos de comisión:' },
       { 'INSTRUCCIONES': '• Porcentual: Se aplica el % sobre el coste calculado' },
