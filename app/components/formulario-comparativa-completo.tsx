@@ -101,6 +101,7 @@ interface FormDataCompleto {
     terminoVariable: number | string;
     excesoPotencia: number | string;
     compensacionExcedentes: number | string;
+    alquilerEquipos: number | string;
     impuesto: number | string;
     iva: number | string;
     total: number | string;
@@ -207,6 +208,7 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
         terminoVariable: datosOCR.facturaElectricidad?.terminoVariable || '',
         excesoPotencia: datosOCR.facturaElectricidad?.excesoPotencia || 0,
         compensacionExcedentes: datosOCR.facturaElectricidad?.compensacionExcedentes || 0,
+        alquilerEquipos: datosOCR.facturaElectricidad?.alquilerEquipos || 0,
         impuesto: datosOCR.facturaElectricidad?.impuesto || '',
         iva: datosOCR.facturaElectricidad?.iva || '',
         total: datosOCR.facturaElectricidad?.total || ''
@@ -291,6 +293,7 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
       terminoVariable: '',
       excesoPotencia: 0,
       compensacionExcedentes: 0,
+      alquilerEquipos: 0,
       impuesto: '',
       iva: '',
       total: ''
@@ -468,6 +471,7 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
           terminoVariableElectricidad: parseFloatSafe(formData.facturaElectricidad.terminoVariable),
           excesoPotencia: parseFloatSafe(formData.facturaElectricidad.excesoPotencia),
           compensacionExcedentes: parseFloatSafe(formData.facturaElectricidad.compensacionExcedentes) || 0,
+          alquilerEquipos: parseFloatSafe(formData.facturaElectricidad.alquilerEquipos) || 0,
           impuestoElectricidad: parseFloatSafe(formData.facturaElectricidad.impuesto),
           ivaElectricidad: parseFloatSafe(formData.facturaElectricidad.iva),
           totalFacturaElectricidad: parseFloatSafe(formData.facturaElectricidad.total),
@@ -1214,6 +1218,18 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
                       placeholder="0.00"
                       value={formData.facturaElectricidad.compensacionExcedentes}
                       onChange={(e) => updateFormData('facturaElectricidad', 'compensacionExcedentes', e.target.value)}
+                    />
+                  </div>
+                  
+                  <div>
+                    <Label htmlFor="alquilerEquipos">Alquiler de Equipos/Contador (€)</Label>
+                    <Input
+                      id="alquilerEquipos"
+                      type="number"
+                      step="0.01"
+                      placeholder="5.91"
+                      value={formData.facturaElectricidad.alquilerEquipos}
+                      onChange={(e) => updateFormData('facturaElectricidad', 'alquilerEquipos', e.target.value)}
                     />
                   </div>
                   

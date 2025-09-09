@@ -68,6 +68,7 @@ interface DatosExtraidos {
     terminoVariable: number;
     excesoPotencia: number;
     compensacionExcedentes: number; // kW de compensación de excedentes
+    alquilerEquipos: number; // € alquiler de contador/equipos
     impuesto: number;
     iva: number;
     total: number;

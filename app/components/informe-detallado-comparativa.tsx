@@ -181,8 +181,8 @@ export default function InformeDetalladoComparativa({
     const periodo = periodoEn.periodo as keyof typeof consumosReales;
     const consumoRealPeriodo = consumosReales[periodo] || 0;
     
-    // Convertir consumo anual a consumo del período de facturación
-    const consumoPeriodo = (consumoRealPeriodo / 365) * diasFacturacion;
+    // USAR CONSUMO REAL DIRECTO - Ya es del período de facturación, no anual
+    const consumoPeriodo = consumoRealPeriodo; // SIN conversión
     
     if (!calculosPorPeriodo[periodoEn.periodo]) calculosPorPeriodo[periodoEn.periodo] = {};
     calculosPorPeriodo[periodoEn.periodo].costoEnergia = periodoEn.precio * consumoPeriodo;
@@ -217,7 +217,7 @@ export default function InformeDetalladoComparativa({
   // Conceptos adicionales USANDO VALORES REALES
   const bonoSocial = diasFacturacion * (4.6510 / 365);
   const impuestoElectricidad = comparativa.impuestoElectricidad || ((totalTerminoPotencia + totalTerminoEnergia) * 0.0511);
-  const alquilerEquipos = comparativa.terminoFijoElectricidad || 1.00; // Usar valor real, no hardcodeado
+  const alquilerEquipos = comparativa.alquilerEquipos || 0; // Valor real del alquiler de equipos
   const excesosPotencia = comparativa.excesoPotencia || 0; // Campo que faltaba
   const costeGestionTarifa = resultado.tarifas?.costeGestion || 0; // Coste de gestión de la tarifa
   const kwCompensacionExcedentes = comparativa.compensacionExcedentes || 0; // kW reales del OCR

@@ -87,6 +87,7 @@ ESTRUCTURA JSON REQUERIDA:
     "terminoVariable": "Término variable en € (número)",
     "excesoPotencia": "Exceso potencia en € o 0",
     "compensacionExcedentes": "kW de compensación excedentes o 0",
+    "alquilerEquipos": "Alquiler de contador/equipos en € o 0",
     "impuesto": "Impuesto electricidad en € (número)",
     "iva": "IVA en € (número)",
     "total": "Total factura en € (número)"
