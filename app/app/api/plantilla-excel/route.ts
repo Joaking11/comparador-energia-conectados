@@ -21,9 +21,9 @@ export async function GET() {
       ]
     });
 
-    console.log(`📊 Generando plantilla con ${tarifasReales.length} tarifas reales`);
+    console.log(`🎯 ENDPOINT TARIFAS: Generando plantilla con ${tarifasReales.length} tarifas reales (P1-P6 + coste gestión)`);
 
-    // Convertir las tarifas reales al formato Excel
+    // Convertir las tarifas reales al formato Excel - TODOS LOS PERÍODOS P1-P6
     const plantillaData = tarifasReales.map((tarifa: any) => ({
       'Comercializadora': tarifa.comercializadoras?.nombre || 'Sin nombre',
       'Oferta': tarifa.nombreOferta || 'Oferta estándar',
@@ -32,9 +32,16 @@ export async function GET() {
       'P1 Energía (€/MWh)': Number(tarifa.energiaP1 || 0),
       'P2 Energía (€/MWh)': Number(tarifa.energiaP2 || 0),
       'P3 Energía (€/MWh)': Number(tarifa.energiaP3 || 0),
+      'P4 Energía (€/MWh)': Number(tarifa.energiaP4 || 0),
+      'P5 Energía (€/MWh)': Number(tarifa.energiaP5 || 0),
+      'P6 Energía (€/MWh)': Number(tarifa.energiaP6 || 0),
       'P1 Potencia (€/kW año)': Number(tarifa.potenciaP1 || 0),
       'P2 Potencia (€/kW año)': Number(tarifa.potenciaP2 || 0),
       'P3 Potencia (€/kW año)': Number(tarifa.potenciaP3 || 0),
+      'P4 Potencia (€/kW año)': Number(tarifa.potenciaP4 || 0),
+      'P5 Potencia (€/kW año)': Number(tarifa.potenciaP5 || 0),
+      'P6 Potencia (€/kW año)': Number(tarifa.potenciaP6 || 0),
+      'Coste Gestión (€)': Number(tarifa.costeGestion || 0),
       'Zona': tarifa.zona || 'PENINSULA',
       'Tipo Cliente': tarifa.tipoCliente || 'Empresas',
       'Rango': tarifa.rango || 'Estándar',
@@ -52,9 +59,16 @@ export async function GET() {
         'P1 Energía (€/MWh)': 0,
         'P2 Energía (€/MWh)': 0,
         'P3 Energía (€/MWh)': 0,
+        'P4 Energía (€/MWh)': 0,
+        'P5 Energía (€/MWh)': 0,
+        'P6 Energía (€/MWh)': 0,
         'P1 Potencia (€/kW año)': 0,
         'P2 Potencia (€/kW año)': 0,
         'P3 Potencia (€/kW año)': 0,
+        'P4 Potencia (€/kW año)': 0,
+        'P5 Potencia (€/kW año)': 0,
+        'P6 Potencia (€/kW año)': 0,
+        'Coste Gestión (€)': 0,
         'Zona': 'PENINSULA',
         'Tipo Cliente': 'Empresas',
         'Rango': 'N/A',
@@ -67,7 +81,7 @@ export async function GET() {
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(plantillaData);
     
-    // Configurar anchos de columna para todas las columnas reales
+    // Configurar anchos de columna para todas las columnas reales P1-P6
     const wscols = [
       { wch: 20 }, // Comercializadora
       { wch: 30 }, // Oferta
@@ -76,9 +90,16 @@ export async function GET() {
       { wch: 16 }, // P1 Energía
       { wch: 16 }, // P2 Energía
       { wch: 16 }, // P3 Energía
+      { wch: 16 }, // P4 Energía
+      { wch: 16 }, // P5 Energía
+      { wch: 16 }, // P6 Energía
       { wch: 18 }, // P1 Potencia
       { wch: 18 }, // P2 Potencia
       { wch: 18 }, // P3 Potencia
+      { wch: 18 }, // P4 Potencia
+      { wch: 18 }, // P5 Potencia
+      { wch: 18 }, // P6 Potencia
+      { wch: 15 }, // Coste Gestión
       { wch: 12 }, // Zona
       { wch: 15 }, // Tipo Cliente
       { wch: 15 }, // Rango
@@ -102,18 +123,20 @@ export async function GET() {
       { 'INSTRUCCIONES': '• Oferta: Nombre específico de la tarifa/producto' },
       { 'INSTRUCCIONES': '• Tarifa: Código oficial (2.0TD, 3.0TD, 6.1TD, etc.)' },
       { 'INSTRUCCIONES': '• Tipo: Fija, Variable, Indexada, etc.' },
-      { 'INSTRUCCIONES': '• P1/P2/P3 Energía: Precios por periodo horario (€/MWh)' },
-      { 'INSTRUCCIONES': '• P1/P2/P3 Potencia: Precios de término de potencia (€/kW año)' },
+      { 'INSTRUCCIONES': '• P1/P2/P3/P4/P5/P6 Energía: Precios por periodo horario (€/MWh)' },
+      { 'INSTRUCCIONES': '• P1/P2/P3/P4/P5/P6 Potencia: Precios de término de potencia (€/kW año)' },
+      { 'INSTRUCCIONES': '• Coste Gestión: Gastos de gestión adicionales de la tarifa (€)' },
       { 'INSTRUCCIONES': '• Zona: PENINSULA, BALEARES, CANARIAS, CEUTA_MELILLA' },
       { 'INSTRUCCIONES': '• Tipo Cliente: Residencial, Empresas, Industrial, etc.' },
       { 'INSTRUCCIONES': '• Descripción: Detalles adicionales de la tarifa' },
       { 'INSTRUCCIONES': '• Activa: SÍ/NO - indica si la tarifa está disponible' },
       { 'INSTRUCCIONES': '• ID: Identificador único interno' },
       { 'INSTRUCCIONES': '' },
-      { 'INSTRUCCIONES': '⚡ Periodos horarios:' },
+      { 'INSTRUCCIONES': '⚡ Periodos horarios (según tarifa):' },
       { 'INSTRUCCIONES': '• P1 (Punta): Horario de mayor demanda y precio' },
       { 'INSTRUCCIONES': '• P2 (Llano): Horario intermedio' },
       { 'INSTRUCCIONES': '• P3 (Valle): Horario de menor demanda y precio' },
+      { 'INSTRUCCIONES': '• P4/P5/P6: Períodos adicionales para tarifas 3.0TD, 6.1TD, 6.2TD' },
       { 'INSTRUCCIONES': '' },
       { 'INSTRUCCIONES': '💡 Uso recomendado:' },
       { 'INSTRUCCIONES': '• Exportar para análisis externos (Excel, Power BI, etc.)' },
@@ -137,7 +160,7 @@ export async function GET() {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="plantilla_tarifas.xlsx"',
+        'Content-Disposition': 'attachment; filename="TARIFAS_completas_P1-P6.xlsx"',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',

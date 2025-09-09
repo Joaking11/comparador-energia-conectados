@@ -22,7 +22,7 @@ export async function GET() {
       ]
     });
 
-    console.log(`📊 Generando plantilla con ${comisionesReales.length} comisiones reales`);
+    console.log(`💰 ENDPOINT COMISIONES: Generando plantilla con ${comisionesReales.length} comisiones reales (NO tarifas)`);
 
     // Convertir las comisiones reales al formato Excel
     const plantillaComisiones = comisionesReales.map((comision: any) => ({
@@ -142,7 +142,7 @@ export async function GET() {
       status: 200,
       headers: {
         'Content-Type': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-        'Content-Disposition': 'attachment; filename="plantilla_comisiones.xlsx"',
+        'Content-Disposition': 'attachment; filename="COMISIONES_completas.xlsx"',
         'Cache-Control': 'no-cache, no-store, must-revalidate',
         'Pragma': 'no-cache',
         'Expires': '0',
