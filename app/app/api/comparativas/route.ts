@@ -160,6 +160,7 @@ export async function POST(request: Request) {
         terminoFijoElectricidad: datosComparativa.terminoFijoElectricidad,
         terminoVariableElectricidad: datosComparativa.terminoVariableElectricidad,
         excesoPotencia: datosComparativa.excesoPotencia || 0,
+        compensacionExcedentes: datosComparativa.compensacionExcedentes || 0,
         impuestoElectricidad: datosComparativa.impuestoElectricidad,
         ivaElectricidad: datosComparativa.ivaElectricidad,
         totalFacturaElectricidad: datosComparativa.totalFacturaElectricidad,

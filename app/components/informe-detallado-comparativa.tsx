@@ -42,48 +42,63 @@ export default function InformeDetalladoComparativa({
 
   const handleCompartir = async () => {
     try {
-      // Generar PDF primero
-      const element = document.querySelector('.informe-contenido') as HTMLElement;
-      if (!element) {
-        console.error('No se encontró el elemento del informe');
-        return;
-      }
+      const titulo = `Comparativa - ${resultado.tarifas?.nombreOferta || 'Sin nombre'}`;
+      const texto = `Informe de comparativa energética para ${comparativa.clientes?.razonSocial || 'Cliente'}`;
+      const url = window.location.href;
 
-      // Usar la API nativa de PDF si está disponible, sino usar print
-      if ('showSaveFilePicker' in window) {
-        // Generar nombre del archivo
-        const fileName = `Comparativa_${resultado.tarifas?.comercializadoras?.nombre || 'Sin_Nombre'}_${comparativa.clientes?.razonSocial?.replace(/\s+/g, '_') || 'Cliente'}_${new Date().toISOString().slice(0,10)}.pdf`;
-        
-        try {
-          // @ts-ignore - showSaveFilePicker es una API experimental
-          const fileHandle = await window.showSaveFilePicker({
-            suggestedName: fileName,
-            types: [{
-              description: 'PDF files',
-              accept: { 'application/pdf': ['.pdf'] }
-            }]
-          });
-          
-          // Para ahora, usar print como fallback
-          window.print();
-        } catch (e) {
-          // Usuario canceló o error, usar método tradicional
-          window.print();
-        }
-      } else if (navigator.share) {
-        // Compartir la URL para generar PDF
+      if (navigator.share && typeof navigator.canShare === 'function') {
+        // Compartir nativo (móvil) con opciones de WhatsApp, email, etc.
         await navigator.share({
-          title: `Comparativa - ${resultado.tarifas?.nombreOferta || 'Sin nombre'}`,
-          text: `Informe de comparativa energética para ${comparativa.clientes?.razonSocial || 'Cliente'}`,
-          url: `${window.location.origin}/comparativa/${comparativa.id}?pdf=true`
+          title: titulo,
+          text: texto,
+          url: url
         });
       } else {
-        // Fallback: generar PDF con print
-        await navigator.clipboard.writeText(window.location.href);
-        alert('Enlace copiado al portapapeles');
+        // Fallback para escritorio - crear opciones de compartir
+        const whatsappUrl = `https://wa.me/?text=${encodeURIComponent(`${titulo}\n${texto}\n${url}`)}`;
+        const emailUrl = `mailto:?subject=${encodeURIComponent(titulo)}&body=${encodeURIComponent(`${texto}\n\n${url}`)}`;
+        
+        const compartirOpciones = [
+          {
+            nombre: 'WhatsApp',
+            url: whatsappUrl
+          },
+          {
+            nombre: 'Email',
+            url: emailUrl
+          },
+          {
+            nombre: 'Copiar enlace',
+            accion: () => {
+              navigator.clipboard.writeText(url);
+              alert('✅ Enlace copiado al portapapeles');
+            }
+          }
+        ];
+
+        // Mostrar opciones
+        const opcion = prompt(`Selecciona cómo compartir:\n1. WhatsApp\n2. Email\n3. Copiar enlace\n\nEscribe el número:`);
+        
+        switch(opcion) {
+          case '1':
+            window.open(whatsappUrl, '_blank');
+            break;
+          case '2':
+            window.location.href = emailUrl;
+            break;
+          case '3':
+          default:
+            // Copiar por defecto
+            navigator.clipboard.writeText(url);
+            alert('✅ Enlace copiado al portapapeles');
+            break;
+        }
       }
     } catch (error) {
       console.error('Error al compartir:', error);
+      // Fallback final
+      await navigator.clipboard.writeText(window.location.href);
+      alert('✅ Enlace copiado al portapapeles');
     }
   };
   
@@ -196,8 +211,8 @@ export default function InformeDetalladoComparativa({
   });
   
   // Totales
-  const totalTerminoPotencia = Object.values(calculosPorPeriodo).reduce((sum: number, p: any) => sum + p.costoPotencia, 0);
-  const totalTerminoEnergia = Object.values(calculosPorPeriodo).reduce((sum: number, p: any) => sum + p.costoEnergia, 0);
+  const totalTerminoPotencia = Object.values(calculosPorPeriodo).reduce((sum: number, p: any) => sum + (p.costoPotencia || 0), 0);
+  const totalTerminoEnergia = Object.values(calculosPorPeriodo).reduce((sum: number, p: any) => sum + (p.costoEnergia || 0), 0);
   
   // Conceptos adicionales USANDO VALORES REALES
   const bonoSocial = diasFacturacion * (4.6510 / 365);
@@ -205,8 +220,10 @@ export default function InformeDetalladoComparativa({
   const alquilerEquipos = comparativa.terminoFijoElectricidad || 1.00; // Usar valor real, no hardcodeado
   const excesosPotencia = comparativa.excesoPotencia || 0; // Campo que faltaba
   const costeGestionTarifa = resultado.tarifas?.costeGestion || 0; // Coste de gestión de la tarifa
+  const kwCompensacionExcedentes = comparativa.compensacionExcedentes || 0; // kW reales del OCR
+  const costoCompensacionExcedentes = kwCompensacionExcedentes * precioExcedentes; // kW × €/kWh
   
-  const totalBase = totalTerminoPotencia + totalTerminoEnergia + bonoSocial + impuestoElectricidad + alquilerEquipos + excesosPotencia + costeGestionTarifa;
+  const totalBase = totalTerminoPotencia + totalTerminoEnergia + bonoSocial + impuestoElectricidad + alquilerEquipos + excesosPotencia + costeGestionTarifa - costoCompensacionExcedentes;
   const iva = totalBase * 0.21;
   const totalFactura = totalBase + iva;
   
@@ -429,8 +446,8 @@ export default function InformeDetalladoComparativa({
                 value={precioExcedentes}
                 onChange={(e) => setPrecioExcedentes(Number(e.target.value))}
                 className="inline-block w-16 h-5 text-xs mx-1 p-1 border-gray-300"
-              />€/kWh) + kW acumulados batería virtual:</span>
-            <span className="font-bold text-gray-700">0.00 €</span>
+              />€/kWh) × {kwCompensacionExcedentes.toFixed(2)} kW:</span>
+            <span className="font-bold text-green-700">-{costoCompensacionExcedentes.toFixed(2)} €</span>
           </div>
           <div className="flex justify-between text-xs bg-white p-2 rounded">
             <span className="text-gray-600">Coste de Gestión:</span>

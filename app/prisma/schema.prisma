@@ -142,6 +142,7 @@ model comparativas {
   terminoFijoElectricidad      Float
   terminoVariableElectricidad  Float
   excesoPotencia               Float                 @default(0.0)
+  compensacionExcedentes       Float                 @default(0.0)
   impuestoElectricidad         Float
   ivaElectricidad              Float
   totalFacturaElectricidad     Float
