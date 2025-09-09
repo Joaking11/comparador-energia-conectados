@@ -98,39 +98,73 @@ export default function ManagePage() {
 
   const toggleEstado = async (id: string, activo: boolean) => {
     try {
+      console.log('👁️ Toggle estado:', { id, activo, activeTab });
+      
       let url = '';
+      let payload: any = {};
+      
       switch (activeTab) {
         case 'comercializadoras':
-          url = `/api/comercializadoras/${id}`;
+          url = `/api/comercializadoras`;
+          payload = { id, activa: !activo };
           break;
         case 'tarifas':
           url = `/api/ofertas/${id}`;
+          payload = { activa: !activo };
           break;
         case 'comisiones':
           url = `/api/admin/comisiones/${id}`;
+          payload = { activa: !activo };
           break;
+        default:
+          throw new Error(`Tipo no soportado: ${activeTab}`);
       }
+      
+      console.log('📡 Enviando:', { url, payload, method: 'PUT' });
       
       const response = await fetch(url, {
         method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ activa: !activo })
+        headers: { 
+          'Content-Type': 'application/json',
+          'Cache-Control': 'no-cache'
+        },
+        body: JSON.stringify(payload)
       });
 
+      console.log('📡 Respuesta:', { status: response.status, statusText: response.statusText });
+
       if (response.ok) {
+        const result = await response.json();
+        console.log('✅ Resultado:', result);
+        
         toast({
-          title: 'Éxito',
+          title: '✅ Estado actualizado',
           description: `${activeTab.slice(0, -1)} ${!activo ? 'activada' : 'desactivada'}`
         });
-        cargarDatos();
+        
+        // Recargar datos después de un breve retraso
+        setTimeout(() => {
+          cargarDatos();
+        }, 200);
+        
       } else {
-        throw new Error('Error al actualizar');
+        const errorText = await response.text();
+        console.error('❌ Error en respuesta:', { status: response.status, errorText });
+        
+        let errorData;
+        try {
+          errorData = JSON.parse(errorText);
+        } catch {
+          errorData = { message: errorText };
+        }
+        
+        throw new Error(errorData.message || `Error HTTP ${response.status}`);
       }
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ Error completo:', error);
       toast({
-        title: 'Error',
-        description: 'No se pudo actualizar el estado',
+        title: '❌ Error',
+        description: `No se pudo actualizar el estado: ${error instanceof Error ? error.message : 'Error desconocido'}`,
         variant: 'destructive'
       });
     }
@@ -138,28 +172,50 @@ export default function ManagePage() {
 
   const descargarPlantilla = async (tipo: 'tarifas' | 'comisiones') => {
     try {
-      const endpoint = activeTab === 'comisiones' 
+      const endpoint = tipo === 'comisiones' 
         ? '/api/plantilla-comisiones' 
         : '/api/plantilla-excel';
       
-      const filename = activeTab === 'comisiones' 
-        ? 'plantilla_comisiones.xlsx' 
-        : 'plantilla_tarifas.xlsx';
+      const filename = tipo === 'comisiones' 
+        ? 'COMISIONES_completas.xlsx' 
+        : 'TARIFAS_completas_P1-P6.xlsx';
+      
+      console.log('🎯 Iniciando descarga:', { endpoint, filename, tipo });
       
       toast({
         title: 'Descargando...',
-        description: `Preparando plantilla de ${activeTab}...`
+        description: `Preparando plantilla de ${tipo}...`
       });
       
-      // Fetch para obtener el archivo
-      const response = await fetch(endpoint);
+      // Fetch para obtener el archivo con headers específicos
+      const response = await fetch(endpoint, {
+        method: 'GET',
+        headers: {
+          'Accept': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+          'Cache-Control': 'no-cache'
+        }
+      });
+      
+      console.log('📡 Respuesta recibida:', {
+        status: response.status,
+        statusText: response.statusText,
+        headers: Object.fromEntries(response.headers.entries())
+      });
       
       if (!response.ok) {
-        throw new Error(`Error HTTP: ${response.status}`);
+        const errorText = await response.text();
+        console.error('❌ Error en respuesta:', errorText);
+        throw new Error(`Error HTTP: ${response.status} - ${errorText}`);
       }
       
       // Convertir a blob
       const blob = await response.blob();
+      console.log('📁 Blob creado:', { size: blob.size, type: blob.type });
+      
+      // Verificar que el blob tiene contenido
+      if (blob.size === 0) {
+        throw new Error('El archivo descargado está vacío');
+      }
       
       // Crear URL temporal del blob
       const url = window.URL.createObjectURL(blob);
@@ -173,21 +229,23 @@ export default function ManagePage() {
       // Añadir al DOM, hacer clic y limpiar
       document.body.appendChild(link);
       link.click();
-      document.body.removeChild(link);
       
-      // Liberar memoria del blob
-      window.URL.revokeObjectURL(url);
+      // Limpiar después de un breve retraso
+      setTimeout(() => {
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+      }, 100);
       
       toast({
-        title: 'Descarga completada',
+        title: '✅ Descarga completada',
         description: `${filename} se ha descargado correctamente`
       });
       
     } catch (error) {
-      console.error('Error descargando plantilla:', error);
+      console.error('❌ Error descargando plantilla:', error);
       toast({
         title: 'Error en la descarga',
-        description: 'Prueba con "Descarga Directa" si este método no funciona',
+        description: `Error: ${error instanceof Error ? error.message : 'Desconocido'}. Prueba con "Descarga Directa"`,
         variant: 'destructive'
       });
     }
@@ -195,30 +253,40 @@ export default function ManagePage() {
 
   const descargarDirecto = (tipo: 'tarifas' | 'comisiones') => {
     try {
-      const endpoint = activeTab === 'comisiones' 
+      const endpoint = tipo === 'comisiones' 
         ? '/api/plantilla-comisiones' 
         : '/api/plantilla-excel';
       
-      // Método alternativo: abrir en nueva ventana que debe descargar automáticamente
-      const newWindow = window.open(endpoint, '_blank');
+      console.log('🔗 Descarga directa:', { endpoint, tipo });
       
-      // Si se bloquea el popup, usar location.href
+      // Crear un enlace temporal invisible que force la descarga
+      const link = document.createElement('a');
+      link.href = endpoint;
+      link.download = ''; // Esto debería forzar la descarga
+      link.target = '_blank';
+      link.style.display = 'none';
+      
+      // Añadir al DOM
+      document.body.appendChild(link);
+      
+      // Hacer clic programáticamente
+      link.click();
+      
+      // Limpiar después de un momento
       setTimeout(() => {
-        if (newWindow && newWindow.closed) {
-          window.location.href = endpoint;
-        }
+        document.body.removeChild(link);
       }, 100);
       
       toast({
-        title: 'Descarga iniciada',
-        description: 'Método directo activado. Si no se descarga, revisa los popups bloqueados.'
+        title: '⬇️ Descarga directa iniciada',
+        description: `Abriendo ${tipo} en nueva ventana. Si no funciona, usa "Copiar URL"`
       });
       
     } catch (error) {
-      console.error('Error en descarga directa:', error);
+      console.error('❌ Error en descarga directa:', error);
       toast({
         title: 'Error',
-        description: 'Prueba copiando y pegando la URL directamente en el navegador',
+        description: 'Prueba el botón "Copiar URL" para obtener el enlace directo',
         variant: 'destructive'
       });
     }
@@ -226,35 +294,67 @@ export default function ManagePage() {
 
   const copiarURL = async (tipo: 'tarifas' | 'comisiones') => {
     try {
-      const endpoint = activeTab === 'comisiones' 
+      const endpoint = tipo === 'comisiones' 
         ? '/api/plantilla-comisiones' 
         : '/api/plantilla-excel';
       
       const urlCompleta = `${window.location.origin}${endpoint}`;
       
-      // Copiar al portapapeles
-      await navigator.clipboard.writeText(urlCompleta);
+      console.log('📋 Copiando URL:', urlCompleta);
       
-      toast({
-        title: 'URL copiada',
-        description: `URL completa copiada: ${urlCompleta.substring(0, 50)}...`
-      });
+      // Intentar copiar al portapapeles usando la API moderna
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        await navigator.clipboard.writeText(urlCompleta);
+        
+        toast({
+          title: '📋 URL copiada al portapapeles',
+          description: `✅ ${urlCompleta}`
+        });
+      } else {
+        // Fallback: Crear un elemento input temporal para copiar
+        const input = document.createElement('input');
+        input.value = urlCompleta;
+        input.style.position = 'absolute';
+        input.style.left = '-9999px';
+        document.body.appendChild(input);
+        
+        input.select();
+        input.setSelectionRange(0, 99999); // Para móviles
+        
+        const success = document.execCommand('copy');
+        document.body.removeChild(input);
+        
+        if (success) {
+          toast({
+            title: '📋 URL copiada (método clásico)',
+            description: `✅ ${urlCompleta}`
+          });
+        } else {
+          throw new Error('No se pudo copiar automáticamente');
+        }
+      }
       
     } catch (error) {
-      // Fallback si no funciona el clipboard API
-      const endpoint = activeTab === 'comisiones' 
+      // Fallback: Mostrar la URL en un toast para copiar manualmente
+      const endpoint = tipo === 'comisiones' 
         ? '/api/plantilla-comisiones' 
         : '/api/plantilla-excel';
       
       const urlCompleta = `${window.location.origin}${endpoint}`;
       
+      console.error('Error copiando URL:', error);
+      console.log('🔗 URL para copiar manualmente:', urlCompleta);
+      
+      // Mostrar un modal o prompt con la URL
+      if (confirm(`No se pudo copiar automáticamente. ¿Quieres que se abra la URL?\n\n${urlCompleta}`)) {
+        window.open(urlCompleta, '_blank');
+      }
+      
       toast({
-        title: 'Copia esta URL',
+        title: '⚠️ Copia esta URL manualmente',
         description: urlCompleta,
         variant: 'default'
       });
-      
-      console.log('URL para copiar manualmente:', urlCompleta);
     }
   };
 
