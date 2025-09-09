@@ -490,8 +490,8 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
             },
             precioEnergia: resultado.tarifas.energiaP1,
             precioPotencia: resultado.tarifas.potenciaP1 || 0,
-            costoMensual: resultado.importeCalculado,
-            ahorroMensual: data.totalFacturaElectricidad - resultado.importeCalculado,
+            costoMensual: resultado.importeCalculado / 12, // Convertir anual a mensual
+            ahorroMensual: (data.totalFacturaElectricidad - resultado.importeCalculado) / 12, // Convertir anual a mensual
             comisionEnergia: 0, // Will be calculated by matriz component
             comisionPotencia: 0, // Will be calculated by matriz component
             comisionTotal: resultado.comisionGanada
