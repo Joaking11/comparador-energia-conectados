@@ -47,26 +47,68 @@ export function HistorialComparativas() {
   useEffect(() => {
     const fetchComparativas = async () => {
       try {
-        const response = await fetch('/api/comparativas');
+        console.log('📡 Iniciando fetch de comparativas...');
+        
+        // Agregar timeout para evitar colgadas
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 segundos
+        
+        const response = await fetch('/api/comparativas', {
+          signal: controller.signal,
+          headers: {
+            'Content-Type': 'application/json',
+          }
+        });
+        
+        clearTimeout(timeoutId);
+        console.log('📡 Response status:', response.status, response.statusText);
+        
         if (response.ok) {
           const data = await response.json();
-          setComparativas(data);
+          console.log('📡 Datos recibidos:', data?.length || 0, 'comparativas');
+          
+          // Validar que data sea un array
+          if (Array.isArray(data)) {
+            setComparativas(data);
+          } else {
+            console.warn('⚠️ Los datos recibidos no son un array:', data);
+            setComparativas([]);
+          }
         } else {
-          throw new Error('Error al cargar las comparativas');
+          const errorText = await response.text();
+          console.error('❌ Error en respuesta:', response.status, errorText);
+          throw new Error(`Error ${response.status}: ${errorText || 'Error del servidor'}`);
         }
       } catch (error) {
-        console.error('Error:', error);
+        console.error('❌ Error completo:', error);
+        
+        // Manejo específico de diferentes tipos de error
+        let errorMessage = 'Error desconocido';
+        if (error instanceof Error) {
+          if (error.name === 'AbortError') {
+            errorMessage = 'La petición tardó demasiado tiempo';
+          } else {
+            errorMessage = error.message;
+          }
+        }
+        
         toast({
-          title: 'Error',
-          description: 'No se pudo cargar el historial',
+          title: 'Error al cargar historial',
+          description: errorMessage,
           variant: 'destructive'
         });
+        
+        // En caso de error, mostrar array vacío en lugar de fallo total
+        setComparativas([]);
       } finally {
         setLoading(false);
       }
     };
 
-    fetchComparativas();
+    // Retraso pequeño para evitar race conditions en hydration
+    const timeoutId = setTimeout(fetchComparativas, 100);
+    
+    return () => clearTimeout(timeoutId);
   }, [toast]);
 
   const handleDelete = async (id: string, titulo: string) => {
