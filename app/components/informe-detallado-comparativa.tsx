@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
 import { 
   X, 
   Calculator, 
@@ -32,6 +33,7 @@ export default function InformeDetalladoComparativa({
 }: InformeDetalladoProps) {
   
   const [paginaActual, setPaginaActual] = useState(1);
+  const [precioExcedentes, setPrecioExcedentes] = useState(0.07); // €/kWh por defecto
   
   const handleDescargarPDF = () => {
     // Generar PDF usando window.print
@@ -40,14 +42,43 @@ export default function InformeDetalladoComparativa({
 
   const handleCompartir = async () => {
     try {
-      if (navigator.share) {
+      // Generar PDF primero
+      const element = document.querySelector('.informe-contenido') as HTMLElement;
+      if (!element) {
+        console.error('No se encontró el elemento del informe');
+        return;
+      }
+
+      // Usar la API nativa de PDF si está disponible, sino usar print
+      if ('showSaveFilePicker' in window) {
+        // Generar nombre del archivo
+        const fileName = `Comparativa_${resultado.tarifas?.comercializadoras?.nombre || 'Sin_Nombre'}_${comparativa.clientes?.razonSocial?.replace(/\s+/g, '_') || 'Cliente'}_${new Date().toISOString().slice(0,10)}.pdf`;
+        
+        try {
+          // @ts-ignore - showSaveFilePicker es una API experimental
+          const fileHandle = await window.showSaveFilePicker({
+            suggestedName: fileName,
+            types: [{
+              description: 'PDF files',
+              accept: { 'application/pdf': ['.pdf'] }
+            }]
+          });
+          
+          // Para ahora, usar print como fallback
+          window.print();
+        } catch (e) {
+          // Usuario canceló o error, usar método tradicional
+          window.print();
+        }
+      } else if (navigator.share) {
+        // Compartir la URL para generar PDF
         await navigator.share({
           title: `Comparativa - ${resultado.tarifas?.nombreOferta || 'Sin nombre'}`,
           text: `Informe de comparativa energética para ${comparativa.clientes?.razonSocial || 'Cliente'}`,
-          url: window.location.href
+          url: `${window.location.origin}/comparativa/${comparativa.id}?pdf=true`
         });
       } else {
-        // Fallback: copiar al portapapeles
+        // Fallback: generar PDF con print
         await navigator.clipboard.writeText(window.location.href);
         alert('Enlace copiado al portapapeles');
       }
@@ -59,13 +90,34 @@ export default function InformeDetalladoComparativa({
   // Cálculos básicos para el informe
   const consumoAnual = comparativa.consumoAnualElectricidad;
   const potenciaContratada = comparativa.potenciaP1;
+  
+  // OBTENER CONSUMOS REALES POR PERÍODO (no distribución inventada)
+  const consumosReales = {
+    P1: comparativa.consumoP1 || 0,
+    P2: comparativa.consumoP2 || 0, 
+    P3: comparativa.consumoP3 || 0,
+    P4: comparativa.consumoP4 || 0,
+    P5: comparativa.consumoP5 || 0,
+    P6: comparativa.consumoP6 || 0
+  };
+  
+  // OBTENER POTENCIAS REALES POR PERÍODO (no solo P1)
+  const potenciasReales = {
+    P1: comparativa.potenciaP1 || 0,
+    P2: comparativa.potenciaP2 || 0,
+    P3: comparativa.potenciaP3 || 0, 
+    P4: comparativa.potenciaP4 || 0,
+    P5: comparativa.potenciaP5 || 0,
+    P6: comparativa.potenciaP6 || 0
+  };
+  
   const facturaActual = comparativa.totalFacturaElectricidad;
   const nuevaFactura = resultado.importeCalculado;
   const ahorroAnual = facturaActual - nuevaFactura;
   const porcentajeAhorro = (ahorroAnual / facturaActual) * 100;
   
   // Período de facturación (asumiendo 30 días para el ejemplo)
-  const diasFacturacion = 30;
+  const diasFacturacion = comparativa.diasPeriodoFactura || 30;
   const fechaInicio = new Date();
   const fechaFin = new Date();
   fechaFin.setDate(fechaInicio.getDate() + diasFacturacion);
@@ -106,24 +158,32 @@ export default function InformeDetalladoComparativa({
   
   const distribucionConsumo = getDistribucionConsumo(resultado.tarifas?.tarifa || '2.0TD', periodosEnergia.length);
   
-  // Cálculos por período usando datos reales
+  // CÁLCULOS CORREGIDOS usando datos REALES por período
   const calculosPorPeriodo: any = {};
   
-  // Calcular costos de energía
-  periodosEnergia.forEach((periodoEn, index) => {
-    const consumoPeriodo = (consumoAnual * distribucionConsumo[index] / 365) * diasFacturacion;
+  // Calcular costos de energía usando CONSUMOS REALES por período
+  periodosEnergia.forEach((periodoEn) => {
+    const periodo = periodoEn.periodo as keyof typeof consumosReales;
+    const consumoRealPeriodo = consumosReales[periodo] || 0;
+    
+    // Convertir consumo anual a consumo del período de facturación
+    const consumoPeriodo = (consumoRealPeriodo / 365) * diasFacturacion;
+    
     if (!calculosPorPeriodo[periodoEn.periodo]) calculosPorPeriodo[periodoEn.periodo] = {};
     calculosPorPeriodo[periodoEn.periodo].costoEnergia = periodoEn.precio * consumoPeriodo;
     calculosPorPeriodo[periodoEn.periodo].consumo = consumoPeriodo;
     calculosPorPeriodo[periodoEn.periodo].precioEnergia = periodoEn.precio;
   });
   
-  // Calcular costos de potencia
-  periodosPotencia.forEach((periodoP, index) => {
+  // Calcular costos de potencia usando POTENCIAS REALES por período
+  periodosPotencia.forEach((periodoP) => {
+    const periodo = periodoP.periodo as keyof typeof potenciasReales;
+    const potenciaRealPeriodo = potenciasReales[periodo] || 0;
+    
     // Fórmula: kW contratados × precio (€/kW/día) × número de días
     if (!calculosPorPeriodo[periodoP.periodo]) calculosPorPeriodo[periodoP.periodo] = {};
-    calculosPorPeriodo[periodoP.periodo].costoPotencia = potenciaContratada * periodoP.precio * diasFacturacion;
-    calculosPorPeriodo[periodoP.periodo].potencia = potenciaContratada;
+    calculosPorPeriodo[periodoP.periodo].costoPotencia = potenciaRealPeriodo * periodoP.precio * diasFacturacion;
+    calculosPorPeriodo[periodoP.periodo].potencia = potenciaRealPeriodo;
     calculosPorPeriodo[periodoP.periodo].precioPotencia = periodoP.precio;
   });
   
@@ -139,12 +199,14 @@ export default function InformeDetalladoComparativa({
   const totalTerminoPotencia = Object.values(calculosPorPeriodo).reduce((sum: number, p: any) => sum + p.costoPotencia, 0);
   const totalTerminoEnergia = Object.values(calculosPorPeriodo).reduce((sum: number, p: any) => sum + p.costoEnergia, 0);
   
-  // Conceptos adicionales
+  // Conceptos adicionales USANDO VALORES REALES
   const bonoSocial = diasFacturacion * (4.6510 / 365);
-  const impuestoElectricidad = (totalTerminoPotencia + totalTerminoEnergia) * 0.0511;
-  const alquilerEquipos = 1.00;
+  const impuestoElectricidad = comparativa.impuestoElectricidad || ((totalTerminoPotencia + totalTerminoEnergia) * 0.0511);
+  const alquilerEquipos = comparativa.terminoFijoElectricidad || 1.00; // Usar valor real, no hardcodeado
+  const excesosPotencia = comparativa.excesoPotencia || 0; // Campo que faltaba
+  const costeGestionTarifa = resultado.tarifas?.costeGestion || 0; // Coste de gestión de la tarifa
   
-  const totalBase = totalTerminoPotencia + totalTerminoEnergia + bonoSocial + impuestoElectricidad + alquilerEquipos;
+  const totalBase = totalTerminoPotencia + totalTerminoEnergia + bonoSocial + impuestoElectricidad + alquilerEquipos + excesosPotencia + costeGestionTarifa;
   const iva = totalBase * 0.21;
   const totalFactura = totalBase + iva;
   
@@ -346,15 +408,29 @@ export default function InformeDetalladoComparativa({
           </div>
           <div className="flex justify-between text-xs bg-white p-2 rounded">
             <span className="text-gray-600">Exceso de potencia:</span>
-            <span className="font-bold text-gray-700">- €</span>
+            <span className="font-bold text-gray-700">{excesosPotencia.toFixed(2)} €</span>
           </div>
+          {costeGestionTarifa > 0 && (
+            <div className="flex justify-between text-xs bg-white p-2 rounded">
+              <span className="text-gray-600">Coste de gestión:</span>
+              <span className="font-bold text-gray-700">{costeGestionTarifa.toFixed(2)} €</span>
+            </div>
+          )}
           <div className="flex justify-between text-xs bg-white p-2 rounded">
             <span className="text-gray-600">Total Reactiva:</span>
-            <span className="font-bold text-gray-700">- €</span>
+            <span className="font-bold text-gray-700">0.00 €</span>
           </div>
-          <div className="flex justify-between text-xs bg-white p-2 rounded">
-            <span className="text-gray-600">Compensación Excedentes (0,07€/Kw) + KW acumulados bateria virtual:</span>
-            <span className="font-bold text-gray-700">- €</span>
+          <div className="flex justify-between text-xs bg-white p-2 rounded items-center">
+            <span className="text-gray-600">Compensación Excedentes 
+              (<Input
+                type="number"
+                step="0.01"
+                min="0"
+                value={precioExcedentes}
+                onChange={(e) => setPrecioExcedentes(Number(e.target.value))}
+                className="inline-block w-16 h-5 text-xs mx-1 p-1 border-gray-300"
+              />€/kWh) + kW acumulados batería virtual:</span>
+            <span className="font-bold text-gray-700">0.00 €</span>
           </div>
           <div className="flex justify-between text-xs bg-white p-2 rounded">
             <span className="text-gray-600">Coste de Gestión:</span>
@@ -562,21 +638,53 @@ export default function InformeDetalladoComparativa({
     <>
       <style jsx global>{`
         @media print {
-          .print-hidden { display: none !important; }
-          .print-full { 
-            position: fixed !important;
-            top: 0 !important;
-            left: 0 !important;
-            right: 0 !important;
-            bottom: 0 !important;
-            z-index: 9999 !important;
-            background: white !important;
-            width: 100% !important;
-            height: 100% !important;
-            overflow: visible !important;
+          * {
+            box-shadow: none !important;
           }
-          body * { visibility: hidden; }
-          .print-full, .print-full * { visibility: visible; }
+          
+          .print-hidden { 
+            display: none !important; 
+          }
+          
+          .print-full { 
+            position: static !important;
+            width: 100% !important;
+            height: auto !important;
+            max-width: 100% !important;
+            max-height: none !important;
+            overflow: visible !important;
+            background: white !important;
+            border-radius: 0 !important;
+            box-shadow: none !important;
+            margin: 0 !important;
+            padding: 20px !important;
+          }
+          
+          .informe-contenido {
+            width: 100% !important;
+            background: white !important;
+            font-size: 12px !important;
+            line-height: 1.4 !important;
+            color: black !important;
+            page-break-inside: avoid;
+          }
+          
+          @page {
+            margin: 15mm;
+            size: A4;
+          }
+          
+          .no-break {
+            page-break-inside: avoid;
+          }
+          
+          body {
+            background: white !important;
+          }
+          
+          .fixed, .sticky {
+            position: static !important;
+          }
         }
       `}</style>
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50 print-hidden">
@@ -622,7 +730,7 @@ export default function InformeDetalladoComparativa({
         </div>
 
         {/* Contenido según página */}
-        <div className="min-h-[80vh]">
+        <div className="min-h-[80vh] informe-contenido">
           {paginaActual === 1 ? (
             <div className="p-6">
               {renderPaginaOficial()}
