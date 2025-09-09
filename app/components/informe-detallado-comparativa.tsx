@@ -221,9 +221,31 @@ export default function InformeDetalladoComparativa({
   const excesosPotencia = comparativa.excesoPotencia || 0; // Campo que faltaba
   const costeGestionTarifa = resultado.tarifas?.costeGestion || 0; // Coste de gestión de la tarifa
   const kwCompensacionExcedentes = comparativa.compensacionExcedentes || 0; // kW reales del OCR
-  const costoCompensacionExcedentes = kwCompensacionExcedentes * precioExcedentes; // kW × €/kWh
+  // CORRECCIÓN: Los excedentes siempre deben ser un descuento (positivo en el cálculo de ahorro)
+  const costoCompensacionExcedentes = Math.abs(kwCompensacionExcedentes) * precioExcedentes; // Valor absoluto × €/kWh
+  
+  // DEBUG: Verificar cálculos
+  console.log('🧮 CÁLCULO COMPENSACIÓN EXCEDENTES:', {
+    kwCompensacionExcedentes,
+    precioExcedentes,
+    costoCompensacionExcedentes,
+    'Math.abs(kwCompensacionExcedentes)': Math.abs(kwCompensacionExcedentes)
+  });
   
   const totalBase = totalTerminoPotencia + totalTerminoEnergia + bonoSocial + impuestoElectricidad + alquilerEquipos + excesosPotencia + costeGestionTarifa - costoCompensacionExcedentes;
+  
+  // DEBUG: Verificar total
+  console.log('💰 CÁLCULO TOTAL BASE:', {
+    totalTerminoPotencia,
+    totalTerminoEnergia, 
+    bonoSocial,
+    impuestoElectricidad,
+    alquilerEquipos,
+    excesosPotencia,
+    costeGestionTarifa,
+    costoCompensacionExcedentes: `-${costoCompensacionExcedentes}`,
+    totalBase
+  });
   const iva = totalBase * 0.21;
   const totalFactura = totalBase + iva;
   
@@ -446,7 +468,7 @@ export default function InformeDetalladoComparativa({
                 value={precioExcedentes}
                 onChange={(e) => setPrecioExcedentes(Number(e.target.value))}
                 className="inline-block w-16 h-5 text-xs mx-1 p-1 border-gray-300"
-              />€/kWh) × {kwCompensacionExcedentes.toFixed(2)} kW:</span>
+              />€/kWh) × {Math.abs(kwCompensacionExcedentes).toFixed(2)} kW:</span>
             <span className="font-bold text-green-700">-{costoCompensacionExcedentes.toFixed(2)} €</span>
           </div>
           <div className="flex justify-between text-xs bg-white p-2 rounded">
