@@ -1,100 +1,128 @@
 
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const prisma = new PrismaClient();
+  
   try {
-    // Crear datos de ejemplo para la plantilla
-    const plantillaData = [
-      {
-        'Comercializadora': 'Iberdrola',
-        'Oferta': 'Tarifa Verde Fija',
-        'Tarifa': '2.0TD',
-        'Tipo': 'Fija',
-        'Precio Energía (€/kWh)': 0.185,
-        'Término Potencia (€/kW mes)': 3.45,
-        'Descripción': '100% energía renovable, precio fijo durante 12 meses',
-        'Comisión Tipo': 'E',
-        'Comisión Valor': 25,
-        'Comisión Mínimo': 2000,
-        'Comisión Máximo': 15000
+    // Obtener TODAS las tarifas reales de la base de datos
+    const tarifasReales = await prisma.tarifas.findMany({
+      include: {
+        comercializadoras: true
       },
-      {
-        'Comercializadora': 'Endesa',
-        'Oferta': 'Tempo Indexado',
-        'Tarifa': '3.0TD',
-        'Tipo': 'Indexada',
-        'Precio Energía (€/kWh)': 0.140,
-        'Término Potencia (€/kW mes)': 4.20,
-        'Descripción': 'Para empresas medianas, precio según pool',
-        'Comisión Tipo': 'P',
-        'Comisión Valor': 45,
-        'Comisión Mínimo': 15,
-        'Comisión Máximo': 100
-      },
-      {
-        'Comercializadora': 'Naturgy',
-        'Oferta': 'Tarifa Digital',
-        'Tarifa': '2.0TD',
-        'Tipo': 'Indexada',
-        'Precio Energía (€/kWh)': 0.160,
-        'Término Potencia (€/kW mes)': 3.15,
-        'Descripción': 'Gestión 100% digital con descuentos',
-        'Comisión Tipo': 'E',
-        'Comisión Valor': 26,
-        'Comisión Mínimo': 2200,
-        'Comisión Máximo': 14000
-      }
-    ];
+      orderBy: [
+        { comercializadoras: { nombre: 'asc' } },
+        { tarifa: 'asc' },
+        { nombreOferta: 'asc' }
+      ]
+    });
+
+    console.log(`📊 Generando plantilla con ${tarifasReales.length} tarifas reales`);
+
+    // Convertir las tarifas reales al formato Excel
+    const plantillaData = tarifasReales.map((tarifa: any) => ({
+      'Comercializadora': tarifa.comercializadoras?.nombre || 'Sin nombre',
+      'Oferta': tarifa.nombreOferta || 'Oferta estándar',
+      'Tarifa': tarifa.tarifa || 'N/A',
+      'Tipo': tarifa.tipoOferta || 'Variable',
+      'P1 Energía (€/MWh)': Number(tarifa.energiaP1 || 0),
+      'P2 Energía (€/MWh)': Number(tarifa.energiaP2 || 0),
+      'P3 Energía (€/MWh)': Number(tarifa.energiaP3 || 0),
+      'P1 Potencia (€/kW año)': Number(tarifa.potenciaP1 || 0),
+      'P2 Potencia (€/kW año)': Number(tarifa.potenciaP2 || 0),
+      'P3 Potencia (€/kW año)': Number(tarifa.potenciaP3 || 0),
+      'Zona': tarifa.zona || 'PENINSULA',
+      'Tipo Cliente': tarifa.tipoCliente || 'Empresas',
+      'Rango': tarifa.rango || 'Estándar',
+      'Activa': tarifa.activa ? 'SÍ' : 'NO',
+      'ID': tarifa.id
+    }));
+
+    // Si no hay tarifas, crear mensaje informativo
+    if (plantillaData.length === 0) {
+      plantillaData.push({
+        'Comercializadora': '[SIN DATOS]',
+        'Oferta': 'No hay tarifas en la base de datos',
+        'Tarifa': 'N/A',
+        'Tipo': 'N/A',
+        'P1 Energía (€/MWh)': 0,
+        'P2 Energía (€/MWh)': 0,
+        'P3 Energía (€/MWh)': 0,
+        'P1 Potencia (€/kW año)': 0,
+        'P2 Potencia (€/kW año)': 0,
+        'P3 Potencia (€/kW año)': 0,
+        'Zona': 'PENINSULA',
+        'Tipo Cliente': 'Empresas',
+        'Rango': 'N/A',
+        'Activa': 'NO',
+        'ID': 0
+      });
+    }
 
     // Crear workbook
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(plantillaData);
     
-    // Configurar anchos de columna
+    // Configurar anchos de columna para todas las columnas reales
     const wscols = [
       { wch: 20 }, // Comercializadora
-      { wch: 25 }, // Oferta
+      { wch: 30 }, // Oferta
       { wch: 10 }, // Tarifa
       { wch: 12 }, // Tipo
-      { wch: 18 }, // Precio Energía
-      { wch: 22 }, // Término Potencia
-      { wch: 40 }, // Descripción
-      { wch: 15 }, // Comisión Tipo
-      { wch: 15 }, // Comisión Valor
-      { wch: 17 }, // Comisión Mínimo
-      { wch: 17 }  // Comisión Máximo
+      { wch: 16 }, // P1 Energía
+      { wch: 16 }, // P2 Energía
+      { wch: 16 }, // P3 Energía
+      { wch: 18 }, // P1 Potencia
+      { wch: 18 }, // P2 Potencia
+      { wch: 18 }, // P3 Potencia
+      { wch: 12 }, // Zona
+      { wch: 15 }, // Tipo Cliente
+      { wch: 15 }, // Rango
+      { wch: 8 },  // Activa
+      { wch: 8 }   // ID
     ];
     ws['!cols'] = wscols;
 
-    // Añadir hoja al workbook
-    XLSX.utils.book_append_sheet(wb, ws, "Plantilla");
+    // Añadir hoja al workbook con nombre descriptivo
+    XLSX.utils.book_append_sheet(wb, ws, `Tarifas_Reales_${new Date().toISOString().slice(0,10)}`);
 
-    // Crear segunda hoja con instrucciones
+    // Crear segunda hoja con instrucciones actualizadas
     const instrucciones = [
-      { 'INSTRUCCIONES': 'Formato de Importación de Comercializadoras y Ofertas' },
+      { 'INSTRUCCIONES': '📊 PLANTILLA TARIFAS REALES - TODAS LAS TARIFAS DE LA BASE DE DATOS' },
       { 'INSTRUCCIONES': '' },
-      { 'INSTRUCCIONES': 'Columnas requeridas:' },
-      { 'INSTRUCCIONES': '• Comercializadora: Nombre de la comercializadora energética' },
-      { 'INSTRUCCIONES': '• Oferta: Nombre de la oferta específica' },
-      { 'INSTRUCCIONES': '• Tarifa: 2.0TD, 3.0TD, 6.1TD, 6.2TD, etc.' },
-      { 'INSTRUCCIONES': '• Tipo: Fija, Indexada, Híbrida' },
-      { 'INSTRUCCIONES': '• Precio Energía (€/kWh): Precio por kWh en euros' },
-      { 'INSTRUCCIONES': '• Término Potencia (€/kW mes): Precio potencia mensual' },
-      { 'INSTRUCCIONES': '• Descripción: Descripción opcional de la oferta' },
-      { 'INSTRUCCIONES': '• Comisión Tipo: E (Energía) o P (Potencia)' },
-      { 'INSTRUCCIONES': '• Comisión Valor: Valor de la comisión' },
-      { 'INSTRUCCIONES': '• Comisión Mínimo: Valor mínimo para aplicar comisión' },
-      { 'INSTRUCCIONES': '• Comisión Máximo: Valor máximo (opcional)' },
+      { 'INSTRUCCIONES': 'Esta plantilla contiene TODAS las tarifas reales importadas en su sistema:' },
+      { 'INSTRUCCIONES': `Total de tarifas exportadas: ${plantillaData.length}` },
       { 'INSTRUCCIONES': '' },
-      { 'INSTRUCCIONES': 'Notas importantes:' },
-      { 'INSTRUCCIONES': '• Si la comercializadora no existe, se creará automáticamente' },
-      { 'INSTRUCCIONES': '• Si la oferta ya existe, se actualizará con los nuevos datos' },
-      { 'INSTRUCCIONES': '• Los precios deben ser mayores que 0' },
-      { 'INSTRUCCIONES': '• Comisión Tipo E = €/MWh, Tipo P = €/kW' },
-      { 'INSTRUCCIONES': '• Puede procesar miles de filas de una vez' }
+      { 'INSTRUCCIONES': '📋 Descripción de columnas:' },
+      { 'INSTRUCCIONES': '• Comercializadora: Nombre de la empresa energética' },
+      { 'INSTRUCCIONES': '• Oferta: Nombre específico de la tarifa/producto' },
+      { 'INSTRUCCIONES': '• Tarifa: Código oficial (2.0TD, 3.0TD, 6.1TD, etc.)' },
+      { 'INSTRUCCIONES': '• Tipo: Fija, Variable, Indexada, etc.' },
+      { 'INSTRUCCIONES': '• P1/P2/P3 Energía: Precios por periodo horario (€/MWh)' },
+      { 'INSTRUCCIONES': '• P1/P2/P3 Potencia: Precios de término de potencia (€/kW año)' },
+      { 'INSTRUCCIONES': '• Zona: PENINSULA, BALEARES, CANARIAS, CEUTA_MELILLA' },
+      { 'INSTRUCCIONES': '• Tipo Cliente: Residencial, Empresas, Industrial, etc.' },
+      { 'INSTRUCCIONES': '• Descripción: Detalles adicionales de la tarifa' },
+      { 'INSTRUCCIONES': '• Activa: SÍ/NO - indica si la tarifa está disponible' },
+      { 'INSTRUCCIONES': '• ID: Identificador único interno' },
+      { 'INSTRUCCIONES': '' },
+      { 'INSTRUCCIONES': '⚡ Periodos horarios:' },
+      { 'INSTRUCCIONES': '• P1 (Punta): Horario de mayor demanda y precio' },
+      { 'INSTRUCCIONES': '• P2 (Llano): Horario intermedio' },
+      { 'INSTRUCCIONES': '• P3 (Valle): Horario de menor demanda y precio' },
+      { 'INSTRUCCIONES': '' },
+      { 'INSTRUCCIONES': '💡 Uso recomendado:' },
+      { 'INSTRUCCIONES': '• Exportar para análisis externos (Excel, Power BI, etc.)' },
+      { 'INSTRUCCIONES': '• Comparar precios entre comercializadoras' },
+      { 'INSTRUCCIONES': '• Crear informes personalizados' },
+      { 'INSTRUCCIONES': '• Backup de datos de tarifas' },
+      { 'INSTRUCCIONES': '' },
+      { 'INSTRUCCIONES': '🔄 Para importar/actualizar tarifas usar:' },
+      { 'INSTRUCCIONES': 'Admin -> Importación Inteligente -> Subir Excel original' }
     ];
 
     const wsInstrucciones = XLSX.utils.json_to_sheet(instrucciones);
@@ -125,5 +153,7 @@ export async function GET() {
       { error: 'Error creando plantilla Excel' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }

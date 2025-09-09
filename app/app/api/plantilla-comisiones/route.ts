@@ -2,119 +2,132 @@
 
 import { NextResponse } from 'next/server';
 import * as XLSX from 'xlsx';
+import { PrismaClient } from '@prisma/client';
 
 export const dynamic = 'force-dynamic';
 
 export async function GET() {
+  const prisma = new PrismaClient();
+  
   try {
-    // Crear datos de ejemplo para la plantilla de comisiones
-    const plantillaComisiones = [
-      {
-        'Comercializadora': 'Iberdrola',
-        'Tarifa': '2.0TD',
-        'Zona': 'PENINSULA',
-        'Tipo Cliente': 'Residencial',
-        'Comisión Energía (%)': 25.00,
-        'Comisión Potencia (%)': 45.00,
-        'Fee Fijo Energía (€/MWh)': 15.00,
-        'Fee Fijo Potencia (€/kW)': 8.50,
-        'Mínimo Energía (€)': 2000,
-        'Máximo Energía (€)': 15000,
-        'Mínimo Potencia (€)': 500,
-        'Máximo Potencia (€)': 5000,
-        'Observaciones': 'Comisión estándar para clientes residenciales'
+    // Obtener TODAS las comisiones reales de la base de datos
+    const comisionesReales = await prisma.comisiones.findMany({
+      include: {
+        comercializadoras: true
       },
-      {
-        'Comercializadora': 'Endesa',
-        'Tarifa': '3.0TD',
-        'Zona': 'PENINSULA',
-        'Tipo Cliente': 'Empresas',
-        'Comisión Energía (%)': 30.00,
-        'Comisión Potencia (%)': 50.00,
-        'Fee Fijo Energía (€/MWh)': 18.00,
-        'Fee Fijo Potencia (€/kW)': 10.00,
-        'Mínimo Energía (€)': 5000,
-        'Máximo Energía (€)': 25000,
-        'Mínimo Potencia (€)': 1000,
-        'Máximo Potencia (€)': 10000,
-        'Observaciones': 'Comisión empresarial con bonificaciones por volumen'
-      },
-      {
-        'Comercializadora': 'Naturgy',
-        'Tarifa': '6.1TD',
-        'Zona': 'BALEARES',
-        'Tipo Cliente': 'Industrial',
-        'Comisión Energía (%)': 20.00,
-        'Comisión Potencia (%)': 40.00,
-        'Fee Fijo Energía (€/MWh)': 12.00,
-        'Fee Fijo Potencia (€/kW)': 6.00,
-        'Mínimo Energía (€)': 10000,
-        'Máximo Energía (€)': 50000,
-        'Mínimo Potencia (€)': 2000,
-        'Máximo Potencia (€)': 15000,
-        'Observaciones': 'Tarifas especiales para grandes consumidores industriales'
-      }
-    ];
+      orderBy: [
+        { comercializadoras: { nombre: 'asc' } },
+        { tarifa: 'asc' },
+        { zona: 'asc' }
+      ]
+    });
+
+    console.log(`📊 Generando plantilla con ${comisionesReales.length} comisiones reales`);
+
+    // Convertir las comisiones reales al formato Excel
+    const plantillaComisiones = comisionesReales.map((comision: any) => ({
+      'Comercializadora': comision.comercializadoras?.nombre || 'Sin nombre',
+      'Oferta': comision.nombreOferta || 'N/A',
+      'Tarifa': comision.tarifa || 'N/A',
+      'Zona': comision.zona || 'PENINSULA',
+      'Tipo Oferta': comision.tipoOferta || 'Empresas',
+      'Rango': comision.rango || 'Estándar',
+      'Desde (€)': Number(comision.rangoDesde || 0),
+      'Hasta (€)': Number(comision.rangoHasta || 0),
+      'Comisión (%)': Number(comision.comision || 0),
+      'Tiene Fee': comision.tieneFee ? 'SÍ' : 'NO',
+      'Fee Energía (%)': Number(comision.porcentajeFeeEnergia || 0),
+      'Fee Potencia (%)': Number(comision.porcentajeFeePotencia || 0),
+      'Activa': comision.activa ? 'SÍ' : 'NO',
+      'ID': comision.id
+    }));
+
+    // Si no hay comisiones, crear mensaje informativo
+    if (plantillaComisiones.length === 0) {
+      plantillaComisiones.push({
+        'Comercializadora': '[SIN DATOS]',
+        'Oferta': 'No hay comisiones en la base de datos',
+        'Tarifa': 'N/A',
+        'Zona': 'N/A',
+        'Tipo Oferta': 'N/A',
+        'Rango': 'N/A',
+        'Desde (€)': 0,
+        'Hasta (€)': 0,
+        'Comisión (%)': 0,
+        'Tiene Fee': 'NO',
+        'Fee Energía (%)': 0,
+        'Fee Potencia (%)': 0,
+        'Activa': 'NO',
+        'ID': 0
+      });
+    }
 
     // Crear workbook
     const wb = XLSX.utils.book_new();
     const ws = XLSX.utils.json_to_sheet(plantillaComisiones);
     
-    // Configurar anchos de columna
+    // Configurar anchos de columna para las nuevas columnas
     const wscols = [
       { wch: 20 }, // Comercializadora
+      { wch: 25 }, // Oferta
       { wch: 10 }, // Tarifa
       { wch: 12 }, // Zona
-      { wch: 15 }, // Tipo Cliente
-      { wch: 18 }, // Comisión Energía
-      { wch: 18 }, // Comisión Potencia
-      { wch: 20 }, // Fee Fijo Energía
-      { wch: 20 }, // Fee Fijo Potencia
-      { wch: 16 }, // Mínimo Energía
-      { wch: 16 }, // Máximo Energía
-      { wch: 16 }, // Mínimo Potencia
-      { wch: 16 }, // Máximo Potencia
-      { wch: 50 }  // Observaciones
+      { wch: 15 }, // Tipo Oferta
+      { wch: 15 }, // Rango
+      { wch: 12 }, // Desde (€)
+      { wch: 12 }, // Hasta (€)
+      { wch: 15 }, // Comisión (%)
+      { wch: 12 }, // Tiene Fee
+      { wch: 15 }, // Fee Energía (%)
+      { wch: 15 }, // Fee Potencia (%)
+      { wch: 8 },  // Activa
+      { wch: 8 }   // ID
     ];
     ws['!cols'] = wscols;
 
-    // Añadir hoja al workbook
-    XLSX.utils.book_append_sheet(wb, ws, "Plantilla_Comisiones");
+    // Añadir hoja al workbook con nombre descriptivo
+    XLSX.utils.book_append_sheet(wb, ws, `Comisiones_Reales_${new Date().toISOString().slice(0,10)}`);
 
-    // Crear segunda hoja con instrucciones
+    // Crear segunda hoja con instrucciones actualizadas
     const instrucciones = [
-      { 'INSTRUCCIONES': 'Formato de Importación de Comisiones Energéticas' },
+      { 'INSTRUCCIONES': '💰 PLANTILLA COMISIONES REALES - TODAS LAS COMISIONES DE LA BASE DE DATOS' },
       { 'INSTRUCCIONES': '' },
-      { 'INSTRUCCIONES': 'Columnas requeridas:' },
-      { 'INSTRUCCIONES': '• Comercializadora: Nombre de la comercializadora energética' },
-      { 'INSTRUCCIONES': '• Tarifa: 2.0TD, 3.0TD, 6.1TD, 6.2TD, etc.' },
+      { 'INSTRUCCIONES': 'Esta plantilla contiene TODAS las comisiones reales importadas en su sistema:' },
+      { 'INSTRUCCIONES': `Total de comisiones exportadas: ${plantillaComisiones.length}` },
+      { 'INSTRUCCIONES': '' },
+      { 'INSTRUCCIONES': '📋 Descripción de columnas:' },
+      { 'INSTRUCCIONES': '• Comercializadora: Nombre de la empresa energética' },
+      { 'INSTRUCCIONES': '• Tarifa: Código oficial (2.0TD, 3.0TD, 6.1TD, etc.)' },
       { 'INSTRUCCIONES': '• Zona: PENINSULA, BALEARES, CANARIAS, CEUTA_MELILLA' },
       { 'INSTRUCCIONES': '• Tipo Cliente: Residencial, Empresas, Industrial, etc.' },
       { 'INSTRUCCIONES': '• Comisión Energía (%): Porcentaje sobre el coste de energía' },
       { 'INSTRUCCIONES': '• Comisión Potencia (%): Porcentaje sobre el coste de potencia' },
       { 'INSTRUCCIONES': '• Fee Fijo Energía (€/MWh): Comisión fija por MWh consumido' },
       { 'INSTRUCCIONES': '• Fee Fijo Potencia (€/kW): Comisión fija por kW contratado' },
-      { 'INSTRUCCIONES': '• Mínimo/Máximo: Valores límite para aplicar comisiones' },
-      { 'INSTRUCCIONES': '• Observaciones: Descripción opcional de condiciones especiales' },
+      { 'INSTRUCCIONES': '• Mínimo/Máximo Energía/Potencia: Límites para aplicar comisiones' },
+      { 'INSTRUCCIONES': '• Observaciones: Condiciones especiales y notas' },
+      { 'INSTRUCCIONES': '• ID: Identificador único interno' },
       { 'INSTRUCCIONES': '' },
-      { 'INSTRUCCIONES': 'Tipos de comisión:' },
-      { 'INSTRUCCIONES': '• Porcentual: Se aplica el % sobre el coste total' },
-      { 'INSTRUCCIONES': '• Fee Fijo: Se aplica una cantidad fija por unidad' },
+      { 'INSTRUCCIONES': '💰 Tipos de comisión:' },
+      { 'INSTRUCCIONES': '• Porcentual: Se aplica el % sobre el coste calculado' },
+      { 'INSTRUCCIONES': '• Fee Fijo: Cantidad fija por unidad (MWh o kW)' },
       { 'INSTRUCCIONES': '• Mixta: Combina porcentaje + fee fijo' },
-      { 'INSTRUCCIONES': '• Si no se especifica fee fijo, se aplica solo porcentual' },
+      { 'INSTRUCCIONES': '• Los mínimos y máximos limitan la comisión total' },
       { 'INSTRUCCIONES': '' },
-      { 'INSTRUCCIONES': 'Zonas geográficas:' },
-      { 'INSTRUCCIONES': '• PENINSULA: España peninsular' },
-      { 'INSTRUCCIONES': '• BALEARES: Islas Baleares' },
-      { 'INSTRUCCIONES': '• CANARIAS: Islas Canarias' },
-      { 'INSTRUCCIONES': '• CEUTA_MELILLA: Ceuta y Melilla' },
+      { 'INSTRUCCIONES': '🗺️ Zonas geográficas españolas:' },
+      { 'INSTRUCCIONES': '• PENINSULA: España peninsular (tarifas estándar)' },
+      { 'INSTRUCCIONES': '• BALEARES: Islas Baleares (tarifas específicas)' },
+      { 'INSTRUCCIONES': '• CANARIAS: Islas Canarias (sin IVA, con IGIC)' },
+      { 'INSTRUCCIONES': '• CEUTA_MELILLA: Ceuta y Melilla (tarifas especiales)' },
       { 'INSTRUCCIONES': '' },
-      { 'INSTRUCCIONES': 'Notas importantes:' },
-      { 'INSTRUCCIONES': '• Puede procesar miles de filas simultáneamente' },
-      { 'INSTRUCCIONES': '• Si la comercializadora no existe, se creará automáticamente' },
-      { 'INSTRUCCIONES': '• Los porcentajes deben estar entre 0 y 100' },
-      { 'INSTRUCCIONES': '• Los fees fijos son opcionales (pueden estar vacíos)' },
-      { 'INSTRUCCIONES': '• Las comisiones duplicadas se actualizarán con los nuevos valores' }
+      { 'INSTRUCCIONES': '💡 Uso recomendado:' },
+      { 'INSTRUCCIONES': '• Análisis de rentabilidad por comercializadora' },
+      { 'INSTRUCCIONES': '• Comparativa de comisiones entre tarifas' },
+      { 'INSTRUCCIONES': '• Exportar para análisis externos (Excel, Power BI)' },
+      { 'INSTRUCCIONES': '• Backup de estructura de comisiones' },
+      { 'INSTRUCCIONES': '' },
+      { 'INSTRUCCIONES': '🔄 Para importar/actualizar comisiones usar:' },
+      { 'INSTRUCCIONES': 'Admin -> Importación Inteligente -> Subir Excel original' }
     ];
 
     const wsInstrucciones = XLSX.utils.json_to_sheet(instrucciones);
@@ -145,5 +158,7 @@ export async function GET() {
       { error: 'Error creando plantilla de comisiones' },
       { status: 500 }
     );
+  } finally {
+    await prisma.$disconnect();
   }
 }
