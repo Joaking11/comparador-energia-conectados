@@ -19,6 +19,9 @@ export async function GET(request: Request) {
     // Solo filtrar por activa si no es admin
     if (!admin) {
       whereClause.activa = true;
+      whereClause.comercializadoras = {
+        activa: true
+      };
     }
     
     if (comercializadoraId) {

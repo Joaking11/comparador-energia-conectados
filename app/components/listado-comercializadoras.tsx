@@ -19,16 +19,24 @@ import { useToast } from '@/hooks/use-toast';
 interface Comercializadora {
   id: string;
   nombre: string;
+  activa: boolean;
+  color?: string;
+  logoUrl?: string;
   ofertas: Oferta[];
 }
 
 interface Oferta {
   id: string;
-  nombre: string;
-  tipo: string;
-  precioEnergia: number;
-  precioTermino: number;
-  descripcion?: string;
+  nombreOferta: string;
+  tipoOferta: string;
+  energiaP1: number;
+  potenciaP1?: number;
+  comercializadoraId: string;
+  activa: boolean;
+  comercializadoras: {
+    nombre: string;
+    activa: boolean;
+  };
 }
 
 export function ListadoComercializadoras() {
@@ -36,23 +44,98 @@ export function ListadoComercializadoras() {
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
   const [filtroTipo, setFiltroTipo] = useState('todos');
+  const [actualizandoOferta, setActualizandoOferta] = useState<string | null>(null);
   const { toast } = useToast();
+
+  const toggleOfertaActiva = async (ofertaId: string, nuevoEstado: boolean) => {
+    try {
+      setActualizandoOferta(ofertaId);
+      console.log(`🔄 ${nuevoEstado ? 'Activando' : 'Desactivando'} oferta ${ofertaId}`);
+      
+      const response = await fetch('/api/ofertas', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          id: ofertaId,
+          activa: nuevoEstado
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error al actualizar oferta');
+      }
+
+      // Actualizar el estado local
+      setComercializadoras(prev => 
+        prev.map(comercializadora => ({
+          ...comercializadora,
+          ofertas: comercializadora.ofertas.map(oferta =>
+            oferta.id === ofertaId 
+              ? { ...oferta, activa: nuevoEstado }
+              : oferta
+          )
+        }))
+      );
+
+      toast({
+        title: 'Éxito',
+        description: `Oferta ${nuevoEstado ? 'activada' : 'desactivada'} correctamente`,
+      });
+
+      console.log(`✅ Oferta ${ofertaId} ${nuevoEstado ? 'activada' : 'desactivada'}`);
+    } catch (error) {
+      console.error('❌ Error actualizando oferta:', error);
+      toast({
+        title: 'Error',
+        description: 'No se pudo actualizar el estado de la oferta',
+        variant: 'destructive'
+      });
+    } finally {
+      setActualizandoOferta(null);
+    }
+  };
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const response = await fetch('/api/comercializadoras');
-        if (response.ok) {
-          const data = await response.json();
-          setComercializadoras(data);
-        } else {
-          throw new Error('Error al cargar las comercializadoras');
+        console.log('🔍 Cargando comercializadoras y ofertas...');
+        
+        // Cargar comercializadoras (solo activas)
+        const comercializadorasResponse = await fetch('/api/comercializadoras');
+        if (!comercializadorasResponse.ok) {
+          throw new Error('Error al cargar comercializadoras');
         }
+        const comercializadorasData = await comercializadorasResponse.json();
+        
+        // Filtrar solo comercializadoras activas
+        const comercializadorasActivas = comercializadorasData.filter((c: any) => c.activa);
+        console.log(`✅ Comercializadoras activas: ${comercializadorasActivas.length}`);
+        
+        // Cargar TODAS las ofertas (activas e inactivas) para gestión admin
+        const ofertasResponse = await fetch('/api/ofertas?admin=true');
+        if (!ofertasResponse.ok) {
+          throw new Error('Error al cargar ofertas');
+        }
+        const ofertasData = await ofertasResponse.json();
+        console.log(`✅ Ofertas disponibles: ${ofertasData.length}`);
+        
+        // Combinar datos: agregar TODAS las ofertas de comercializadoras activas
+        const comercializadorasConOfertas = comercializadorasActivas.map((comercializadora: any) => ({
+          ...comercializadora,
+          ofertas: ofertasData.filter((oferta: Oferta) => 
+            oferta.comercializadoraId === comercializadora.id
+          )
+        }));
+        
+        console.log('✅ Datos combinados exitosamente');
+        setComercializadoras(comercializadorasConOfertas);
       } catch (error) {
-        console.error('Error:', error);
+        console.error('❌ Error cargando datos:', error);
         toast({
           title: 'Error',
-          description: 'No se pudo cargar la información',
+          description: 'No se pudo cargar la información de comercializadoras',
           variant: 'destructive'
         });
       } finally {
@@ -72,8 +155,15 @@ export function ListadoComercializadoras() {
 
     if (filtroTipo === 'todos') return true;
     
+    const tipoFiltroMap: { [key: string]: string } = {
+      'fija': 'FIJO',
+      'indexada': 'INDEXADO'
+    };
+    
+    const tipoFiltroReal = tipoFiltroMap[filtroTipo] || filtroTipo.toUpperCase();
+    
     return comercializadora.ofertas.some(oferta => 
-      oferta.tipo.toLowerCase() === filtroTipo.toLowerCase()
+      oferta.tipoOferta.toUpperCase() === tipoFiltroReal
     );
   });
 
@@ -150,9 +240,15 @@ export function ListadoComercializadoras() {
           </Card>
         ) : (
           comercializadorasFiltradas.map((comercializadora) => {
+            const tipoFiltroMap: { [key: string]: string } = {
+              'fija': 'FIJO',
+              'indexada': 'INDEXADO'
+            };
+            const tipoFiltroReal = tipoFiltroMap[filtroTipo] || filtroTipo.toUpperCase();
+            
             const ofertasFiltradas = filtroTipo === 'todos' 
               ? comercializadora.ofertas 
-              : comercializadora.ofertas?.filter(o => o.tipo.toLowerCase() === filtroTipo.toLowerCase()) || [];
+              : comercializadora.ofertas?.filter(o => o.tipoOferta.toUpperCase() === tipoFiltroReal) || [];
 
             return (
               <Card key={comercializadora.id} className="hover:shadow-lg transition-shadow">
@@ -185,29 +281,53 @@ export function ListadoComercializadoras() {
                         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-3">
                           <div className="flex-1">
                             <div className="flex items-center gap-2 mb-2">
-                              <h4 className="font-medium text-gray-900">{oferta.nombre}</h4>
-                              <Badge variant={oferta.tipo === 'Fija' ? 'default' : 'secondary'}>
-                                {oferta.tipo}
+                              <h4 className="font-medium text-gray-900">{oferta.nombreOferta}</h4>
+                              <Badge variant={oferta.tipoOferta === 'FIJO' ? 'default' : 'secondary'}>
+                                {oferta.tipoOferta}
                               </Badge>
+                              {!oferta.activa && (
+                                <Badge variant="destructive" className="text-xs">
+                                  Inactiva
+                                </Badge>
+                              )}
                             </div>
-                            {oferta.descripcion && (
-                              <p className="text-sm text-gray-600 mb-2">{oferta.descripcion}</p>
-                            )}
                           </div>
                           
                           <div className="grid grid-cols-2 gap-4 lg:flex lg:items-center lg:gap-6">
                             <div className="text-center lg:text-right">
                               <div className="text-sm text-gray-500">Precio Energía</div>
                               <div className="font-semibold text-blue-600">
-                                {oferta.precioEnergia.toFixed(4)}€/kWh
+                                {oferta.energiaP1.toFixed(4)}€/kWh
                               </div>
                             </div>
                             
                             <div className="text-center lg:text-right">
                               <div className="text-sm text-gray-500">Término Potencia</div>
                               <div className="font-semibold text-green-600">
-                                {oferta.precioTermino.toFixed(2)}€/kW·mes
+                                {oferta.potenciaP1 ? oferta.potenciaP1.toFixed(2) : '0.00'}€/kW·día
                               </div>
+                            </div>
+                            
+                            <div className="text-center lg:text-right">
+                              <button 
+                                onClick={() => toggleOfertaActiva(oferta.id, !oferta.activa)}
+                                disabled={actualizandoOferta === oferta.id}
+                                className={`px-3 py-1 rounded-full text-xs font-medium transition-colors flex items-center gap-1 ${
+                                  actualizandoOferta === oferta.id
+                                    ? 'bg-gray-100 text-gray-500 cursor-not-allowed'
+                                    : oferta.activa 
+                                    ? 'bg-green-100 text-green-800 hover:bg-green-200' 
+                                    : 'bg-red-100 text-red-800 hover:bg-red-200'
+                                }`}
+                              >
+                                {actualizandoOferta === oferta.id && (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                )}
+                                {actualizandoOferta === oferta.id 
+                                  ? 'Actualizando...' 
+                                  : oferta.activa ? 'Activa' : 'Inactiva'
+                                }
+                              </button>
                             </div>
                           </div>
                         </div>
