@@ -31,6 +31,9 @@ export default function ManagePage() {
   const [datos, setDatos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [busqueda, setBusqueda] = useState('');
+  const [filtroComercializadora, setFiltroComercializadora] = useState('todas');
+  const [filtroOferta, setFiltroOferta] = useState('todas');
+  const [comercializadoras, setComercializadoras] = useState<any[]>([]);
   const [editando, setEditando] = useState<any>(null);
   const [mostrandoEditor, setMostrandoEditor] = useState(false);
   const { toast } = useToast();
@@ -56,10 +59,24 @@ export default function ManagePage() {
           break;
       }
       
-      const response = await fetch(url);
-      if (response.ok) {
-        const data = await response.json();
+      const promises = [fetch(url)];
+      
+      // Cargar comercializadoras para filtros si estamos en tarifas
+      if (activeTab === 'tarifas') {
+        promises.push(fetch('/api/comercializadoras'));
+      }
+
+      const responses = await Promise.all(promises);
+      
+      if (responses[0].ok) {
+        const data = await responses[0].json();
         setDatos(data);
+      }
+
+      // Si hay segunda respuesta (comercializadoras), procesarla
+      if (responses[1] && responses[1].ok) {
+        const comercializadorasData = await responses[1].json();
+        setComercializadoras(comercializadorasData);
       }
     } catch (error) {
       console.error('Error cargando datos:', error);
@@ -74,27 +91,54 @@ export default function ManagePage() {
   };
 
   const datosFiltrados = datos.filter(item => {
-    if (!busqueda) return true;
-    
-    const busquedaLower = busqueda.toLowerCase();
-    
-    switch (activeTab) {
-      case 'comercializadoras':
-        return item.nombre?.toLowerCase().includes(busquedaLower);
-      case 'tarifas':
-        return (
-          item.nombreOferta?.toLowerCase().includes(busquedaLower) ||
-          item.comercializadoras?.nombre?.toLowerCase().includes(busquedaLower)
-        );
-      case 'comisiones':
-        return (
-          item.comercializadoras?.nombre?.toLowerCase().includes(busquedaLower) ||
-          item.tarifa?.toLowerCase().includes(busquedaLower)
-        );
-      default:
-        return true;
+    // Filtro por búsqueda de texto
+    if (busqueda) {
+      const busquedaLower = busqueda.toLowerCase();
+      let matchBusqueda = false;
+      
+      switch (activeTab) {
+        case 'comercializadoras':
+          matchBusqueda = item.nombre?.toLowerCase().includes(busquedaLower);
+          break;
+        case 'tarifas':
+          matchBusqueda = (
+            item.nombreOferta?.toLowerCase().includes(busquedaLower) ||
+            item.comercializadoras?.nombre?.toLowerCase().includes(busquedaLower)
+          );
+          break;
+        case 'comisiones':
+          matchBusqueda = (
+            item.comercializadoras?.nombre?.toLowerCase().includes(busquedaLower) ||
+            item.tarifa?.toLowerCase().includes(busquedaLower)
+          );
+          break;
+        default:
+          matchBusqueda = true;
+      }
+      
+      if (!matchBusqueda) return false;
     }
+
+    // Filtros específicos para tarifas
+    if (activeTab === 'tarifas') {
+      // Filtro por comercializadora
+      if (filtroComercializadora !== 'todas' && item.comercializadoraId !== filtroComercializadora) {
+        return false;
+      }
+      
+      // Filtro por oferta
+      if (filtroOferta !== 'todas' && item.nombreOferta !== filtroOferta) {
+        return false;
+      }
+    }
+
+    return true;
   });
+
+  // Obtener ofertas únicas para el filtro
+  const ofertasUnicas = activeTab === 'tarifas' ? 
+    [...new Set(datos.map((t: any) => t.nombreOferta))].filter(Boolean) : 
+    [];
 
   const toggleEstado = async (id: string, activo: boolean) => {
     try {
@@ -443,6 +487,35 @@ export default function ManagePage() {
                   className="pl-10 w-80"
                 />
               </div>
+
+              {/* Filtros adicionales para tarifas */}
+              {activeTab === 'tarifas' && (
+                <>
+                  <Select value={filtroComercializadora} onValueChange={setFiltroComercializadora}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Comercializadora" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas las comercializadoras</SelectItem>
+                      {comercializadoras.map(c => (
+                        <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  
+                  <Select value={filtroOferta} onValueChange={setFiltroOferta}>
+                    <SelectTrigger className="w-48">
+                      <SelectValue placeholder="Oferta" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="todas">Todas las ofertas</SelectItem>
+                      {ofertasUnicas.map(oferta => (
+                        <SelectItem key={oferta} value={oferta}>{oferta}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </>
+              )}
               <Button variant="outline" onClick={cargarDatos}>
                 <RefreshCw className="h-4 w-4 mr-2" />
                 Actualizar
@@ -635,12 +708,14 @@ export default function ManagePage() {
           
           {editando && (
             <div className="space-y-4">
+              <form id="edit-form">
               {activeTab === 'comercializadoras' && (
                 <>
                   <div>
                     <Label htmlFor="edit-nombre">Nombre</Label>
                     <Input
                       id="edit-nombre"
+                      name="nombre"
                       defaultValue={editando.nombre}
                       placeholder="Nombre de la comercializadora"
                     />
@@ -650,6 +725,7 @@ export default function ManagePage() {
                       <Label htmlFor="edit-email">Email</Label>
                       <Input
                         id="edit-email"
+                        name="email"
                         type="email"
                         defaultValue={editando.email || ''}
                         placeholder="contacto@comercializadora.com"
@@ -659,6 +735,7 @@ export default function ManagePage() {
                       <Label htmlFor="edit-telefono">Teléfono</Label>
                       <Input
                         id="edit-telefono"
+                        name="telefono"
                         defaultValue={editando.telefono || ''}
                         placeholder="+34 900 000 000"
                       />
@@ -674,13 +751,14 @@ export default function ManagePage() {
                       <Label htmlFor="edit-oferta">Nombre de la Oferta</Label>
                       <Input
                         id="edit-oferta"
+                        name="nombreOferta"
                         defaultValue={editando.nombreOferta}
                         placeholder="Nombre de la tarifa"
                       />
                     </div>
                     <div>
                       <Label htmlFor="edit-tarifa">Tarifa de Acceso</Label>
-                      <Select defaultValue={editando.tarifa}>
+                      <Select defaultValue={editando.tarifa} name="tarifa">
                         <SelectTrigger id="edit-tarifa">
                           <SelectValue />
                         </SelectTrigger>
@@ -696,27 +774,143 @@ export default function ManagePage() {
                     </div>
                   </div>
                   
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <Label htmlFor="edit-energia">Precio Energía P1 (€/kWh)</Label>
-                      <Input
-                        id="edit-energia"
-                        type="number"
-                        step="0.000001"
-                        defaultValue={editando.energiaP1}
-                        placeholder="0.185000"
-                      />
+                  {/* Precios de Energía */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-3 text-orange-600">⚡ Precios de Energía (€/kWh)</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label htmlFor="edit-energiaP1">P1 (Punta)</Label>
+                        <Input
+                          id="edit-energiaP1" name="energiaP1"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.energiaP1}
+                          placeholder="0.185000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-energiaP2">P2 (Llano)</Label>
+                        <Input
+                          id="edit-energiaP2" name="energiaP2"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.energiaP2}
+                          placeholder="0.160000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-energiaP3">P3 (Valle)</Label>
+                        <Input
+                          id="edit-energiaP3" name="energiaP3"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.energiaP3}
+                          placeholder="0.140000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-energiaP4">P4</Label>
+                        <Input
+                          id="edit-energiaP4" name="energiaP4"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.energiaP4}
+                          placeholder="0.000000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-energiaP5">P5</Label>
+                        <Input
+                          id="edit-energiaP5" name="energiaP5"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.energiaP5}
+                          placeholder="0.000000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-energiaP6">P6</Label>
+                        <Input
+                          id="edit-energiaP6" name="energiaP6"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.energiaP6}
+                          placeholder="0.000000"
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <Label htmlFor="edit-potencia">Precio Potencia P1 (€/kW·día)</Label>
-                      <Input
-                        id="edit-potencia"
-                        type="number"
-                        step="0.000001"
-                        defaultValue={editando.potenciaP1}
-                        placeholder="0.115000"
-                      />
+                  </div>
+
+                  {/* Precios de Potencia */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-3 text-purple-600">🔌 Precios de Potencia (€/kW·día)</h3>
+                    <div className="grid grid-cols-3 gap-3">
+                      <div>
+                        <Label htmlFor="edit-potenciaP1">P1 (Punta)</Label>
+                        <Input
+                          id="edit-potenciaP1" name="potenciaP1"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.potenciaP1}
+                          placeholder="0.115000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-potenciaP2">P2 (Llano)</Label>
+                        <Input
+                          id="edit-potenciaP2" name="potenciaP2"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.potenciaP2}
+                          placeholder="0.080000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-potenciaP3">P3 (Valle)</Label>
+                        <Input
+                          id="edit-potenciaP3" name="potenciaP3"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.potenciaP3}
+                          placeholder="0.040000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-potenciaP4">P4</Label>
+                        <Input
+                          id="edit-potenciaP4" name="potenciaP4"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.potenciaP4}
+                          placeholder="0.000000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-potenciaP5">P5</Label>
+                        <Input
+                          id="edit-potenciaP5" name="potenciaP5"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.potenciaP5}
+                          placeholder="0.000000"
+                        />
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-potenciaP6">P6</Label>
+                        <Input
+                          id="edit-potenciaP6" name="potenciaP6"
+                          type="number"
+                          step="0.000001"
+                          defaultValue={editando.potenciaP6}
+                          placeholder="0.000000"
+                        />
+                      </div>
                     </div>
+                  </div>
+
+                  <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                    <p className="font-semibold mb-1">📝 Nota importante:</p>
+                    <p>Para tarifas 2.0TD usar principalmente P1, P2, P3. Para tarifas 3.0TD y 6.1TD usar todos los periodos según corresponda. Las comisiones se gestionan en el tab "Comisiones".</p>
                   </div>
                 </>
               )}
@@ -726,7 +920,7 @@ export default function ManagePage() {
                   <div className="grid grid-cols-3 gap-4">
                     <div>
                       <Label htmlFor="edit-zona">Zona</Label>
-                      <Select defaultValue={editando.zona}>
+                      <Select defaultValue={editando.zona} name="zona">
                         <SelectTrigger id="edit-zona">
                           <SelectValue />
                         </SelectTrigger>
@@ -741,7 +935,7 @@ export default function ManagePage() {
                     <div>
                       <Label htmlFor="edit-comision-energia">% Energía</Label>
                       <Input
-                        id="edit-comision-energia"
+                        id="edit-comision-energia" name="porcentajeFeeEnergia"
                         type="number"
                         step="0.01"
                         defaultValue={editando.porcentajeFeeEnergia}
@@ -751,7 +945,7 @@ export default function ManagePage() {
                     <div>
                       <Label htmlFor="edit-comision-potencia">% Potencia</Label>
                       <Input
-                        id="edit-comision-potencia"
+                        id="edit-comision-potencia" name="porcentajeFeePotencia"
                         type="number"
                         step="0.01"
                         defaultValue={editando.porcentajeFeePotencia}
@@ -762,18 +956,81 @@ export default function ManagePage() {
                 </>
               )}
               
+              </form>
               <div className="flex justify-end gap-3 pt-4 border-t">
                 <Button variant="outline" onClick={() => setMostrandoEditor(false)}>
                   Cancelar
                 </Button>
                 <Button 
-                  onClick={() => {
-                    toast({
-                      title: 'Guardado',
-                      description: 'Los cambios se han guardado correctamente'
-                    });
-                    setMostrandoEditor(false);
-                    cargarDatos();
+                  onClick={async () => {
+                    try {
+                      const formData = new FormData(document.getElementById('edit-form') as HTMLFormElement);
+                      const data: any = {};
+                      
+                      if (activeTab === 'comercializadoras') {
+                        data.nombre = formData.get('nombre');
+                        data.email = formData.get('email');
+                        data.telefono = formData.get('telefono');
+                      } else if (activeTab === 'tarifas') {
+                        data.nombreOferta = formData.get('nombreOferta');
+                        data.tarifa = formData.get('tarifa');
+                        data.energiaP1 = parseFloat(formData.get('energiaP1') as string) || 0;
+                        data.energiaP2 = parseFloat(formData.get('energiaP2') as string) || 0;
+                        data.energiaP3 = parseFloat(formData.get('energiaP3') as string) || 0;
+                        data.energiaP4 = parseFloat(formData.get('energiaP4') as string) || 0;
+                        data.energiaP5 = parseFloat(formData.get('energiaP5') as string) || 0;
+                        data.energiaP6 = parseFloat(formData.get('energiaP6') as string) || 0;
+                        data.potenciaP1 = parseFloat(formData.get('potenciaP1') as string) || 0;
+                        data.potenciaP2 = parseFloat(formData.get('potenciaP2') as string) || 0;
+                        data.potenciaP3 = parseFloat(formData.get('potenciaP3') as string) || 0;
+                        data.potenciaP4 = parseFloat(formData.get('potenciaP4') as string) || 0;
+                        data.potenciaP5 = parseFloat(formData.get('potenciaP5') as string) || 0;
+                        data.potenciaP6 = parseFloat(formData.get('potenciaP6') as string) || 0;
+                      } else if (activeTab === 'comisiones') {
+                        data.zona = formData.get('zona');
+                        data.porcentajeFeeEnergia = parseFloat(formData.get('porcentajeFeeEnergia') as string) || 0;
+                        data.porcentajeFeePotencia = parseFloat(formData.get('porcentajeFeePotencia') as string) || 0;
+                      }
+                      
+                      let url = '';
+                      switch (activeTab) {
+                        case 'comercializadoras':
+                          url = `/api/comercializadoras`;
+                          data.id = editando.id;
+                          break;
+                        case 'tarifas':
+                          url = `/api/ofertas/${editando.id}`;
+                          break;
+                        case 'comisiones':
+                          url = `/api/admin/comisiones/${editando.id}`;
+                          break;
+                      }
+
+                      const response = await fetch(url, {
+                        method: 'PUT',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(data)
+                      });
+
+                      if (response.ok) {
+                        toast({
+                          title: '✅ Guardado exitoso',
+                          description: 'Los cambios se han guardado correctamente'
+                        });
+                        setMostrandoEditor(false);
+                        cargarDatos();
+                      } else {
+                        const error = await response.json();
+                        throw new Error(error.message || 'Error al guardar');
+                      }
+                    } catch (error) {
+                      console.error('Error guardando:', error);
+                      toast({
+                        title: '❌ Error',
+                        description: `No se pudieron guardar los cambios: ${error instanceof Error ? error.message : 'Error desconocido'}`,
+                        variant: 'destructive'
+                      });
+                    }
                   }}
                 >
                   Guardar Cambios
