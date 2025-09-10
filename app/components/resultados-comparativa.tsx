@@ -43,6 +43,7 @@ interface ComparativaData {
   tarifaAccesoElectricidad: string;
   totalFacturaElectricidad: number;
   comercializadoraActual: string;
+  diasPeriodoFactura: number;
   clientes: {
     razonSocial: string;
     cif?: string | null;
@@ -109,6 +110,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
     const fetchData = async () => {
       try {
         setLoading(true);
+        console.log('🔍 Cargando comparativa:', comparativaId);
         const response = await fetch(`/api/comparativas/${comparativaId}`);
         
         if (!response.ok) {
@@ -116,7 +118,8 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
         }
         
         const comparativa = await response.json();
-        console.log('Datos recibidos:', comparativa);
+        console.log('✅ Datos recibidos:', comparativa);
+        console.log('🔢 diasPeriodoFactura:', comparativa.diasPeriodoFactura);
         setData(comparativa);
         
         // Cargar parámetros actuales para edición
@@ -475,27 +478,31 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
       {/* Resultados - Vista condicional */}
       {vistaActiva === 'matriz' ? (
         <MatrizInteractivaResultados
-          resultados={ofertasFiltradas.map(resultado => ({
-            id: resultado.id,
-            tarifa: {
-              id: resultado.tarifas.id,
-              nombre: resultado.tarifas.nombreOferta,
-              comercializadora: {
-                id: resultado.tarifas.comercializadoras.id,
-                nombre: resultado.tarifas.comercializadoras.nombre,
-                color: resultado.tarifas.comercializadoras.color,
-                logoUrl: resultado.tarifas.comercializadoras.logoUrl,
-                activa: true // Default value, adjust if needed
-              }
-            },
-            precioEnergia: resultado.tarifas.energiaP1,
-            precioPotencia: resultado.tarifas.potenciaP1 || 0,
-            costoMensual: resultado.importeCalculado / 12, // Convertir de anual a mensual para la matriz
-            ahorroMensual: (data.totalFacturaElectricidad - resultado.importeCalculado) / 12, // Ahorro mensual
-            comisionEnergia: 0, // Will be calculated by matriz component
-            comisionPotencia: 0, // Will be calculated by matriz component
-            comisionTotal: resultado.comisionGanada
-          }))}
+          resultados={ofertasFiltradas.map(resultado => {
+            const diasPeriodo = data?.diasPeriodoFactura || 30;
+            console.log('🔢 Calculando para matriz - dias:', diasPeriodo);
+            return {
+              id: resultado.id,
+              tarifa: {
+                id: resultado.tarifas.id,
+                nombre: resultado.tarifas.nombreOferta,
+                comercializadora: {
+                  id: resultado.tarifas.comercializadoras.id,
+                  nombre: resultado.tarifas.comercializadoras.nombre,
+                  color: resultado.tarifas.comercializadoras.color,
+                  logoUrl: resultado.tarifas.comercializadoras.logoUrl,
+                  activa: true // Default value, adjust if needed
+                }
+              },
+              precioEnergia: resultado.tarifas.energiaP1,
+              precioPotencia: resultado.tarifas.potenciaP1 || 0,
+              costoMensual: (resultado.importeCalculado * 30) / diasPeriodo, // Convertir del período a mensual
+              ahorroMensual: ((data.totalFacturaElectricidad - resultado.importeCalculado) * 30) / diasPeriodo, // Ahorro mensual
+              comisionEnergia: 0, // Will be calculated by matriz component
+              comisionPotencia: 0, // Will be calculated by matriz component
+              comisionTotal: resultado.comisionGanada
+            };
+          })}
           onSeleccionarOferta={(resultado) => {
             const ofertaOriginal = ofertasFiltradas.find(o => o.id === resultado.id);
             if (ofertaOriginal) {
@@ -538,8 +545,9 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                       <th className="text-left py-3 px-4 font-medium text-gray-700">Comercializadora</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700">Oferta</th>
                       <th className="text-left py-3 px-4 font-medium text-gray-700">Tipo</th>
-                      <th className="text-right py-3 px-4 font-medium text-gray-700">Coste Anual</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">Coste Factura</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-700">Ahorro</th>
+                      <th className="text-right py-3 px-4 font-medium text-gray-700">Ahorro Anual</th>
                       <th className="text-right py-3 px-4 font-medium text-gray-700">Comisión</th>
                       <th className="text-center py-3 px-4 font-medium text-gray-700">Acciones</th>
                     </tr>
@@ -591,7 +599,15 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                               {ahorroReal > 0 ? `+${ahorroReal.toFixed(0)}€` : `${ahorroReal.toFixed(0)}€`}
                             </div>
                             <div className="text-sm text-gray-500">
-                              {ahorroReal > 0 ? 'Ahorro anual' : 'Incremento'}
+                              {ahorroReal > 0 ? 'Ahorro factura' : 'Incremento'}
+                            </div>
+                          </td>
+                          <td className="py-3 px-4 text-right">
+                            <div className={`font-medium ${ahorroReal > 0 ? 'text-blue-600' : 'text-red-600'}`}>
+                              {ahorroReal > 0 ? `+${((ahorroReal * 365) / (data?.diasPeriodoFactura || 30)).toFixed(0)}€` : `${((ahorroReal * 365) / (data?.diasPeriodoFactura || 30)).toFixed(0)}€`}
+                            </div>
+                            <div className="text-sm text-gray-500">
+                              {ahorroReal > 0 ? 'Ahorro anual' : 'Incremento anual'}
                             </div>
                           </td>
                           <td className="py-3 px-4 text-right">
