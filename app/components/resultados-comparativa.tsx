@@ -326,9 +326,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
           </CardHeader>
           <CardContent>
             <div className="text-2xl font-bold text-gray-900">
-              {data.totalFacturaElectricidad > 100000 
-                ? (data.totalFacturaElectricidad / 1000).toFixed(2) 
-                : data.totalFacturaElectricidad?.toFixed(2)}€
+              {data.totalFacturaElectricidad?.toFixed(2)}€
             </div>
             <p className="text-xs text-gray-500">
               {data.comercializadoraActual} - {data.tarifaAccesoElectricidad}
@@ -492,18 +490,8 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
             },
             precioEnergia: resultado.tarifas.energiaP1,
             precioPotencia: resultado.tarifas.potenciaP1 || 0,
-            costoMensual: resultado.importeCalculado > 100000 
-              ? (resultado.importeCalculado / 1000) / 12  // Corregir valor inflado y convertir a mensual
-              : resultado.importeCalculado / 12, // Convertir a mensual
-            ahorroMensual: (() => {
-              const facturaCorregida = data.totalFacturaElectricidad > 100000 
-                ? data.totalFacturaElectricidad / 1000 
-                : data.totalFacturaElectricidad;
-              const importeCorregido = resultado.importeCalculado > 100000 
-                ? resultado.importeCalculado / 1000 
-                : resultado.importeCalculado;
-              return (facturaCorregida - importeCorregido) / 12; // Convertir a mensual
-            })(),
+            costoMensual: resultado.importeCalculado / 12, // Convertir de anual a mensual para la matriz
+            ahorroMensual: (data.totalFacturaElectricidad - resultado.importeCalculado) / 12, // Ahorro mensual
             comisionEnergia: 0, // Will be calculated by matriz component
             comisionPotencia: 0, // Will be calculated by matriz component
             comisionTotal: resultado.comisionGanada
@@ -558,19 +546,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                   </thead>
                   <tbody>
                     {ofertasFiltradas.map((resultado, index) => {
-                      // CORRECCIÓN: Si los valores son demasiado grandes, aplicar factor de corrección
-                      let importeCorregido = resultado.importeCalculado;
-                      let totalFacturaCorregida = data.totalFacturaElectricidad;
-                      
-                      // Detectar si los valores están inflados (mayor a 100,000€ anual es sospechoso)
-                      if (resultado.importeCalculado > 100000) {
-                        console.log('⚠️ Valor inflado detectado, aplicando corrección:', resultado.importeCalculado);
-                        // Aplicar corrección dividiendo por 1000 si está inflado
-                        importeCorregido = resultado.importeCalculado / 1000;
-                        totalFacturaCorregida = data.totalFacturaElectricidad / 1000;
-                      }
-                      
-                      const ahorroReal = totalFacturaCorregida - importeCorregido;
+                      const ahorroReal = data.totalFacturaElectricidad - resultado.importeCalculado;
                       const esLaMejor = index === 0;
                       
                       return (
@@ -604,7 +580,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
                           </td>
                           <td className="py-3 px-4 text-right">
                             <div className="font-medium text-gray-900">
-                              {importeCorregido.toFixed(2)}€
+                              {resultado.importeCalculado.toFixed(2)}€
                             </div>
                             <div className="text-sm text-gray-500">
                               {resultado.tarifas.energiaP1.toFixed(4)}€/kWh + {resultado.tarifas.potenciaP1 ? resultado.tarifas.potenciaP1.toFixed(2) : '0'}€/kW
@@ -706,15 +682,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
               <div className="text-center">
                 <p className="text-sm text-gray-600">Ahorro Anual</p>
                 <p className="text-2xl font-bold text-secondary">
-                  {(() => {
-                    const facturaCorregida = data.totalFacturaElectricidad > 100000 
-                      ? data.totalFacturaElectricidad / 1000 
-                      : data.totalFacturaElectricidad;
-                    const importeCorregido = mejorOferta.importeCalculado > 100000 
-                      ? mejorOferta.importeCalculado / 1000 
-                      : mejorOferta.importeCalculado;
-                    return (facturaCorregida - importeCorregido).toFixed(0);
-                  })()}€
+                  {(data.totalFacturaElectricidad - mejorOferta.importeCalculado).toFixed(0)}€
                 </p>
               </div>
               <div className="text-center">

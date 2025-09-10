@@ -142,12 +142,15 @@ export class CalculationEngine {
     try {
       // PASO 1: Calcular coste energía
       const totalEnergia = this.calculateEnergiaCost(comparativa, tarifa, parametrosPersonalizados);
+      console.log(`🔍 [${tarifa.nombreOferta}] Coste energía:`, totalEnergia);
 
       // PASO 2: Calcular coste potencia
       const totalPotencia = this.calculatePotenciaCost(comparativa, tarifa, parametrosPersonalizados);
+      console.log(`🔍 [${tarifa.nombreOferta}] Coste potencia:`, totalPotencia);
 
       // PASO 3: Calcular base imponible
-      const totalBase = totalEnergia + totalPotencia + tarifa.costeGestion;
+      const totalBase = totalEnergia + totalPotencia + (tarifa.costeGestion || 0);
+      console.log(`🔍 [${tarifa.nombreOferta}] Base imponible:`, totalBase, `(energía: ${totalEnergia} + potencia: ${totalPotencia} + gestión: ${tarifa.costeGestion || 0})`);
 
       // PASO 4: Calcular impuesto eléctrico (5.11269632% en España)
       const impuestoElectricidad = totalBase * 0.0511269632;
@@ -261,8 +264,10 @@ export class CalculationEngine {
 
     for (const periodo of periodos) {
       if (periodo.potencia > 0 && periodo.precio > 0) {
-        // Convertir €/kW mes a €/kW año (x12 meses)
-        totalPotencia += periodo.potencia * periodo.precio * 12;
+        // CORREGIDO: Los precios de potencia ya vienen anualizados, no multiplicar por 12
+        const costePeriodo = periodo.potencia * periodo.precio;
+        console.log(`🔍 Potencia P${periodos.indexOf(periodo) + 1}: ${periodo.potencia} kW × ${periodo.precio} €/kW = ${costePeriodo}€`);
+        totalPotencia += costePeriodo;
       }
     }
 
@@ -291,7 +296,10 @@ export class CalculationEngine {
         comparativa.potenciaP6 || 0
       );
       
-      totalPotencia += potenciaMaxima * feeAplicar * 12; // €/kW año
+      // CORREGIDO: FEE ya viene anualizado, no multiplicar por 12
+      const feePotenciaAnual = potenciaMaxima * feeAplicar;
+      console.log(`🔍 FEE Potencia: ${potenciaMaxima} kW × ${feeAplicar} €/kW = ${feePotenciaAnual}€`);
+      totalPotencia += feePotenciaAnual;
       
       if (parametrosPersonalizados) {
         console.log('🎯 Aplicado fee potencia personalizado:', feeAplicar, '€/kW·día');
