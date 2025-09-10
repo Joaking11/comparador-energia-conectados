@@ -264,9 +264,9 @@ export class CalculationEngine {
 
     for (const periodo of periodos) {
       if (periodo.potencia > 0 && periodo.precio > 0) {
-        // CORREGIDO: Los precios de potencia vienen en €/kW·día, multiplicar por 365 para anualizar
-        const costePeriodo = periodo.potencia * periodo.precio * 365;
-        console.log(`🔍 Potencia P${periodos.indexOf(periodo) + 1}: ${periodo.potencia} kW × ${periodo.precio} €/kW·día × 365 días = ${costePeriodo}€`);
+        // Los precios de potencia vienen en €/kW·año, NO multiplicar por días adicionales  
+        const costePeriodo = periodo.potencia * periodo.precio;
+        console.log(`🔍 Potencia P${periodos.indexOf(periodo) + 1}: ${periodo.potencia} kW × ${periodo.precio} €/kW·año = ${costePeriodo}€`);
         totalPotencia += costePeriodo;
       }
     }
@@ -296,9 +296,9 @@ export class CalculationEngine {
         comparativa.potenciaP6 || 0
       );
       
-      // CORREGIDO: FEE viene en €/kW·día, multiplicar por 365 para anualizar
-      const feePotenciaAnual = potenciaMaxima * feeAplicar * 365;
-      console.log(`🔍 FEE Potencia: ${potenciaMaxima} kW × ${feeAplicar} €/kW·día × 365 días = ${feePotenciaAnual}€`);
+      // FEE de potencia anualizado
+      const feePotenciaAnual = potenciaMaxima * feeAplicar;
+      console.log(`🔍 FEE Potencia: ${potenciaMaxima} kW × ${feeAplicar} €/kW·año = ${feePotenciaAnual}€`);
       totalPotencia += feePotenciaAnual;
       
       if (parametrosPersonalizados) {
