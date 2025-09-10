@@ -492,8 +492,18 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
             },
             precioEnergia: resultado.tarifas.energiaP1,
             precioPotencia: resultado.tarifas.potenciaP1 || 0,
-            costoMensual: resultado.importeCalculado, // La matriz maneja la conversión internamente
-            ahorroMensual: (data.totalFacturaElectricidad - resultado.importeCalculado), // La matriz maneja la conversión internamente
+            costoMensual: resultado.importeCalculado > 100000 
+              ? (resultado.importeCalculado / 1000) / 12  // Corregir valor inflado y convertir a mensual
+              : resultado.importeCalculado / 12, // Convertir a mensual
+            ahorroMensual: (() => {
+              const facturaCorregida = data.totalFacturaElectricidad > 100000 
+                ? data.totalFacturaElectricidad / 1000 
+                : data.totalFacturaElectricidad;
+              const importeCorregido = resultado.importeCalculado > 100000 
+                ? resultado.importeCalculado / 1000 
+                : resultado.importeCalculado;
+              return (facturaCorregida - importeCorregido) / 12; // Convertir a mensual
+            })(),
             comisionEnergia: 0, // Will be calculated by matriz component
             comisionPotencia: 0, // Will be calculated by matriz component
             comisionTotal: resultado.comisionGanada
