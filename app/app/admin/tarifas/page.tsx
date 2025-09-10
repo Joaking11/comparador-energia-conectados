@@ -34,6 +34,7 @@ export default function AdminTarifasPage() {
   const [loading, setLoading] = useState(true);
   const [filtroComercializadora, setFiltroComercializadora] = useState('todas');
   const [filtroTarifa, setFiltroTarifa] = useState('todas');
+  const [filtroOferta, setFiltroOferta] = useState('todas');
   const [busqueda, setBusqueda] = useState('');
   const [mostrandoEditor, setMostrandoEditor] = useState(false);
   const [tarifaEditando, setTarifaEditando] = useState<any>(null);
@@ -49,11 +50,15 @@ export default function AdminTarifasPage() {
     energiaP1: 0,
     energiaP2: 0,
     energiaP3: 0,
+    energiaP4: 0,
+    energiaP5: 0,
+    energiaP6: 0,
     potenciaP1: 0,
     potenciaP2: 0,
-    tieneFee: false,
-    feeEnergia: 0,
-    feePotencia: 0,
+    potenciaP3: 0,
+    potenciaP4: 0,
+    potenciaP5: 0,
+    potenciaP6: 0,
     costeGestion: 0
   });
 
@@ -96,12 +101,16 @@ export default function AdminTarifasPage() {
     const matchComercializadora = filtroComercializadora === 'todas' || 
       tarifa.comercializadoraId === filtroComercializadora;
     const matchTarifa = filtroTarifa === 'todas' || tarifa.tarifa === filtroTarifa;
+    const matchOferta = filtroOferta === 'todas' || tarifa.nombreOferta === filtroOferta;
     const matchBusqueda = !busqueda || 
       tarifa.nombreOferta?.toLowerCase().includes(busqueda.toLowerCase()) ||
       tarifa.comercializadoras?.nombre?.toLowerCase().includes(busqueda.toLowerCase());
     
-    return matchComercializadora && matchTarifa && matchBusqueda;
+    return matchComercializadora && matchTarifa && matchOferta && matchBusqueda;
   });
+
+  // Obtener ofertas únicas para el filtro
+  const ofertasUnicas = [...new Set(tarifas.map((t: any) => t.nombreOferta))].filter(Boolean);
 
   const handleSubirExcel = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -164,11 +173,15 @@ export default function AdminTarifasPage() {
         energiaP1: tarifa.energiaP1 || 0,
         energiaP2: tarifa.energiaP2 || 0,
         energiaP3: tarifa.energiaP3 || 0,
+        energiaP4: tarifa.energiaP4 || 0,
+        energiaP5: tarifa.energiaP5 || 0,
+        energiaP6: tarifa.energiaP6 || 0,
         potenciaP1: tarifa.potenciaP1 || 0,
         potenciaP2: tarifa.potenciaP2 || 0,
-        tieneFee: tarifa.tieneFee || false,
-        feeEnergia: tarifa.feeEnergia || 0,
-        feePotencia: tarifa.feePotencia || 0,
+        potenciaP3: tarifa.potenciaP3 || 0,
+        potenciaP4: tarifa.potenciaP4 || 0,
+        potenciaP5: tarifa.potenciaP5 || 0,
+        potenciaP6: tarifa.potenciaP6 || 0,
         costeGestion: tarifa.costeGestion || 0
       });
     } else {
@@ -182,11 +195,15 @@ export default function AdminTarifasPage() {
         energiaP1: 0,
         energiaP2: 0,
         energiaP3: 0,
+        energiaP4: 0,
+        energiaP5: 0,
+        energiaP6: 0,
         potenciaP1: 0,
         potenciaP2: 0,
-        tieneFee: false,
-        feeEnergia: 0,
-        feePotencia: 0,
+        potenciaP3: 0,
+        potenciaP4: 0,
+        potenciaP5: 0,
+        potenciaP6: 0,
         costeGestion: 0
       });
     }
@@ -350,13 +367,13 @@ export default function AdminTarifasPage() {
       {/* Filtros */}
       <Card className="mb-6">
         <CardContent className="pt-6">
-          <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
             <div>
               <Label className="text-sm font-medium">Buscar</Label>
               <div className="relative">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
                 <Input
-                  placeholder="Buscar tarifa o comercializadora..."
+                  placeholder="Buscar..."
                   value={busqueda}
                   onChange={(e) => setBusqueda(e.target.value)}
                   className="pl-10"
@@ -374,6 +391,21 @@ export default function AdminTarifasPage() {
                   <SelectItem value="todas">Todas</SelectItem>
                   {comercializadoras.map(c => (
                     <SelectItem key={c.id} value={c.id}>{c.nombre}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            <div>
+              <Label className="text-sm font-medium">Oferta</Label>
+              <Select value={filtroOferta} onValueChange={setFiltroOferta}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="todas">Todas</SelectItem>
+                  {ofertasUnicas.map(oferta => (
+                    <SelectItem key={oferta} value={oferta}>{oferta}</SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -553,7 +585,8 @@ export default function AdminTarifasPage() {
                 </Button>
               </div>
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {/* Información General */}
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
                 <div>
                   <Label htmlFor="comercializadora">Comercializadora</Label>
                   <Select value={formData.comercializadoraId} onValueChange={(value) => 
@@ -612,109 +645,182 @@ export default function AdminTarifasPage() {
                 </div>
 
                 <div>
-                  <Label htmlFor="energiaP1">Precio Energía P1 (€/kWh)</Label>
+                  <Label htmlFor="zona">Zona</Label>
                   <Input
-                    id="energiaP1"
-                    type="number"
-                    step="0.000001"
-                    value={formData.energiaP1}
-                    onChange={(e) => setFormData(prev => ({...prev, energiaP1: parseFloat(e.target.value) || 0}))}
+                    id="zona"
+                    value={formData.zona}
+                    onChange={(e) => setFormData(prev => ({...prev, zona: e.target.value}))}
+                    placeholder="Peninsula"
                   />
                 </div>
 
                 <div>
-                  <Label htmlFor="potenciaP1">Precio Potencia P1 (€/kW)</Label>
+                  <Label htmlFor="costeGestion">Coste Gestión (€/mes)</Label>
                   <Input
-                    id="potenciaP1"
+                    id="costeGestion"
                     type="number"
-                    step="0.000001"
-                    value={formData.potenciaP1}
-                    onChange={(e) => setFormData(prev => ({...prev, potenciaP1: parseFloat(e.target.value) || 0}))}
+                    step="0.01"
+                    value={formData.costeGestion}
+                    onChange={(e) => setFormData(prev => ({...prev, costeGestion: parseFloat(e.target.value) || 0}))}
                   />
                 </div>
+              </div>
 
-                <div>
-                  <Label htmlFor="energiaP2">Precio Energía P2 (€/kWh)</Label>
-                  <Input
-                    id="energiaP2"
-                    type="number"
-                    step="0.000001"
-                    value={formData.energiaP2}
-                    onChange={(e) => setFormData(prev => ({...prev, energiaP2: parseFloat(e.target.value) || 0}))}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="potenciaP2">Precio Potencia P2 (€/kW)</Label>
-                  <Input
-                    id="potenciaP2"
-                    type="number"
-                    step="0.000001"
-                    value={formData.potenciaP2}
-                    onChange={(e) => setFormData(prev => ({...prev, potenciaP2: parseFloat(e.target.value) || 0}))}
-                  />
-                </div>
-
-                <div>
-                  <Label htmlFor="energiaP3">Precio Energía P3 (€/kWh)</Label>
-                  <Input
-                    id="energiaP3"
-                    type="number"
-                    step="0.000001"
-                    value={formData.energiaP3}
-                    onChange={(e) => setFormData(prev => ({...prev, energiaP3: parseFloat(e.target.value) || 0}))}
-                  />
-                </div>
-
-                <div className="md:col-span-2">
-                  <div className="flex items-center space-x-2">
-                    <input
-                      type="checkbox"
-                      id="tieneFee"
-                      checked={formData.tieneFee}
-                      onChange={(e) => setFormData(prev => ({...prev, tieneFee: e.target.checked}))}
-                      className="rounded border-gray-300"
+              {/* Precios de Energía */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-4 text-orange-600">⚡ Precios de Energía (€/kWh)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="energiaP1">P1 (Punta)</Label>
+                    <Input
+                      id="energiaP1"
+                      type="number"
+                      step="0.000001"
+                      value={formData.energiaP1}
+                      onChange={(e) => setFormData(prev => ({...prev, energiaP1: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
                     />
-                    <Label htmlFor="tieneFee">Esta tarifa tiene Fee/Comisiones</Label>
+                  </div>
+                  <div>
+                    <Label htmlFor="energiaP2">P2 (Llano)</Label>
+                    <Input
+                      id="energiaP2"
+                      type="number"
+                      step="0.000001"
+                      value={formData.energiaP2}
+                      onChange={(e) => setFormData(prev => ({...prev, energiaP2: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="energiaP3">P3 (Valle)</Label>
+                    <Input
+                      id="energiaP3"
+                      type="number"
+                      step="0.000001"
+                      value={formData.energiaP3}
+                      onChange={(e) => setFormData(prev => ({...prev, energiaP3: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="energiaP4">P4</Label>
+                    <Input
+                      id="energiaP4"
+                      type="number"
+                      step="0.000001"
+                      value={formData.energiaP4}
+                      onChange={(e) => setFormData(prev => ({...prev, energiaP4: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="energiaP5">P5</Label>
+                    <Input
+                      id="energiaP5"
+                      type="number"
+                      step="0.000001"
+                      value={formData.energiaP5}
+                      onChange={(e) => setFormData(prev => ({...prev, energiaP5: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="energiaP6">P6</Label>
+                    <Input
+                      id="energiaP6"
+                      type="number"
+                      step="0.000001"
+                      value={formData.energiaP6}
+                      onChange={(e) => setFormData(prev => ({...prev, energiaP6: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
                   </div>
                 </div>
+              </div>
 
-                {formData.tieneFee && (
-                  <>
-                    <div>
-                      <Label htmlFor="feeEnergia">Fee Energía (%)</Label>
-                      <Input
-                        id="feeEnergia"
-                        type="number"
-                        step="0.01"
-                        value={formData.feeEnergia}
-                        onChange={(e) => setFormData(prev => ({...prev, feeEnergia: parseFloat(e.target.value) || 0}))}
-                      />
-                    </div>
+              {/* Precios de Potencia */}
+              <div className="mb-6">
+                <h3 className="text-lg font-semibold mb-4 text-purple-600">🔌 Precios de Potencia (€/kW·día)</h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  <div>
+                    <Label htmlFor="potenciaP1">P1 (Punta)</Label>
+                    <Input
+                      id="potenciaP1"
+                      type="number"
+                      step="0.000001"
+                      value={formData.potenciaP1}
+                      onChange={(e) => setFormData(prev => ({...prev, potenciaP1: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="potenciaP2">P2 (Llano)</Label>
+                    <Input
+                      id="potenciaP2"
+                      type="number"
+                      step="0.000001"
+                      value={formData.potenciaP2}
+                      onChange={(e) => setFormData(prev => ({...prev, potenciaP2: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="potenciaP3">P3 (Valle)</Label>
+                    <Input
+                      id="potenciaP3"
+                      type="number"
+                      step="0.000001"
+                      value={formData.potenciaP3}
+                      onChange={(e) => setFormData(prev => ({...prev, potenciaP3: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="potenciaP4">P4</Label>
+                    <Input
+                      id="potenciaP4"
+                      type="number"
+                      step="0.000001"
+                      value={formData.potenciaP4}
+                      onChange={(e) => setFormData(prev => ({...prev, potenciaP4: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="potenciaP5">P5</Label>
+                    <Input
+                      id="potenciaP5"
+                      type="number"
+                      step="0.000001"
+                      value={formData.potenciaP5}
+                      onChange={(e) => setFormData(prev => ({...prev, potenciaP5: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                  <div>
+                    <Label htmlFor="potenciaP6">P6</Label>
+                    <Input
+                      id="potenciaP6"
+                      type="number"
+                      step="0.000001"
+                      value={formData.potenciaP6}
+                      onChange={(e) => setFormData(prev => ({...prev, potenciaP6: parseFloat(e.target.value) || 0}))}
+                      placeholder="0.000000"
+                    />
+                  </div>
+                </div>
+              </div>
 
-                    <div>
-                      <Label htmlFor="feePotencia">Fee Potencia (%)</Label>
-                      <Input
-                        id="feePotencia"
-                        type="number"
-                        step="0.01"
-                        value={formData.feePotencia}
-                        onChange={(e) => setFormData(prev => ({...prev, feePotencia: parseFloat(e.target.value) || 0}))}
-                      />
-                    </div>
-
-                    <div>
-                      <Label htmlFor="costeGestion">Coste Gestión (€/mes)</Label>
-                      <Input
-                        id="costeGestion"
-                        type="number"
-                        step="0.01"
-                        value={formData.costeGestion}
-                        onChange={(e) => setFormData(prev => ({...prev, costeGestion: parseFloat(e.target.value) || 0}))}
-                      />
-                    </div>
-                  </>
-                )}
+              <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
+                <p className="font-semibold mb-2">📝 Notas importantes:</p>
+                <ul className="space-y-1">
+                  <li>• Los precios de energía se introducen en €/kWh (6 decimales)</li>
+                  <li>• Los precios de potencia se introducen en €/kW·día (6 decimales)</li>
+                  <li>• Las comisiones se gestionan por separado en el módulo de comisiones</li>
+                  <li>• Para tarifas 2.0TD usar principalmente P1, P2, P3</li>
+                  <li>• Para tarifas 3.0TD y 6.1TD usar todos los periodos según corresponda</li>
+                </ul>
               </div>
 
               <div className="flex justify-end space-x-3 mt-6">
