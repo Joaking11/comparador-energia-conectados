@@ -69,6 +69,7 @@ interface ComparativaData {
         nombre: string;
         color?: string;
         logoUrl?: string;
+        activa: boolean;
       };
     };
   }>;
@@ -223,7 +224,12 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   }
 
   // Calcular estadísticas con los nombres de campos correctos
-  const ofertas = data.comparativa_ofertas || [];
+  const todasLasOfertas = data.comparativa_ofertas || [];
+  
+  // Filtrar solo ofertas de comercializadoras ACTIVAS para estadísticas
+  const ofertas = todasLasOfertas.filter(oferta => oferta.tarifas.comercializadoras.activa === true);
+  console.log(`🔍 Ofertas totales: ${todasLasOfertas.length}, Ofertas activas: ${ofertas.length}`);
+  
   const mejorOferta = ofertas.reduce((mejor, actual) => 
     actual.ahorroAnual > mejor.ahorroAnual ? actual : mejor, 
     ofertas[0]
@@ -235,6 +241,9 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
   
   // Aplicar filtros
   const ofertasFiltradas = ofertas.filter(oferta => {
+    // FILTRO CRÍTICO: Solo comercializadoras ACTIVAS
+    const esComercializadoraActiva = oferta.tarifas.comercializadoras.activa === true;
+    
     const matchComercializadora = filtroComercializadora === 'todas' || 
       oferta.tarifas.comercializadoras.nombre === filtroComercializadora;
     const matchTipo = filtroTipo === 'todos' || 
@@ -243,7 +252,7 @@ export function ResultadosComparativa({ comparativaId }: ResultadosComparativaPr
       oferta.tarifas.nombreOferta.toLowerCase().includes(busqueda.toLowerCase()) ||
       oferta.tarifas.comercializadoras.nombre.toLowerCase().includes(busqueda.toLowerCase());
     
-    return matchComercializadora && matchTipo && matchBusqueda;
+    return esComercializadoraActiva && matchComercializadora && matchTipo && matchBusqueda;
   });
 
   const handleShare = async () => {
