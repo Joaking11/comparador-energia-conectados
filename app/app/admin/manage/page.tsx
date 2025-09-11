@@ -921,9 +921,27 @@ function ManagePageContent() {
                     </div>
                   </div>
 
+                  {/* Coste de Gestión */}
+                  <div className="mb-4">
+                    <h3 className="text-lg font-semibold mb-3 text-green-600">💰 Coste de Gestión</h3>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div>
+                        <Label htmlFor="edit-costeGestion">Coste de Gestión (€)</Label>
+                        <Input
+                          id="edit-costeGestion" name="costeGestion"
+                          type="number"
+                          step="0.01"
+                          defaultValue={editando.costeGestion}
+                          placeholder="0.00"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">Coste fijo de gestión mensual o anual</p>
+                      </div>
+                    </div>
+                  </div>
+
                   <div className="text-sm text-gray-600 bg-blue-50 p-3 rounded-lg">
                     <p className="font-semibold mb-1">📝 Nota importante:</p>
-                    <p>Para tarifas 2.0TD usar principalmente P1, P2, P3. Para tarifas 3.0TD y 6.1TD usar todos los periodos según corresponda. Las comisiones se gestionan en el tab "Comisiones".</p>
+                    <p>Para tarifas 2.0TD usar principalmente P1, P2, P3. Para tarifas 3.0TD y 6.1TD usar todos los periodos según corresponda. El coste de gestión es adicional a los precios de energía y potencia. Las comisiones se gestionan en el tab "Comisiones".</p>
                   </div>
                 </>
               )}

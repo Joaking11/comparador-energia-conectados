@@ -237,12 +237,23 @@ function interpretarTarifas(headers: any[], filasDatos: any[][]) {
         const valor = fila[index];
         
         if (campo && valor !== null && valor !== undefined && valor !== '') {
-          if (campo.includes('energia') || campo.includes('potencia') || campo.includes('fee')) {
+          if (campo.includes('energia') || campo.includes('potencia') || campo.includes('fee') || campo === 'costeGestion') {
             // Convertir a número
-            const numero = typeof valor === 'number' ? valor : parseFloat(String(valor).replace(/[^\d.,]/g, '').replace(',', '.'));
+            let numero = typeof valor === 'number' ? valor : parseFloat(String(valor).replace(/[^\d.,]/g, '').replace(',', '.'));
+            
             if (!isNaN(numero)) {
+              // CONVERSIÓN ESPECIAL: Si es energía y viene en €/MWh, convertir a €/kWh
+              if (campo.includes('energia') && header && String(header).includes('€/MWh')) {
+                numero = numero * 1000; // Convertir €/MWh a €/kWh
+                console.log(`🔄 Convertido ${campo}: ${valor} €/MWh → ${numero} €/kWh`);
+              }
+              
               tarifa[campo] = numero;
             }
+          } else if (campo === 'activa') {
+            // Manejar campo activa (puede ser SÍ/NO, true/false, 1/0)
+            const strValor = String(valor).trim().toLowerCase();
+            tarifa[campo] = strValor === 'sí' || strValor === 'si' || strValor === 'true' || strValor === '1' || valor === true;
           } else {
             tarifa[campo] = String(valor).trim();
           }
@@ -305,7 +316,7 @@ function interpretarComisiones(headers: any[], filasDatos: any[][]) {
 function mapearHeadersTarifas(headers: any[]): { [index: number]: string } {
   const mapeo: { [index: number]: string } = {};
   
-  // Patrones avanzados para detectar campos de tarifas
+  // Patrones avanzados para detectar campos de tarifas (actualizados para formato real)
   const patrones = {
     comercializadora: [
       /^(comercializadora|company|empresa|supplier|proveedor)$/i,
@@ -322,36 +333,83 @@ function mapearHeadersTarifas(headers: any[]): { [index: number]: string } {
     ],
     tipoOferta: [
       /^(tipo.*oferta|type|modalidad)$/i,
+      /^(tipo)$/i,
       /^(fixed|fijo|indexado|variable)$/i
     ],
     zona: [
       /^(zona|zone|region|territorio)$/i,
       /^(peninsula|baleares|canarias|ceuta|melilla)$/i
     ],
+    // NUEVOS PATRONES PARA EL FORMATO REAL
     energiaP1: [
+      /^P1\s+Energía.*€\/MWh/i,
+      /^P1.*Energía/i,
       /^(energia.*p1|energy.*p1|precio.*energia.*p1)$/i,
       /^(€.*kwh.*p1|€\/kwh.*p1|p1.*energia)$/i,
       /^(punta|peak.*energy|tarifa.*p1)$/i
     ],
     energiaP2: [
+      /^P2\s+Energía.*€\/MWh/i,
+      /^P2.*Energía/i,
       /^(energia.*p2|energy.*p2|precio.*energia.*p2)$/i,
       /^(€.*kwh.*p2|€\/kwh.*p2|p2.*energia)$/i,
       /^(llano|standard.*energy|tarifa.*p2)$/i
     ],
     energiaP3: [
+      /^P3\s+Energía.*€\/MWh/i,
+      /^P3.*Energía/i,
       /^(energia.*p3|energy.*p3|precio.*energia.*p3)$/i,
       /^(€.*kwh.*p3|€\/kwh.*p3|p3.*energia)$/i,
       /^(valle|off.*peak.*energy|tarifa.*p3)$/i
     ],
+    energiaP4: [
+      /^P4\s+Energía.*€\/MWh/i,
+      /^P4.*Energía/i,
+      /^(energia.*p4|energy.*p4|precio.*energia.*p4)$/i
+    ],
+    energiaP5: [
+      /^P5\s+Energía.*€\/MWh/i,
+      /^P5.*Energía/i,
+      /^(energia.*p5|energy.*p5|precio.*energia.*p5)$/i
+    ],
+    energiaP6: [
+      /^P6\s+Energía.*€\/MWh/i,
+      /^P6.*Energía/i,
+      /^(energia.*p6|energy.*p6|precio.*energia.*p6)$/i
+    ],
     potenciaP1: [
+      /^P1\s+Potencia.*€\/kW.*año/i,
+      /^P1.*Potencia/i,
       /^(potencia.*p1|power.*p1|término.*potencia.*p1)$/i,
       /^(€.*kw.*p1|€\/kw.*p1|p1.*potencia)$/i,
       /^(pot.*p1|termino.*fijo.*p1)$/i
     ],
     potenciaP2: [
+      /^P2\s+Potencia.*€\/kW.*año/i,
+      /^P2.*Potencia/i,
       /^(potencia.*p2|power.*p2|término.*potencia.*p2)$/i,
       /^(€.*kw.*p2|€\/kw.*p2|p2.*potencia)$/i,
       /^(pot.*p2|termino.*fijo.*p2)$/i
+    ],
+    potenciaP3: [
+      /^P3\s+Potencia.*€\/kW.*año/i,
+      /^P3.*Potencia/i,
+      /^(potencia.*p3|power.*p3|término.*potencia.*p3)$/i
+    ],
+    potenciaP4: [
+      /^P4\s+Potencia.*€\/kW.*año/i,
+      /^P4.*Potencia/i,
+      /^(potencia.*p4|power.*p4|término.*potencia.*p4)$/i
+    ],
+    potenciaP5: [
+      /^P5\s+Potencia.*€\/kW.*año/i,
+      /^P5.*Potencia/i,
+      /^(potencia.*p5|power.*p5|término.*potencia.*p5)$/i
+    ],
+    potenciaP6: [
+      /^P6\s+Potencia.*€\/kW.*año/i,
+      /^P6.*Potencia/i,
+      /^(potencia.*p6|power.*p6|término.*potencia.*p6)$/i
     ],
     feeEnergia: [
       /^(fee.*energia|commission.*energy|comision.*energia)$/i,
@@ -362,8 +420,18 @@ function mapearHeadersTarifas(headers: any[]): { [index: number]: string } {
       /^(margen.*potencia|descuento.*potencia)$/i
     ],
     costeGestion: [
+      /^Coste\s+Gestión.*€/i,
       /^(coste.*gestion|management.*cost|gestion)$/i,
       /^(gastos.*comercializacion|fee.*gestion)$/i
+    ],
+    activa: [
+      /^(activa|active|estado)$/i
+    ],
+    tipoCliente: [
+      /^(tipo.*cliente|client.*type|customer.*type)$/i
+    ],
+    rango: [
+      /^(rango|range|segment)$/i
     ]
   };
   
