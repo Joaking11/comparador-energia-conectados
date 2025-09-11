@@ -632,7 +632,7 @@ export default function ManagePage() {
                         ? item.nombre
                         : activeTab === 'tarifas'
                         ? item.nombreOferta
-                        : `${item.comercializadoras?.nombre} - ${item.tarifa}`
+                        : `${item.comercializadoras?.nombre} - ${item.nombreOferta} - ${item.tarifa}`
                       }
                     </h3>
                     <p className="text-sm text-gray-600">
@@ -640,7 +640,9 @@ export default function ManagePage() {
                         ? `${item.tarifas?.length || 0} tarifas`
                         : activeTab === 'tarifas'
                         ? `${item.comercializadoras?.nombre} • ${item.tarifa} • ${item.energiaP1?.toFixed(6)} €/kWh`
-                        : `${item.zona} • Energía: ${item.porcentajeFeeEnergia || 0}% • Potencia: ${item.porcentajeFeePotencia || 0}%`
+                        : item.tieneFee 
+                          ? `🎯 FEE • ${item.zona} • Energía: ${item.porcentajeFeeEnergia || 0}% • Potencia: ${item.porcentajeFeePotencia || 0}%`
+                          : `💵 FIJA • ${item.zona} • ${item.comision || 0}€ • Rango ${item.rango}: ${item.rangoDesde}-${item.rangoHasta || '∞'}`
                       }
                     </p>
                   </div>
@@ -917,7 +919,22 @@ export default function ManagePage() {
               
               {activeTab === 'comisiones' && (
                 <>
-                  <div className="grid grid-cols-3 gap-4">
+                  <div className="mb-4">
+                    <div className="flex items-center space-x-2 mb-4">
+                      <input
+                        type="checkbox"
+                        id="edit-tieneFee"
+                        name="tieneFee"
+                        defaultChecked={editando.tieneFee}
+                        className="rounded border-gray-300"
+                      />
+                      <Label htmlFor="edit-tieneFee" className="font-semibold">
+                        🎯 Esta comisión va por FEE (se calcula con porcentajes)
+                      </Label>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-3 gap-4 mb-4">
                     <div>
                       <Label htmlFor="edit-zona">Zona</Label>
                       <Select defaultValue={editando.zona} name="zona">
@@ -933,25 +950,89 @@ export default function ManagePage() {
                       </Select>
                     </div>
                     <div>
-                      <Label htmlFor="edit-comision-energia">% Energía</Label>
-                      <Input
-                        id="edit-comision-energia" name="porcentajeFeeEnergia"
-                        type="number"
-                        step="0.01"
-                        defaultValue={editando.porcentajeFeeEnergia}
-                        placeholder="25.00"
-                      />
+                      <Label htmlFor="edit-rango">Tipo de Rango</Label>
+                      <Select defaultValue={editando.rango} name="rango">
+                        <SelectTrigger id="edit-rango">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="E">E - Por Energía (kWh)</SelectItem>
+                          <SelectItem value="P">P - Por Potencia (kW)</SelectItem>
+                        </SelectContent>
+                      </Select>
                     </div>
                     <div>
-                      <Label htmlFor="edit-comision-potencia">% Potencia</Label>
+                      <Label htmlFor="edit-rangoDesde">Rango Desde</Label>
                       <Input
-                        id="edit-comision-potencia" name="porcentajeFeePotencia"
+                        id="edit-rangoDesde" 
+                        name="rangoDesde"
                         type="number"
                         step="0.01"
-                        defaultValue={editando.porcentajeFeePotencia}
-                        placeholder="45.00"
+                        defaultValue={editando.rangoDesde}
+                        placeholder="0"
                       />
                     </div>
+                  </div>
+
+                  {/* Campos para comisión por FEE */}
+                  <div className="mb-4 p-4 bg-green-50 rounded-lg">
+                    <h4 className="font-semibold mb-3 text-green-700">💰 Comisión por FEE (solo si está marcado arriba)</h4>
+                    <div className="grid grid-cols-2 gap-4">
+                      <div>
+                        <Label htmlFor="edit-comision-energia">% Fee Energía</Label>
+                        <Input
+                          id="edit-comision-energia" 
+                          name="porcentajeFeeEnergia"
+                          type="number"
+                          step="0.01"
+                          defaultValue={editando.porcentajeFeeEnergia}
+                          placeholder="25.00"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          % sobre (consumo × fee energía de la comparativa)
+                        </p>
+                      </div>
+                      <div>
+                        <Label htmlFor="edit-comision-potencia">% Fee Potencia</Label>
+                        <Input
+                          id="edit-comision-potencia" 
+                          name="porcentajeFeePotencia"
+                          type="number"
+                          step="0.01"
+                          defaultValue={editando.porcentajeFeePotencia}
+                          placeholder="45.00"
+                        />
+                        <p className="text-xs text-gray-500 mt-1">
+                          % sobre (suma potencias × fee potencia de la comparativa)
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Campos para comisión fija */}
+                  <div className="mb-4 p-4 bg-blue-50 rounded-lg">
+                    <h4 className="font-semibold mb-3 text-blue-700">💵 Comisión Fija (solo si NO va por FEE)</h4>
+                    <div>
+                      <Label htmlFor="edit-comision-fija">Comisión Fija (€)</Label>
+                      <Input
+                        id="edit-comision-fija" 
+                        name="comision"
+                        type="number"
+                        step="0.01"
+                        defaultValue={editando.comision}
+                        placeholder="150.00"
+                      />
+                      <p className="text-xs text-gray-500 mt-1">
+                        Cantidad fija en euros (ignorada si va por FEE)
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="text-sm text-gray-600 bg-yellow-50 p-3 rounded-lg">
+                    <p className="font-semibold mb-1">⚠️ Importante:</p>
+                    <p>Si marcas "va por FEE", la comisión se calculará como: <br/>
+                    <code className="bg-gray-100 px-1 rounded">(suma_potencias × fee_potencia × %_potencia) + (consumo_anual × fee_energia × %_energia)</code><br/>
+                    Si no está marcado, se usará la comisión fija en euros.</p>
                   </div>
                 </>
               )}
@@ -988,8 +1069,12 @@ export default function ManagePage() {
                         data.potenciaP6 = parseFloat(formData.get('potenciaP6') as string) || 0;
                       } else if (activeTab === 'comisiones') {
                         data.zona = formData.get('zona');
-                        data.porcentajeFeeEnergia = parseFloat(formData.get('porcentajeFeeEnergia') as string) || 0;
-                        data.porcentajeFeePotencia = parseFloat(formData.get('porcentajeFeePotencia') as string) || 0;
+                        data.rango = formData.get('rango');
+                        data.rangoDesde = parseFloat(formData.get('rangoDesde') as string) || 0;
+                        data.tieneFee = formData.get('tieneFee') === 'on';
+                        data.porcentajeFeeEnergia = parseFloat(formData.get('porcentajeFeeEnergia') as string) || null;
+                        data.porcentajeFeePotencia = parseFloat(formData.get('porcentajeFeePotencia') as string) || null;
+                        data.comision = parseFloat(formData.get('comision') as string) || 0;
                       }
                       
                       let url = '';

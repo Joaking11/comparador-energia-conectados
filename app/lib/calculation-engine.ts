@@ -163,7 +163,7 @@ export class CalculationEngine {
       const total = baseConImpuesto + iva;
 
       // PASO 7: Buscar comisión correspondiente
-      const comisionGanada = await this.findMatchingComision(comparativa, tarifa);
+      const comisionGanada = await this.findMatchingComision(comparativa, tarifa, parametrosPersonalizados);
 
       // PASO 8: Calcular ahorro vs factura actual (permitir valores negativos)
       const ahorroAnual = comparativa.totalFacturaElectricidad - total;
@@ -319,10 +319,13 @@ export class CalculationEngine {
    * - Mismo comercializadora, oferta, tarifa, tipo oferta
    * - Rango E: buscar donde cae el consumo
    * - Rango P: buscar donde cae la potencia máxima
+   * - Si tieneFee=true: calcula usando SUMA_POTENCIAS × FEE_POTENCIA × % + CONSUMO × FEE_ENERGIA × %
+   * - Si tieneFee=false: devuelve comisión fija
    */
   private static async findMatchingComision(
     comparativa: comparativas, 
-    tarifa: any
+    tarifa: any,
+    parametrosPersonalizados?: any
   ): Promise<number> {
     try {
       const consumoAnual = comparativa.consumoAnualElectricidad;
@@ -334,6 +337,14 @@ export class CalculationEngine {
         comparativa.potenciaP5 || 0,
         comparativa.potenciaP6 || 0
       );
+
+      // Calcular suma total de potencias (para comisiones por FEE)
+      const sumaPotencias = (comparativa.potenciaP1 || 0) + 
+                           (comparativa.potenciaP2 || 0) + 
+                           (comparativa.potenciaP3 || 0) + 
+                           (comparativa.potenciaP4 || 0) + 
+                           (comparativa.potenciaP5 || 0) + 
+                           (comparativa.potenciaP6 || 0);
 
       // Buscar comisión con matching exacto
       const comision = await prisma.comisiones.findFirst({
@@ -371,7 +382,42 @@ export class CalculationEngine {
         }
       });
 
-      return comision?.comision || 0;
+      if (!comision) {
+        console.log('⚠️ No se encontró comisión para:', tarifa.nombreOferta);
+        return 0;
+      }
+
+      // Si la comisión va por FEE, calcular usando la fórmula correcta
+      if (comision.tieneFee) {
+        console.log('💰 Calculando comisión por FEE para:', tarifa.nombreOferta);
+        
+        // Obtener valores de FEE desde los parámetros personalizados o comparativa
+        const feeEnergia = parametrosPersonalizados?.feeEnergia || comparativa.feeEnergia || 0;
+        const feePotencia = parametrosPersonalizados?.feePotencia || comparativa.feePotencia || 0;
+        
+        // FÓRMULA: (SUMA_POTENCIAS × FEE_POTENCIA × %_FEE_POTENCIA) + (CONSUMO_ANUAL × FEE_ENERGIA × %_FEE_ENERGIA)
+        const comisionPorPotencia = sumaPotencias * feePotencia * ((comision.porcentajeFeePotencia || 0) / 100);
+        const comisionPorEnergia = consumoAnual * feeEnergia * ((comision.porcentajeFeeEnergia || 0) / 100);
+        const comisionTotal = comisionPorPotencia + comisionPorEnergia;
+        
+        console.log('🔢 Cálculo FEE:', {
+          sumaPotencias,
+          feePotencia,
+          porcentajeFeePotencia: comision.porcentajeFeePotencia,
+          comisionPorPotencia,
+          consumoAnual,
+          feeEnergia,
+          porcentajeFeeEnergia: comision.porcentajeFeeEnergia,
+          comisionPorEnergia,
+          comisionTotal
+        });
+        
+        return comisionTotal;
+      } else {
+        // Comisión fija
+        console.log('💰 Usando comisión fija para:', tarifa.nombreOferta, '=', comision.comision);
+        return comision.comision || 0;
+      }
 
     } catch (error) {
       console.log('❌ Error buscando comisión:', error);
