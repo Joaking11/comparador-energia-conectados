@@ -242,12 +242,8 @@ function interpretarTarifas(headers: any[], filasDatos: any[][]) {
             let numero = typeof valor === 'number' ? valor : parseFloat(String(valor).replace(/[^\d.,]/g, '').replace(',', '.'));
             
             if (!isNaN(numero)) {
-              // CONVERSIÓN ESPECIAL: Si es energía y viene en €/MWh, convertir a €/kWh
-              if (campo.includes('energia') && header && String(header).includes('€/MWh')) {
-                numero = numero * 1000; // Convertir €/MWh a €/kWh
-                console.log(`🔄 Convertido ${campo}: ${valor} €/MWh → ${numero} €/kWh`);
-              }
-              
+              // Los precios ya vienen en las unidades correctas (€/kWh para energía)
+              // NO hacer conversiones automáticas
               tarifa[campo] = numero;
             }
           } else if (campo === 'activa') {
@@ -340,40 +336,40 @@ function mapearHeadersTarifas(headers: any[]): { [index: number]: string } {
       /^(zona|zone|region|territorio)$/i,
       /^(peninsula|baleares|canarias|ceuta|melilla)$/i
     ],
-    // NUEVOS PATRONES PARA EL FORMATO REAL
+    // NUEVOS PATRONES PARA EL FORMATO REAL (CORREGIDOS - €/kWh)
     energiaP1: [
-      /^P1\s+Energía.*€\/MWh/i,
+      /^P1\s+Energía.*€\/kWh/i,
       /^P1.*Energía/i,
       /^(energia.*p1|energy.*p1|precio.*energia.*p1)$/i,
       /^(€.*kwh.*p1|€\/kwh.*p1|p1.*energia)$/i,
       /^(punta|peak.*energy|tarifa.*p1)$/i
     ],
     energiaP2: [
-      /^P2\s+Energía.*€\/MWh/i,
+      /^P2\s+Energía.*€\/kWh/i,
       /^P2.*Energía/i,
       /^(energia.*p2|energy.*p2|precio.*energia.*p2)$/i,
       /^(€.*kwh.*p2|€\/kwh.*p2|p2.*energia)$/i,
       /^(llano|standard.*energy|tarifa.*p2)$/i
     ],
     energiaP3: [
-      /^P3\s+Energía.*€\/MWh/i,
+      /^P3\s+Energía.*€\/kWh/i,
       /^P3.*Energía/i,
       /^(energia.*p3|energy.*p3|precio.*energia.*p3)$/i,
       /^(€.*kwh.*p3|€\/kwh.*p3|p3.*energia)$/i,
       /^(valle|off.*peak.*energy|tarifa.*p3)$/i
     ],
     energiaP4: [
-      /^P4\s+Energía.*€\/MWh/i,
+      /^P4\s+Energía.*€\/kWh/i,
       /^P4.*Energía/i,
       /^(energia.*p4|energy.*p4|precio.*energia.*p4)$/i
     ],
     energiaP5: [
-      /^P5\s+Energía.*€\/MWh/i,
+      /^P5\s+Energía.*€\/kWh/i,
       /^P5.*Energía/i,
       /^(energia.*p5|energy.*p5|precio.*energia.*p5)$/i
     ],
     energiaP6: [
-      /^P6\s+Energía.*€\/MWh/i,
+      /^P6\s+Energía.*€\/kWh/i,
       /^P6.*Energía/i,
       /^(energia.*p6|energy.*p6|precio.*energia.*p6)$/i
     ],
