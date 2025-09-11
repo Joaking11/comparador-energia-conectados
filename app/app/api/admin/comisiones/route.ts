@@ -61,6 +61,11 @@ export async function POST(request: NextRequest) {
       rango,
       rangoDesde,
       rangoHasta,
+      tieneFee,
+      porcentajeFeeEnergia,
+      porcentajeFeePotencia,
+      comision,
+      // Backwards compatibility
       comisionEnergia,
       comisionPotencia,
       comisionFija
@@ -84,10 +89,10 @@ export async function POST(request: NextRequest) {
         rango: rango || 'E',
         rangoDesde: rangoDesde ? parseFloat(rangoDesde) : 0,
         rangoHasta: rangoHasta ? parseFloat(rangoHasta) : null,
-        comision: comisionEnergia ? parseFloat(comisionEnergia) : 0,
-        tieneFee: Boolean(comisionFija && parseFloat(comisionFija) > 0),
-        porcentajeFeeEnergia: comisionEnergia ? parseFloat(comisionEnergia) : null,
-        porcentajeFeePotencia: comisionPotencia ? parseFloat(comisionPotencia) : null,
+        tieneFee: Boolean(tieneFee),
+        porcentajeFeeEnergia: (tieneFee && porcentajeFeeEnergia) ? parseFloat(porcentajeFeeEnergia) : (comisionEnergia ? parseFloat(comisionEnergia) : null),
+        porcentajeFeePotencia: (tieneFee && porcentajeFeePotencia) ? parseFloat(porcentajeFeePotencia) : (comisionPotencia ? parseFloat(comisionPotencia) : null),
+        comision: tieneFee ? 0 : (comision ? parseFloat(comision) : (comisionFija ? parseFloat(comisionFija) : 0)),
         updatedAt: new Date()
       },
       include: {
