@@ -215,44 +215,44 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* Herramientas Especializadas */}
+      {/* Accesos Directos */}
       <Card className="mb-8">
         <CardHeader>
-          <CardTitle>🛠️ Herramientas Especializadas</CardTitle>
+          <CardTitle>⚡ Accesos Directos</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <div className="text-center">
-              <Link href="/admin/tarifas">
-                <div className="bg-orange-50 p-6 rounded-lg hover:bg-orange-100 transition-colors cursor-pointer">
-                  <Zap className="h-8 w-8 text-orange-600 mx-auto mb-3" />
-                  <h3 className="font-semibold text-orange-900">Tarifas Avanzado</h3>
-                  <p className="text-sm text-orange-700 mt-2">
-                    Editor completo con validación automática y funcionalidades avanzadas
-                  </p>
-                </div>
-              </Link>
-            </div>
-            
-            <div className="text-center">
-              <Link href="/admin/comisiones">
-                <div className="bg-purple-50 p-6 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer">
-                  <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-3" />
-                  <h3 className="font-semibold text-purple-900">Comisiones Avanzado</h3>
-                  <p className="text-sm text-purple-700 mt-2">
-                    Gestión completa de comisiones con rangos y condiciones especiales
-                  </p>
-                </div>
-              </Link>
-            </div>
-            
-            <div className="text-center">
-              <Link href="/admin/comercializadoras">
+              <Link href="/admin/manage?tab=comercializadoras">
                 <div className="bg-blue-50 p-6 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer">
                   <Building className="h-8 w-8 text-blue-600 mx-auto mb-3" />
                   <h3 className="font-semibold text-blue-900">Comercializadoras</h3>
                   <p className="text-sm text-blue-700 mt-2">
-                    Administración de comercializadoras y sus configuraciones
+                    Gestionar empresas energéticas y configuraciones
+                  </p>
+                </div>
+              </Link>
+            </div>
+            
+            <div className="text-center">
+              <Link href="/admin/manage?tab=tarifas">
+                <div className="bg-orange-50 p-6 rounded-lg hover:bg-orange-100 transition-colors cursor-pointer">
+                  <Zap className="h-8 w-8 text-orange-600 mx-auto mb-3" />
+                  <h3 className="font-semibold text-orange-900">Tarifas y Ofertas</h3>
+                  <p className="text-sm text-orange-700 mt-2">
+                    Ver y editar todas las tarifas disponibles
+                  </p>
+                </div>
+              </Link>
+            </div>
+            
+            <div className="text-center">
+              <Link href="/admin/manage?tab=comisiones">
+                <div className="bg-purple-50 p-6 rounded-lg hover:bg-purple-100 transition-colors cursor-pointer">
+                  <DollarSign className="h-8 w-8 text-purple-600 mx-auto mb-3" />
+                  <h3 className="font-semibold text-purple-900">Comisiones</h3>
+                  <p className="text-sm text-purple-700 mt-2">
+                    Gestionar comisiones fijas y por FEE
                   </p>
                 </div>
               </Link>

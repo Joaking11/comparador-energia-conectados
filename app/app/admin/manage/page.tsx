@@ -11,6 +11,8 @@ import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useToast } from "@/hooks/use-toast";
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
+import { Suspense } from 'react';
 import { 
   Edit, 
   Trash2, 
@@ -26,7 +28,8 @@ import {
   Home
 } from 'lucide-react';
 
-export default function ManagePage() {
+function ManagePageContent() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'comercializadoras' | 'tarifas' | 'comisiones'>('comercializadoras');
   const [datos, setDatos] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
@@ -37,6 +40,14 @@ export default function ManagePage() {
   const [editando, setEditando] = useState<any>(null);
   const [mostrandoEditor, setMostrandoEditor] = useState(false);
   const { toast } = useToast();
+
+  // Efecto para leer parámetros de URL y establecer tab activo
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab && ['comercializadoras', 'tarifas', 'comisiones'].includes(tab)) {
+      setActiveTab(tab as 'comercializadoras' | 'tarifas' | 'comisiones');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     cargarDatos();
@@ -1189,3 +1200,16 @@ export default function ManagePage() {
     </div>
   );
 }
+
+export default function ManagePage() {
+  return (
+    <Suspense fallback={
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    }>
+      <ManagePageContent />
+    </Suspense>
+  );
+}
+
