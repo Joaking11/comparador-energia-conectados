@@ -519,12 +519,21 @@ async function importarTarifas(tarifasInterpretadas: any[]) {
         energiaP1: tarifaData.energiaP1 || 0,
         energiaP2: tarifaData.energiaP2 || null,
         energiaP3: tarifaData.energiaP3 || null,
+        energiaP4: tarifaData.energiaP4 || null,
+        energiaP5: tarifaData.energiaP5 || null,
+        energiaP6: tarifaData.energiaP6 || null,
         potenciaP1: tarifaData.potenciaP1 || null,
         potenciaP2: tarifaData.potenciaP2 || null,
+        potenciaP3: tarifaData.potenciaP3 || null,
+        potenciaP4: tarifaData.potenciaP4 || null,
+        potenciaP5: tarifaData.potenciaP5 || null,
+        potenciaP6: tarifaData.potenciaP6 || null,
         tieneFee: !!(tarifaData.feeEnergia || tarifaData.feePotencia),
         feeEnergia: tarifaData.feeEnergia || null,
         feePotencia: tarifaData.feePotencia || null,
-        costeGestion: tarifaData.costeGestion || null,
+        costeGestion: tarifaData.costeGestion || 0,
+        costeTotal: 0,
+        activa: true,
         updatedAt: new Date()
       };
       
