@@ -24,7 +24,8 @@ import {
   Cpu,
   Users,
   ArrowLeft,
-  Home
+  Home,
+  Eye
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -152,67 +153,70 @@ export default function AdminDashboardPage() {
         </Card>
       </div>
 
-      {/* Funcionalidades Principales */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        {/* Importación Inteligente */}
-        <Card className="border-2 border-blue-200 bg-blue-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-blue-900">
-              <Brain className="h-5 w-5" />
-              🤖 Importación Inteligente con IA
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-blue-800 mb-4">
-              Sistema avanzado que utiliza inteligencia artificial para interpretar automáticamente archivos Excel y PDF.
-            </p>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-white p-3 rounded">
-                <FileSpreadsheet className="h-6 w-6 text-green-600 mb-2" />
-                <span className="text-sm font-medium">Excel Inteligente</span>
+      {/* FLUJO SIMPLIFICADO - 2 PASOS */}
+      <div className="bg-gradient-to-r from-blue-50 to-green-50 p-8 rounded-lg mb-8">
+        <div className="text-center mb-6">
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">⚡ ADMINISTRACIÓN SIMPLIFICADA</h2>
+          <p className="text-gray-700">Sólo 2 pasos: Subir Excel → Ver y editar datos</p>
+        </div>
+        
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+          {/* PASO 1: Importar */}
+          <Card className="border-3 border-blue-400 bg-white shadow-lg">
+            <CardHeader className="bg-blue-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Upload className="h-6 w-6" />
+                PASO 1: SUBIR EXCEL
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p className="text-gray-700 mb-4 text-lg">
+                📤 Sube tu archivo Excel modificado aquí. Los cambios se guardan automáticamente.
+              </p>
+              <div className="bg-blue-50 p-4 rounded-lg mb-4">
+                <h4 className="font-semibold text-blue-900 mb-2">✅ Lo que hace la IA:</h4>
+                <ul className="text-sm text-blue-800 space-y-1">
+                  <li>• Lee tarifas y comisiones automáticamente</li>
+                  <li>• Identifica comercializadoras y ofertas</li>
+                  <li>• Guarda los cambios en la base de datos</li>
+                </ul>
               </div>
-              <div className="bg-white p-3 rounded">
-                <FileText className="h-6 w-6 text-red-600 mb-2" />
-                <span className="text-sm font-medium">OCR para PDF</span>
-              </div>
-            </div>
-            <Link href="/admin/upload-smart">
-              <Button className="w-full bg-blue-600 hover:bg-blue-700">
-                Acceder a Importación IA
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+              <Link href="/admin/upload-smart">
+                <Button size="lg" className="w-full bg-blue-600 hover:bg-blue-700 text-lg py-4">
+                  📁 IR A SUBIR EXCEL
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
 
-        {/* Gestión Manual */}
-        <Card className="border-2 border-green-200 bg-green-50">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 text-green-900">
-              <Database className="h-5 w-5" />
-              Gestión Manual Avanzada
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <p className="text-green-800 mb-4">
-              Interfaz completa para administrar manualmente todos los datos con herramientas avanzadas.
-            </p>
-            <div className="grid grid-cols-2 gap-4 mb-4">
-              <div className="bg-white p-3 rounded">
-                <Users className="h-6 w-6 text-blue-600 mb-2" />
-                <span className="text-sm font-medium">Gestión Completa</span>
+          {/* PASO 2: Ver y Editar */}
+          <Card className="border-3 border-green-400 bg-white shadow-lg">
+            <CardHeader className="bg-green-500 text-white rounded-t-lg">
+              <CardTitle className="flex items-center gap-2 text-xl">
+                <Eye className="h-6 w-6" />
+                PASO 2: VER Y EDITAR
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="p-6">
+              <p className="text-gray-700 mb-4 text-lg">
+                👁️ Ve todos los cambios aplicados y edita manualmente si necesitas.
+              </p>
+              <div className="bg-green-50 p-4 rounded-lg mb-4">
+                <h4 className="font-semibold text-green-900 mb-2">✅ Lo que puedes hacer:</h4>
+                <ul className="text-sm text-green-800 space-y-1">
+                  <li>• Ver todas las tarifas/ofertas importadas</li>
+                  <li>• Ver todas las comisiones (fijas y FEE)</li>
+                  <li>• Editar cualquier dato manualmente</li>
+                </ul>
               </div>
-              <div className="bg-white p-3 rounded">
-                <TrendingUp className="h-6 w-6 text-purple-600 mb-2" />
-                <span className="text-sm font-medium">Análisis Avanzado</span>
-              </div>
-            </div>
-            <Link href="/admin/manage">
-              <Button className="w-full bg-green-600 hover:bg-green-700">
-                Acceder a Gestión Manual
-              </Button>
-            </Link>
-          </CardContent>
-        </Card>
+              <Link href="/admin/manage">
+                <Button size="lg" className="w-full bg-green-600 hover:bg-green-700 text-lg py-4">
+                  👀 IR A VER DATOS
+                </Button>
+              </Link>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* Accesos Directos */}
