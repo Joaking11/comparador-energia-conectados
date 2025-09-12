@@ -164,6 +164,60 @@ model comparativas {
   comparativa_ofertas          comparativa_ofertas[]
   clientes                     clientes              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
   venta                        ventas?
+  // Relación con datos de consumo obtenidos por scraping
+  datos_consumo_scraping       datos_consumo_scraping[]
+}
+
+// Nueva tabla para credenciales de portales web (distribuidoras)
+model credenciales_distribuidoras {
+  id                String   @id @default(cuid())
+  distribuidora     String   // Nombre de la distribuidora (Iberdrola, Endesa, etc.)
+  usuario           String   // Usuario para el portal
+  password_encrypted String  // Contraseña encriptada
+  url_portal        String   // URL del portal web
+  activa            Boolean  @default(true)
+  ultima_conexion   DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  // Datos obtenidos mediante scraping
+  datos_consumo_scraping datos_consumo_scraping[]
+}
+
+// Nueva tabla para almacenar datos de consumo obtenidos por scraping
+model datos_consumo_scraping {
+  id                String   @id @default(cuid())
+  comparativaId     String?
+  credencialId      String
+  cups              String
+  distribuidora     String
+  // Datos de consumo por periodos
+  consumoP1         Float?
+  consumoP2         Float?
+  consumoP3         Float?
+  consumoP4         Float?
+  consumoP5         Float?
+  consumoP6         Float?
+  consumoTotal      Float
+  // Datos de potencia (maxímetros)
+  potenciaP1        Float?
+  potenciaP2        Float?
+  potenciaP3        Float?
+  potenciaP4        Float?
+  potenciaP5        Float?
+  potenciaP6        Float?
+  potenciaMaxima    Float?
+  // Metadatos del scraping
+  fecha_obtencion   DateTime @default(now())
+  periodo_analizado String?  // Ej: "Enero 2025 - Diciembre 2025"
+  tipo_dato         String   // "historico" | "tiempo_real" | "maximetros"
+  estado_scraping   String   // "exitoso" | "error" | "pendiente"
+  mensaje_error     String?
+  datos_raw         String?  // JSON con datos completos obtenidos
+  // Relaciones
+  comparativas      comparativas? @relation(fields: [comparativaId], references: [id], onDelete: SetNull)
+  credencial        credenciales_distribuidoras @relation(fields: [credencialId], references: [id], onDelete: Cascade)
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
 
 model sessions {

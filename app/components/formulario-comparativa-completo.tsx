@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { ScrapingWidget } from '@/components/scraping-widget';
 import { 
   Calculator, 
   User, 
@@ -1145,6 +1146,30 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
 
           {/* TAB CONSUMO/POTENCIA */}
           <TabsContent value="consumo" className="space-y-4">
+            
+            {/* Widget de Scraping Automático */}
+            <ScrapingWidget
+              cups={formData.electricidad.cupsElectricidad}
+              distribuidora={formData.electricidad.distribuidoraElectrica}
+              onDataObtained={(data) => {
+                // Actualizar datos del formulario con los datos obtenidos
+                updateFormData('electricidad', 'consumoAnualElectricidad', data.consumoTotal);
+                
+                if (data.consumoP1) updateFormData('consumos', 'consumoP1', data.consumoP1);
+                if (data.consumoP2) updateFormData('consumos', 'consumoP2', data.consumoP2);
+                if (data.consumoP3) updateFormData('consumos', 'consumoP3', data.consumoP3);
+                
+                if (data.potenciaMaxima) {
+                  updateFormData('potencias', 'potenciaP1', data.potenciaMaxima);
+                }
+                
+                toast({
+                  title: 'Datos aplicados',
+                  description: 'Los datos obtenidos se han aplicado automáticamente al formulario',
+                });
+              }}
+            />
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               
               {/* Potencias */}

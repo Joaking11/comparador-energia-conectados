@@ -25,7 +25,9 @@ import {
   Users,
   ArrowLeft,
   Home,
-  Eye
+  Eye,
+  Globe,
+  Activity
 } from 'lucide-react';
 
 export default function AdminDashboardPage() {
@@ -225,7 +227,7 @@ export default function AdminDashboardPage() {
           <CardTitle>⚡ Accesos Directos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-6 gap-6">
             <div className="text-center">
               <Link href="/admin/manage?tab=comercializadoras">
                 <div className="bg-blue-50 p-6 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer">
@@ -281,6 +283,18 @@ export default function AdminDashboardPage() {
                   <h3 className="font-semibold text-indigo-900">Perfiles Comisión</h3>
                   <p className="text-sm text-indigo-700 mt-2">
                     Configurar comisiones granulares
+                  </p>
+                </div>
+              </Link>
+            </div>
+
+            <div className="text-center">
+              <Link href="/admin/scraping">
+                <div className="bg-red-50 p-6 rounded-lg hover:bg-red-100 transition-colors cursor-pointer">
+                  <Globe className="h-8 w-8 text-red-600 mx-auto mb-3" />
+                  <h3 className="font-semibold text-red-900">Scraping Web</h3>
+                  <p className="text-sm text-red-700 mt-2">
+                    Obtener datos automáticamente de distribuidoras
                   </p>
                 </div>
               </Link>
