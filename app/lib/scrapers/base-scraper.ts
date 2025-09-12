@@ -51,7 +51,7 @@ export abstract class BaseScraper {
     console.log(`🔧 Inicializando navegador para ${this.empresa}...`);
     
     this.browser = await puppeteer.launch({
-      headless: true, // Cambiar a false para debugging
+      headless: false, // Cambiar a false para debugging
       args: [
         '--no-sandbox',
         '--disable-setuid-sandbox',
