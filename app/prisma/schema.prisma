@@ -155,6 +155,10 @@ model comparativas {
   ivaGas                       Float?
   totalFacturaGas              Float?
   notas                        String?
+  // Nuevos campos para gestión de agentes
+  agenteId                     String?
+  nombreAgente                 String?
+  mostrarComisiones            Boolean               @default(true)
   createdAt                    DateTime              @default(now())
   updatedAt                    DateTime
   comparativa_ofertas          comparativa_ofertas[]

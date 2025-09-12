@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,6 +40,12 @@ interface FormDataCompleto {
     nifFirmante: string;
     telefono: string;
     email: string;
+  };
+  // Nuevo: Información del agente
+  agente: {
+    agenteId: string;
+    nombreAgente: string;
+    mostrarComisiones: boolean;
   };
   electricidad: {
     contrataElectricidad: boolean;
@@ -128,6 +134,32 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
   const router = useRouter();
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
+  // Estados para gestión de agentes
+  const [agentes, setAgentes] = useState<any[]>([]);
+  const [loadingAgentes, setLoadingAgentes] = useState(false);
+
+  // Cargar lista de agentes al montar el componente
+  useEffect(() => {
+    const fetchAgentes = async () => {
+      setLoadingAgentes(true);
+      try {
+        const response = await fetch('/api/users');
+        const data = await response.json();
+        // Filtrar solo agentes
+        const agentesFiltrados = data.users?.filter((user: any) => 
+          user.tipoUsuario.includes('agente') && user.activo
+        ) || [];
+        setAgentes(agentesFiltrados);
+      } catch (error) {
+        console.error('Error cargando agentes:', error);
+        setAgentes([]);
+      } finally {
+        setLoadingAgentes(false);
+      }
+    };
+
+    fetchAgentes();
+  }, []);
 
   // Función para mapear datos de OCR al formato del formulario
   const mapearDatosOCR = (datosOCR: any): FormDataCompleto => {
@@ -147,6 +179,12 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
         nifFirmante: datosOCR.cliente?.nifFirmante || '',
         telefono: datosOCR.cliente?.telefono || '',
         email: datosOCR.cliente?.email || ''
+      },
+      // Mantener sección del agente incluso con datos OCR
+      agente: {
+        agenteId: '',
+        nombreAgente: '',
+        mostrarComisiones: true
       },
       electricidad: {
         contrataElectricidad: datosOCR.electricidad?.contrataElectricidad ?? true,
@@ -239,6 +277,12 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
       nifFirmante: '',
       telefono: '',
       email: ''
+    },
+    // Inicializar sección del agente
+    agente: {
+      agenteId: '',
+      nombreAgente: '',
+      mostrarComisiones: true // Por defecto mostrar comisiones para usuario principal
     },
     electricidad: {
       contrataElectricidad: true,
@@ -411,6 +455,11 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
         comparativa: {
           titulo: formData.metadatos.titulo,
           
+          // Información del agente (NUEVA FUNCIONALIDAD)
+          agenteId: formData.agente.agenteId || null,
+          nombreAgente: formData.agente.nombreAgente || null,
+          mostrarComisiones: formData.agente.mostrarComisiones,
+          
           // Electricidad
           contrataElectricidad: formData.electricidad.contrataElectricidad,
           multipuntoElectricidad: formData.electricidad.multipuntoElectricidad,
@@ -552,8 +601,9 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
           </CardContent>
         </Card>
 
-        <Tabs defaultValue="cliente" className="w-full">
-          <TabsList className="grid w-full grid-cols-6">
+        <Tabs defaultValue="agente" className="w-full">
+          <TabsList className="grid w-full grid-cols-7">
+            <TabsTrigger value="agente">Agente</TabsTrigger>
             <TabsTrigger value="cliente">Cliente</TabsTrigger>
             <TabsTrigger value="electricidad">Electricidad</TabsTrigger>
             <TabsTrigger value="gas">Gas</TabsTrigger>
@@ -561,6 +611,71 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
             <TabsTrigger value="consumo">Consumo/Potencia</TabsTrigger>
             <TabsTrigger value="factura">Factura Actual</TabsTrigger>
           </TabsList>
+
+          {/* TAB AGENTE */}
+          <TabsContent value="agente" className="space-y-4">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <User className="h-5 w-5" />
+                  Selección de Agente
+                </CardTitle>
+                <CardDescription>
+                  Selecciona el agente responsable de esta comparativa
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="agenteId">Agente Responsable</Label>
+                  <Select 
+                    value={formData.agente.agenteId} 
+                    onValueChange={(value) => {
+                      const agenteSeleccionado = agentes.find(a => a.id === value);
+                      updateFormData('agente', 'agenteId', value);
+                      updateFormData('agente', 'nombreAgente', agenteSeleccionado?.name || '');
+                    }}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder={loadingAgentes ? "Cargando agentes..." : "Selecciona un agente"} />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="principal">Usuario Principal (Todas las comisiones)</SelectItem>
+                      {agentes.map((agente) => (
+                        <SelectItem key={agente.id} value={agente.id}>
+                          {agente.name} ({agente.email})
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                  {formData.agente.agenteId && formData.agente.agenteId !== 'principal' && (
+                    <div className="text-sm text-gray-600 mt-2">
+                      <p>✅ Agente seleccionado: <strong>{formData.agente.nombreAgente}</strong></p>
+                      <p>Las comisiones se calcularan según el perfil de este agente.</p>
+                    </div>
+                  )}
+                  {formData.agente.agenteId === 'principal' && (
+                    <div className="text-sm text-blue-600 mt-2">
+                      <p>👑 Usuario Principal: Se mostrarán todas las comisiones sin restricciones</p>
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex items-center space-x-2">
+                  <Switch
+                    id="mostrarComisiones"
+                    checked={formData.agente.mostrarComisiones}
+                    onCheckedChange={(checked) => updateFormData('agente', 'mostrarComisiones', checked)}
+                  />
+                  <Label htmlFor="mostrarComisiones">Mostrar comisiones en los resultados</Label>
+                </div>
+                {formData.agente.mostrarComisiones && (
+                  <div className="text-sm text-green-600">
+                    💰 Las comisiones serán visibles en la comparativa
+                  </div>
+                )}
+              </CardContent>
+            </Card>
+          </TabsContent>
 
           {/* TAB CLIENTE */}
           <TabsContent value="cliente" className="space-y-4">
