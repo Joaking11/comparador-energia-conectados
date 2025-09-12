@@ -65,14 +65,18 @@ export async function POST(request: NextRequest) {
           parseFloat(row['Precio Energía (€/kWh)'] || 
           row['precio_energia'] || 
           row['Precio Energia'] ||
-          row['precioEnergia'] || 
+          row['precioEnergia'] ||
+          row['P1 Energía (€/MWh)'] ||
+          row['P1 Energia'] ||
           0);
           
         const precioTermino = 
           parseFloat(row['Término Potencia (€/kW mes)'] || 
           row['termino_potencia'] || 
           row['Termino Potencia'] ||
-          row['precioTermino'] || 
+          row['precioTermino'] ||
+          row['P1 Potencia (€/kW año)'] ||
+          row['P1 Potencia'] ||
           0);
           
         const descripcion = 
@@ -116,8 +120,9 @@ export async function POST(request: NextRequest) {
           continue;
         }
 
-        if (precioEnergia <= 0 || precioTermino <= 0) {
-          errores.push(`Fila ${procesadas + 1}: Precios deben ser mayores que 0`);
+        // Validación más permisiva para precios muy pequeños pero válidos (ej: 0.0002 €/kWh)
+        if (precioEnergia < 0.00001 || precioTermino < 0) {
+          errores.push(`Fila ${procesadas + 1}: Precios inválidos (energía: ${precioEnergia}, potencia: ${precioTermino})`);
           continue;
         }
 
