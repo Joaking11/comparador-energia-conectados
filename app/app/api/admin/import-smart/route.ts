@@ -666,15 +666,15 @@ async function importarComisiones(comisionesInterpretadas: any[]) {
         rango: 'E',
         rangoDesde: 0,
         rangoHasta: null,
-        comision: comisionData.comisionEnergia || 0,
+        comision: comisionData.comisionFija || 0,  // CORREGIDO: usar comisionFija
         tieneFee: !!(comisionData.comisionFija && comisionData.comisionFija > 0),
         porcentajeFeeEnergia: comisionData.comisionEnergia || null,
         porcentajeFeePotencia: comisionData.comisionPotencia || null,
         updatedAt: new Date()
       };
       
-      // Verificar si la comisión ya existe
-      const comisionExistente = await prisma.comisiones.findFirst({
+      // Verificar si hay comisiones existentes (puede haber múltiples)
+      const comisionesExistentes = await prisma.comisiones.findMany({
         where: {
           comercializadoraId: comercializadora.id,
           tarifa: comisionParaDB.tarifa,
@@ -682,17 +682,27 @@ async function importarComisiones(comisionesInterpretadas: any[]) {
         }
       });
       
-      if (comisionExistente) {
-        await prisma.comisiones.update({
-          where: { id: comisionExistente.id },
-          data: comisionParaDB
-        });
-        updated++;
+      if (comisionesExistentes.length > 0) {
+        // Actualizar TODAS las comisiones que coincidan
+        for (const comisionExistente of comisionesExistentes) {
+          await prisma.comisiones.update({
+            where: { id: comisionExistente.id },
+            data: {
+              comision: comisionParaDB.comision,
+              porcentajeFeeEnergia: comisionParaDB.porcentajeFeeEnergia,
+              porcentajeFeePotencia: comisionParaDB.porcentajeFeePotencia,
+              updatedAt: new Date()
+            }
+          });
+        }
+        updated += comisionesExistentes.length;
+        console.log(`✅ Actualizadas ${comisionesExistentes.length} comisiones de ${comercializadora.nombre}`);
       } else {
         await prisma.comisiones.create({
           data: comisionParaDB
         });
         imported++;
+        console.log(`✅ Creada nueva comisión de ${comercializadora.nombre}`);
       }
       
     } catch (error) {
