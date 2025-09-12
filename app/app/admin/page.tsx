@@ -225,7 +225,7 @@ export default function AdminDashboardPage() {
           <CardTitle>⚡ Accesos Directos</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <div className="grid grid-cols-1 md:grid-cols-5 gap-6">
             <div className="text-center">
               <Link href="/admin/manage?tab=comercializadoras">
                 <div className="bg-blue-50 p-6 rounded-lg hover:bg-blue-100 transition-colors cursor-pointer">
@@ -257,6 +257,30 @@ export default function AdminDashboardPage() {
                   <h3 className="font-semibold text-purple-900">Comisiones</h3>
                   <p className="text-sm text-purple-700 mt-2">
                     Gestionar comisiones fijas y por FEE
+                  </p>
+                </div>
+              </Link>
+            </div>
+
+            <div className="text-center">
+              <Link href="/admin/usuarios">
+                <div className="bg-green-50 p-6 rounded-lg hover:bg-green-100 transition-colors cursor-pointer">
+                  <Users className="h-8 w-8 text-green-600 mx-auto mb-3" />
+                  <h3 className="font-semibold text-green-900">Usuarios</h3>
+                  <p className="text-sm text-green-700 mt-2">
+                    Gestionar usuarios y agentes comerciales
+                  </p>
+                </div>
+              </Link>
+            </div>
+
+            <div className="text-center">
+              <Link href="/admin/perfiles-comision">
+                <div className="bg-indigo-50 p-6 rounded-lg hover:bg-indigo-100 transition-colors cursor-pointer">
+                  <TrendingUp className="h-8 w-8 text-indigo-600 mx-auto mb-3" />
+                  <h3 className="font-semibold text-indigo-900">Perfiles Comisión</h3>
+                  <p className="text-sm text-indigo-700 mt-2">
+                    Configurar comisiones granulares
                   </p>
                 </div>
               </Link>

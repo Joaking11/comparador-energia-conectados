@@ -54,6 +54,8 @@ model comercializadoras {
   logoUrl    String?
   comisiones comisiones[]
   tarifas    tarifas[]
+  comisiones_comercializadora comisiones_comercializadora[]
+  comisiones_oferta comisiones_oferta[]
 }
 
 model comisiones {
@@ -157,6 +159,7 @@ model comparativas {
   updatedAt                    DateTime
   comparativa_ofertas          comparativa_ofertas[]
   clientes                     clientes              @relation(fields: [clienteId], references: [id], onDelete: Cascade)
+  venta                        ventas?
 }
 
 model sessions {
@@ -208,17 +211,140 @@ model tarifas {
   updatedAt           DateTime
   comparativa_ofertas comparativa_ofertas[]
   comercializadoras   comercializadoras     @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
+  ventas              ventas[]
 }
 
 model users {
-  id            String     @id
-  name          String?
-  email         String     @unique
-  emailVerified DateTime?
-  image         String?
-  password      String?
-  accounts      accounts[]
-  sessions      sessions[]
+  id                  String              @id
+  name                String?
+  email               String              @unique
+  emailVerified       DateTime?
+  image               String?
+  password            String?
+  username            String?             @unique
+  tipoUsuario         String              @default("regular") // regular, agente_con_login, agente_sin_login, admin
+  perfilComisionId    String?
+  activo              Boolean             @default(true)
+  telefono            String?
+  observaciones       String?
+  fechaAlta           DateTime            @default(now())
+  ultimoAcceso        DateTime?
+  createdAt           DateTime            @default(now())
+  updatedAt           DateTime            @updatedAt @default(now())
+  accounts            accounts[]
+  sessions            sessions[]
+  perfilComision      perfiles_comision?  @relation(fields: [perfilComisionId], references: [id])
+  ventas              ventas[]
+  comision_ventas     comision_ventas[]
+}
+
+model perfiles_comision {
+  id                      String                   @id @default(uuid())
+  nombre                  String                   @unique
+  descripcion             String?
+  porcentajeTotal         Float                    // Porcentaje base para todas las ventas
+  activo                  Boolean                  @default(true)
+  createdAt               DateTime                 @default(now())
+  updatedAt               DateTime                 @updatedAt
+  usuarios                users[]
+  comisiones_comercializadora comisiones_comercializadora[]
+  comisiones_tarifa       comisiones_tarifa[]
+  comisiones_oferta       comisiones_oferta[]
+}
+
+model comision_principal {
+  id              String    @id @default(uuid())
+  porcentajeBase  Float     // Porcentaje principal del sistema
+  activo          Boolean   @default(true)
+  fechaActivacion DateTime  @default(now())
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+}
+
+// Comisiones específicas por comercializadora para cada perfil
+model comisiones_comercializadora {
+  id                    String             @id @default(uuid())
+  perfilComisionId      String
+  comercializadoraId    String
+  porcentaje            Float              // Porcentaje específico para esta comercializadora
+  activo                Boolean            @default(true)
+  createdAt             DateTime           @default(now())
+  updatedAt             DateTime           @updatedAt
+  perfilComision        perfiles_comision  @relation(fields: [perfilComisionId], references: [id], onDelete: Cascade)
+  comercializadora      comercializadoras  @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
+
+  @@unique([perfilComisionId, comercializadoraId])
+}
+
+// Comisiones específicas por tarifa de acceso para cada perfil
+model comisiones_tarifa {
+  id                String             @id @default(uuid())
+  perfilComisionId  String
+  tarifaAcceso      String             // 2.0TD, 3.0TD, 6.1TD, etc
+  porcentaje        Float              // Porcentaje específico para esta tarifa
+  activo            Boolean            @default(true)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+  perfilComision    perfiles_comision  @relation(fields: [perfilComisionId], references: [id], onDelete: Cascade)
+
+  @@unique([perfilComisionId, tarifaAcceso])
+}
+
+// Comisiones específicas por oferta individual para cada perfil
+model comisiones_oferta {
+  id                  String             @id @default(uuid())
+  perfilComisionId    String
+  comercializadoraId  String
+  nombreOferta        String
+  tarifaAcceso        String?            // Opcional, si no se especifica aplica a todas las tarifas de esa oferta
+  porcentaje          Float              // Porcentaje específico para esta oferta
+  activo              Boolean            @default(true)
+  createdAt           DateTime           @default(now())
+  updatedAt           DateTime           @updatedAt
+  perfilComision      perfiles_comision  @relation(fields: [perfilComisionId], references: [id], onDelete: Cascade)
+  comercializadora    comercializadoras  @relation(fields: [comercializadoraId], references: [id], onDelete: Cascade)
+
+  @@unique([perfilComisionId, comercializadoraId, nombreOferta, tarifaAcceso])
+}
+
+// Registro de ventas para seguimiento de comisiones
+model ventas {
+  id                    String            @id @default(uuid())
+  comparativaId         String            @unique
+  usuarioId             String            // Usuario/agente que realizó la venta
+  clienteId             String
+  tarifaSeleccionadaId  String
+  importeAnual          Float             // Importe anual de la tarifa seleccionada
+  comisionCalculada     Float             // Comisión calculada para esta venta
+  porcentajeAplicado    Float             // Porcentaje aplicado para el cálculo
+  tipoComision          String            // 'total', 'comercializadora', 'tarifa', 'oferta'
+  fechaVenta            DateTime          @default(now())
+  estadoVenta           String            @default("pendiente") // pendiente, confirmada, cancelada
+  observaciones         String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  usuario               users             @relation(fields: [usuarioId], references: [id])
+  comparativa           comparativas      @relation(fields: [comparativaId], references: [id], onDelete: Cascade)
+  tarifaSeleccionada    tarifas           @relation(fields: [tarifaSeleccionadaId], references: [id])
+  comisiones_detalle    comision_ventas[]
+}
+
+// Detalle de comisiones por venta (para múltiples usuarios si es necesario)
+model comision_ventas {
+  id              String   @id @default(uuid())
+  ventaId         String
+  usuarioId       String
+  importeComision Float    // Importe de la comisión para este usuario
+  porcentaje      Float    // Porcentaje aplicado
+  fechaPago       DateTime?
+  estadoPago      String   @default("pendiente") // pendiente, pagado, cancelado
+  observaciones   String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  venta           ventas   @relation(fields: [ventaId], references: [id], onDelete: Cascade)
+  usuario         users    @relation(fields: [usuarioId], references: [id])
+
+  @@unique([ventaId, usuarioId])
 }
 
 model verification_tokens {

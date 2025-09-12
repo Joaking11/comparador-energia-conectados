@@ -18,13 +18,31 @@ export const authOptions: NextAuthOptions = {
         }
 
         try {
+          console.log('🔍 Intentando autenticar:', credentials.email);
+          
+          // Permitir login demo para pruebas
+          if (credentials.email === 'demo@example.com' && credentials.password === 'demo123') {
+            console.log('✅ Login demo exitoso');
+            return {
+              id: 'demo-user-id',
+              email: 'demo@example.com',
+              name: 'Usuario Demo'
+            };
+          }
+          
           const user = await prisma.users.findUnique({
             where: {
               email: credentials.email
             }
           });
 
-          if (!user || !user.password) {
+          if (!user) {
+            console.log('❌ Usuario no encontrado:', credentials.email);
+            return null;
+          }
+
+          if (!user.password) {
+            console.log('❌ Usuario sin contraseña:', credentials.email);
             return null;
           }
 
@@ -34,16 +52,19 @@ export const authOptions: NextAuthOptions = {
           );
 
           if (!isPasswordValid) {
+            console.log('❌ Contraseña inválida para:', credentials.email);
             return null;
           }
 
+          console.log('✅ Autenticación exitosa:', credentials.email);
+          
           return {
             id: user.id,
             email: user.email,
             name: user.name,
           };
         } catch (error) {
-          console.error('Auth error:', error);
+          console.error('❌ Error de autenticación:', error);
           return null;
         }
       }
