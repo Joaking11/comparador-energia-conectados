@@ -40,7 +40,7 @@ export abstract class BaseScraper {
   protected page: Page | null = null;
   
   constructor(
-    protected distribuidora: string,
+    protected empresa: string, // Puede ser distribuidora o comercializadora
     protected credentials: ScrapingCredentials
   ) {}
 
@@ -48,7 +48,7 @@ export abstract class BaseScraper {
    * Inicializa el navegador con configuración optimizada
    */
   protected async initBrowser(): Promise<void> {
-    console.log(`🔧 Inicializando navegador para ${this.distribuidora}...`);
+    console.log(`🔧 Inicializando navegador para ${this.empresa}...`);
     
     this.browser = await puppeteer.launch({
       headless: true, // Cambiar a false para debugging
@@ -109,7 +109,7 @@ export abstract class BaseScraper {
     try {
       await this.initBrowser();
       
-      console.log(`🌐 Iniciando scraping para ${this.distribuidora} - CUPS: ${cups}`);
+      console.log(`🌐 Iniciando scraping para ${this.empresa} - CUPS: ${cups}`);
       
       // Login
       const loginSuccess = await this.login();
@@ -130,7 +130,7 @@ export abstract class BaseScraper {
       };
 
     } catch (error) {
-      console.error(`❌ Error en scraping ${this.distribuidora}:`, error);
+      console.error(`❌ Error en scraping ${this.empresa}:`, error);
       return {
         success: false,
         error: error instanceof Error ? error.message : 'Error desconocido',

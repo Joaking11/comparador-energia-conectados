@@ -2,19 +2,27 @@
 import { ScrapingCredentials } from './base-scraper';
 import { IberdrolaScraper } from './iberdrola-scraper';
 import { EndesaScraper } from './endesa-scraper';
+import { LogosEnergiaScraper } from './logos-energia-scraper';
 
 export class ScraperFactory {
-  static createScraper(distribuidora: string, credentials: ScrapingCredentials) {
-    const distribuidoraNormalizada = distribuidora.toUpperCase().trim();
+  static createScraper(empresa: string, credentials: ScrapingCredentials) {
+    const empresaNormalizada = empresa.toUpperCase().trim();
     
-    switch (distribuidoraNormalizada) {
+    switch (empresaNormalizada) {
+      // Distribuidoras
       case 'IBERDROLA':
         return new IberdrolaScraper(credentials);
         
       case 'ENDESA':
         return new EndesaScraper(credentials);
         
-      // Aquí se pueden añadir más distribuidoras
+      // Comercializadoras
+      case 'LOGOS_ENERGIA':
+      case 'LOGOS ENERGIA':
+      case 'LOGOS':
+        return new LogosEnergiaScraper(credentials);
+        
+      // Otras distribuidoras
       case 'NATURGY':
       case 'EDP':
       case 'VIESGO':
@@ -22,27 +30,31 @@ export class ScraperFactory {
         // Por ahora usar el scraper de Iberdrola como base y adaptarlo
         return new IberdrolaScraper({
           ...credentials,
-          url_portal: getPortalUrl(distribuidoraNormalizada)
+          url_portal: getPortalUrl(empresaNormalizada)
         });
         
       default:
-        throw new Error(`Distribuidora no soportada: ${distribuidora}`);
+        throw new Error(`Empresa no soportada: ${empresa}`);
     }
   }
 
-  static getSupportedDistribuidoras(): string[] {
+  static getSupportedEmpresas(): string[] {
     return [
+      // Distribuidoras
       'IBERDROLA',
       'ENDESA', 
       'NATURGY',
       'EDP',
       'VIESGO',
-      'UFD'
+      'UFD',
+      // Comercializadoras
+      'LOGOS_ENERGIA'
     ];
   }
 
-  static getPortalInfo(distribuidora: string) {
+  static getPortalInfo(empresa: string) {
     const info: Record<string, { name: string; url: string; description: string }> = {
+      // Distribuidoras
       'IBERDROLA': {
         name: 'Iberdrola',
         url: 'https://www.iberdrola.es/clientes/zona-clientes',
@@ -72,20 +84,27 @@ export class ScraperFactory {
         name: 'Unión Fenosa Distribución',
         url: 'https://www.ufd.es/clientes',
         description: 'Portal de clientes UFD'
+      },
+      // Comercializadoras
+      'LOGOS_ENERGIA': {
+        name: 'Logos Energía',
+        url: 'https://cconsulting.logosenergia.wolfcrm.es/documents/',
+        description: 'Portal de consulta Logos Energía - Consulta de SIPS'
       }
     };
 
-    return info[distribuidora.toUpperCase()] || null;
+    return info[empresa.toUpperCase()] || null;
   }
 }
 
-function getPortalUrl(distribuidora: string): string {
+function getPortalUrl(empresa: string): string {
   const urls: Record<string, string> = {
     'NATURGY': 'https://www.naturgy.es/area_privada',
     'EDP': 'https://www.edpenergia.es/es/clientes',
     'VIESGO': 'https://www.viesgo.com/area-clientes', 
-    'UFD': 'https://www.ufd.es/clientes'
+    'UFD': 'https://www.ufd.es/clientes',
+    'LOGOS_ENERGIA': 'https://cconsulting.logosenergia.wolfcrm.es/documents/'
   };
 
-  return urls[distribuidora] || 'https://www.iberdrola.es/clientes/zona-clientes';
+  return urls[empresa] || 'https://www.iberdrola.es/clientes/zona-clientes';
 }
