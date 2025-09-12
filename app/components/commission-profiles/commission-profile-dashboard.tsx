@@ -223,8 +223,8 @@ export function CommissionProfileDashboard() {
 
       <Tabs defaultValue="perfiles" className="w-full">
         <TabsList>
-          <TabsTrigger value="perfiles">Perfiles de Comisión</TabsTrigger>
-          <TabsTrigger value="configuracion">Configuración Global</TabsTrigger>
+          <TabsTrigger value="perfiles" onClick={() => {}}>Perfiles de Comisión</TabsTrigger>
+          <TabsTrigger value="configuracion" onClick={() => {}}>Configuración Global</TabsTrigger>
         </TabsList>
 
         {/* Perfiles */}

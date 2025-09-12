@@ -75,8 +75,8 @@ export function UserManagementDashboard() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterTipoUsuario, setFilterTipoUsuario] = useState('');
-  const [filterActivo, setFilterActivo] = useState('');
+  const [filterTipoUsuario, setFilterTipoUsuario] = useState('all');
+  const [filterActivo, setFilterActivo] = useState('all');
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -96,8 +96,8 @@ export function UserManagementDashboard() {
         page: currentPage.toString(),
         limit: '10',
         ...(searchTerm && { search: searchTerm }),
-        ...(filterTipoUsuario && { tipoUsuario: filterTipoUsuario }),
-        ...(filterActivo && { activo: filterActivo })
+        ...(filterTipoUsuario && filterTipoUsuario !== 'all' && { tipoUsuario: filterTipoUsuario }),
+        ...(filterActivo && filterActivo !== 'all' && { activo: filterActivo })
       });
 
       const response = await fetch(`/api/users?${params}`);
@@ -323,7 +323,7 @@ export function UserManagementDashboard() {
                   <SelectValue placeholder="Todos los tipos" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los tipos</SelectItem>
+                  <SelectItem value="all">Todos los tipos</SelectItem>
                   <SelectItem value="admin">Administrador</SelectItem>
                   <SelectItem value="regular">Regular</SelectItem>
                   <SelectItem value="agente_con_login">Agente c/Login</SelectItem>
@@ -339,7 +339,7 @@ export function UserManagementDashboard() {
                   <SelectValue placeholder="Todos los estados" />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="">Todos los estados</SelectItem>
+                  <SelectItem value="all">Todos los estados</SelectItem>
                   <SelectItem value="true">Activos</SelectItem>
                   <SelectItem value="false">Inactivos</SelectItem>
                 </SelectContent>
@@ -351,8 +351,8 @@ export function UserManagementDashboard() {
                 variant="outline" 
                 onClick={() => {
                   setSearchTerm('');
-                  setFilterTipoUsuario('');
-                  setFilterActivo('');
+                  setFilterTipoUsuario('all');
+                  setFilterActivo('all');
                   setCurrentPage(1);
                 }}
                 className="w-full"
