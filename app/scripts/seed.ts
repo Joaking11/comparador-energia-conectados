@@ -87,13 +87,13 @@ async function main() {
   const userDemo = await prisma.users.create({
     data: {
       id: uuidv4(),
-      email: 'demo@conectados.energy',
+      email: 'demo@conectadosconsulting.es',
       name: 'Usuario Demo',
       password: hashedPassword
     }
   });
 
-  console.log('✅ Creado usuario demo (email: demo@conectados.energy, password: admin123)');
+  console.log('✅ Creado usuario demo (email: demo@conectadosconsulting.es, password: admin123)');
   console.log('🎉 Seed completado exitosamente!');
 }
 

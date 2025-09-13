@@ -11,7 +11,7 @@ export function Header() {
           <div className="h-10 w-auto">
             <Image
               src="/conectados-logo.png"
-              alt="CONECTADOS"
+              alt="Conectados Consulting"
               width={120}
               height={40}
               className="h-10 w-auto object-contain"
@@ -19,7 +19,7 @@ export function Header() {
           </div>
           <div className="border-l border-gray-300 pl-3">
             <h1 className="text-lg font-bold text-gray-900">Comparativas Energía</h1>
-            <p className="text-xs text-gray-600">Consultor Energético</p>
+            <p className="text-xs text-gray-600">Conectados Consulting</p>
           </div>
         </Link>
         

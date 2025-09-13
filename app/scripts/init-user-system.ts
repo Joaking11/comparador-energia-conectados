@@ -70,7 +70,7 @@ async function initUserSystem() {
       {
         id: 'admin-user',
         name: 'Administrador Principal',
-        email: 'admin@conectados.com',
+        email: 'admin@conectadosconsulting.es',
         username: 'admin',
         password: await bcryptjs.hash('admin123', 12),
         tipoUsuario: 'admin',
@@ -80,7 +80,7 @@ async function initUserSystem() {
       {
         id: 'agente-senior-1',
         name: 'María García López',
-        email: 'maria.garcia@conectados.com',
+        email: 'maria.garcia@conectadosconsulting.es',
         username: 'maria.garcia',
         password: await bcryptjs.hash('maria123', 12),
         tipoUsuario: 'agente_con_login',
@@ -90,7 +90,7 @@ async function initUserSystem() {
       {
         id: 'agente-junior-1',
         name: 'Carlos Rodríguez Martín',
-        email: 'carlos.rodriguez@conectados.com',
+        email: 'carlos.rodriguez@conectadosconsulting.es',
         username: 'carlos.rodriguez',
         password: await bcryptjs.hash('carlos123', 12),
         tipoUsuario: 'agente_con_login',
@@ -203,9 +203,9 @@ async function initUserSystem() {
 
     console.log('\n🎉 Sistema de usuarios y comisiones inicializado correctamente!');
     console.log('\n📋 Usuarios creados:');
-    console.log('   👨‍💼 admin@conectados.com / admin123 (Administrador)');
-    console.log('   🏆 maria.garcia@conectados.com / maria123 (Agente Senior)');
-    console.log('   📚 carlos.rodriguez@conectados.com / carlos123 (Agente Junior)');
+    console.log('   👨‍💼 admin@conectadosconsulting.es / admin123 (Administrador)');
+    console.log('   🏆 maria.garcia@conectadosconsulting.es / maria123 (Agente Senior)');
+    console.log('   📚 carlos.rodriguez@conectadosconsulting.es / carlos123 (Agente Junior)');
     console.log('   🤝 ana.fernandez@colaborador.com (Sin login)');
     console.log('   🧪 demo@example.com / demo123 (Demo)');
     console.log('\n💰 Comisión principal: 10%');
