@@ -12,7 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Switch } from '@/components/ui/switch';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
-import { ScrapingWidget } from '@/components/scraping-widget';
+// import { ScrapingWidget } from '@/components/scraping-widget';
 import { 
   Calculator, 
   User, 
@@ -1147,7 +1147,8 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
           {/* TAB CONSUMO/POTENCIA */}
           <TabsContent value="consumo" className="space-y-4">
             
-            {/* Widget de Scraping Automático */}
+            {/* Widget de Scraping Automático - TEMPORALMENTE DESHABILITADO */}
+            {/*
             <ScrapingWidget
               cups={formData.electricidad.cupsElectricidad}
               distribuidora={formData.electricidad.distribuidoraElectrica}
@@ -1169,6 +1170,7 @@ export function FormularioComparativaCompleto({ datosIniciales }: { datosInicial
                 });
               }}
             />
+            */}
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
               

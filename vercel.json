@@ -1,0 +1,25 @@
+
+{
+  "version": 2,
+  "builds": [
+    {
+      "src": "app/package.json",
+      "use": "@vercel/next"
+    }
+  ],
+  "routes": [
+    {
+      "src": "/(.*)",
+      "dest": "/app/$1"
+    }
+  ],
+  "env": {
+    "NEXTAUTH_URL": "https://comparativas.conectadosconsulting.es",
+    "NODE_ENV": "production"
+  },
+  "functions": {
+    "app/app/api/**": {
+      "maxDuration": 30
+    }
+  }
+}
