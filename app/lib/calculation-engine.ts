@@ -39,6 +39,15 @@ export class CalculationEngine {
         throw new Error(`Comparativa ${comparativaId} no encontrada`);
       }
 
+      // Validaciones adicionales
+      if (!comparativa.consumoAnualElectricidad || comparativa.consumoAnualElectricidad <= 0) {
+        throw new Error(`Consumo anual inválido: ${comparativa.consumoAnualElectricidad}. Debe ser mayor a 0.`);
+      }
+
+      if (!comparativa.tarifaAccesoElectricidad) {
+        throw new Error(`Tarifa de acceso eléctrico faltante. Es requerida para el cálculo.`);
+      }
+
       console.log('📊 Datos de comparativa cargados:', {
         consumoAnual: comparativa.consumoAnualElectricidad,
         potenciaMaxima: Math.max(
@@ -55,6 +64,22 @@ export class CalculationEngine {
       // Obtener todas las tarifas aplicables
       const tarifasAplicables = await this.findApplicableTarifas(comparativa);
       console.log(`📋 Encontradas ${tarifasAplicables.length} tarifas aplicables`);
+
+      if (tarifasAplicables.length === 0) {
+        console.log('⚠️ No se encontraron tarifas aplicables para esta comparativa');
+        console.log('📊 Criterios de búsqueda:', {
+          tarifa: comparativa.tarifaAccesoElectricidad,
+          consumoAnual: comparativa.consumoAnualElectricidad,
+          potenciaMaxima: Math.max(
+            comparativa.potenciaP1 || 0,
+            comparativa.potenciaP2 || 0,
+            comparativa.potenciaP3 || 0,
+            comparativa.potenciaP4 || 0,
+            comparativa.potenciaP5 || 0,
+            comparativa.potenciaP6 || 0
+          )
+        });
+      }
 
       // Calcular cada tarifa
       const resultados: CalculationResult[] = [];
