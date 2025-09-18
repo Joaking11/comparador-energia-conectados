@@ -1,222 +1,193 @@
 
-import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
-import { v4 as uuidv4 } from 'uuid';
-import { CalculationEngine } from '@/lib/calculation-engine';
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getServerSession } from 'next-auth';
+import { authOptions } from '@/lib/auth';
 
-export const dynamic = 'force-dynamic';
-
-const prisma = new PrismaClient();
-
-export async function GET() {
+export async function POST(request: NextRequest) {
   try {
-    const comparativas = await prisma.comparativas.findMany({
-      include: {
-        clientes: true,
-        comparativa_ofertas: {
-          include: {
-            tarifas: {
-              include: {
-                comercializadoras: true
-              }
-            }
-          }
-        }
-      },
-      orderBy: { createdAt: 'desc' }
+    console.log('=== INICIO CÁLCULO COMPARATIVA ===');
+    
+    // Verificar autenticación
+    const session = await getServerSession(authOptions);
+    if (!session?.user || !(session.user as any).id) {
+      console.error('Usuario no autenticado');
+      return NextResponse.json(
+        { error: 'No autorizado' },
+        { status: 401 }
+      );
+    }
+
+    const body = await request.json();
+    console.log('Datos recibidos:', JSON.stringify(body, null, 2));
+
+    // Validar datos requeridos
+    const { cliente, consumo, titulo, notas } = body;
+    
+    if (!cliente?.nombre || !consumo?.consumoAnual || !consumo?.potenciaContratada) {
+      console.error('Datos insuficientes:', { cliente, consumo });
+      return NextResponse.json(
+        { error: 'Datos insuficientes: se requieren nombre del cliente, consumo anual y potencia contratada' },
+        { status: 400 }
+      );
+    }
+
+    // Crear la comparativa en la base de datos
+    const nuevaComparativa = await prisma.comparativa_simple.create({
+      data: {
+        titulo: titulo || `Comparativa ${cliente.nombre}`,
+        clienteNombre: cliente.nombre,
+        clienteCif: cliente.cif || '',
+        clienteDireccion: cliente.direccion || '',
+        clienteTelefono: cliente.telefono || '',
+        clienteEmail: cliente.email || '',
+        consumoAnual: Number(consumo.consumoAnual),
+        potenciaContratada: Number(consumo.potenciaContratada),
+        tarifaActual: consumo.tarifaActual || 'No especificada',
+        importeActual: Number(consumo.importeActual) || 0,
+        notas: notas || '',
+        usuarioId: (session.user as any).id,
+        fechaCreacion: new Date(),
+        estado: 'CALCULANDO'
+      }
     });
 
-    return NextResponse.json(comparativas);
+    console.log('Comparativa creada en BD:', nuevaComparativa.id);
+
+    // Obtener todas las tarifas activas para el cálculo
+    const tarifas = await prisma.tarifas.findMany({
+      where: { 
+        activa: true 
+      },
+      include: {
+        comercializadoras: true
+      }
+    });
+
+    console.log(`Encontradas ${tarifas.length} tarifas activas`);
+
+    if (tarifas.length === 0) {
+      await prisma.comparativa_simple.update({
+        where: { id: nuevaComparativa.id },
+        data: { estado: 'ERROR' }
+      });
+      
+      return NextResponse.json(
+        { error: 'No hay tarifas activas disponibles para calcular' },
+        { status: 400 }
+      );
+    }
+
+    // Calcular cada tarifa
+    const resultados = [];
+    const consumoMensual = nuevaComparativa.consumoAnual / 12;
+    const potencia = nuevaComparativa.potenciaContratada;
+
+    for (const tarifa of tarifas) {
+      try {        
+        // Cálculo básico usando los precios de la tarifa
+        const costeFijoMensual = (tarifa.potenciaP1 || 0) * potencia;
+        const costeVariableMensual = (tarifa.energiaP1 || 0) * consumoMensual;
+        const costeTotal = (costeFijoMensual + costeVariableMensual) * 12;
+
+        const ahorro = nuevaComparativa.importeActual - costeTotal;
+        const porcentajeAhorro = nuevaComparativa.importeActual > 0 
+          ? (ahorro / nuevaComparativa.importeActual) * 100 
+          : 0;
+
+        const resultado = await prisma.resultado_comparativa_simple.create({
+          data: {
+            comparativaId: nuevaComparativa.id,
+            ofertaId: null, // No hay ofertas separadas, solo tarifas
+            comercializadoraId: tarifa.comercializadoraId,
+            costeAnual: costeTotal,
+            ahorro: ahorro,
+            porcentajeAhorro: porcentajeAhorro,
+            detalleCalculo: JSON.stringify({
+              costeFijoMensual,
+              costeVariableMensual,
+              energiaP1: tarifa.energiaP1,
+              potenciaP1: tarifa.potenciaP1,
+              consumoMensual,
+              potencia,
+              nombreOferta: tarifa.nombreOferta
+            })
+          }
+        });
+
+        resultados.push(resultado);
+        console.log(`Calculado resultado para ${tarifa.comercializadoras.nombre} - ${tarifa.nombreOferta}`);
+        
+      } catch (error) {
+        console.error(`Error calculando tarifa ${tarifa.id}:`, error);
+        continue;
+      }
+    }
+
+    // Actualizar estado de la comparativa
+    await prisma.comparativa_simple.update({
+      where: { id: nuevaComparativa.id },
+      data: { 
+        estado: resultados.length > 0 ? 'COMPLETADA' : 'ERROR',
+        fechaActualizacion: new Date()
+      }
+    });
+
+    if (resultados.length === 0) {
+      return NextResponse.json(
+        { error: 'No se pudieron calcular resultados para ninguna oferta' },
+        { status: 500 }
+      );
+    }
+
+    console.log(`=== COMPARATIVA COMPLETADA: ${resultados.length} resultados ===`);
+
+    return NextResponse.json({
+      success: true,
+      id: nuevaComparativa.id,
+      resultados: resultados.length,
+      message: 'Comparativa creada exitosamente'
+    });
 
   } catch (error) {
-    console.error('Error fetching comparativas:', error);
+    console.error('Error en POST /api/comparativas:', error);
+    
     return NextResponse.json(
-      { error: 'Error fetching comparativas' },
+      { 
+        error: 'Error interno del servidor',
+        details: error instanceof Error ? error.message : 'Error desconocido'
+      },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }
 
-export async function POST(request: Request) {
+export async function GET() {
   try {
-    const body = await request.json();
-    console.log('Datos recibidos en API:', JSON.stringify(body, null, 2));
-    const { cliente, comparativa: datosComparativa } = body;
-
-    // Crear o encontrar cliente
-    let clienteRecord = await prisma.clientes.findFirst({
-      where: { 
-        OR: [
-          { razonSocial: cliente.razonSocial },
-          { email: cliente.email },
-          { cif: cliente.cif }
-        ]
-      }
-    });
-
-    if (!clienteRecord) {
-      clienteRecord = await prisma.clientes.create({
-        data: {
-          id: uuidv4(),
-          razonSocial: cliente.razonSocial,
-          cif: cliente.cif || undefined,
-          direccion: cliente.direccion || undefined,
-          localidad: cliente.localidad || undefined,
-          provincia: cliente.provincia || undefined,
-          codigoPostal: cliente.codigoPostal || undefined,
-          nombreFirmante: cliente.nombreFirmante || undefined,
-          nifFirmante: cliente.nifFirmante || undefined,
-          telefono: cliente.telefono || undefined,
-          email: cliente.email || undefined,
-          updatedAt: new Date()
-        }
-      });
+    const session = await getServerSession(authOptions);
+    if (!session?.user) {
+      return NextResponse.json({ error: 'No autorizado' }, { status: 401 });
     }
 
-    console.log('Cliente encontrado/creado:', clienteRecord);
-
-    // Validar campos requeridos
-    if (!datosComparativa.consumoAnualElectricidad || datosComparativa.consumoAnualElectricidad <= 0) {
-      throw new Error('Consumo anual de electricidad es requerido');
-    }
-    if (!datosComparativa.potenciaP1 || datosComparativa.potenciaP1 <= 0) {
-      throw new Error('Potencia P1 es requerida');
-    }
-    if (!datosComparativa.totalFacturaElectricidad || datosComparativa.totalFacturaElectricidad <= 0) {
-      throw new Error('Total de factura de electricidad es requerido');
-    }
-
-    // Crear comparativa con todos los campos
-    console.log('Creando comparativa con datos:', datosComparativa);
-    
-    let comparativa;
-    try {
-      comparativa = await prisma.comparativas.create({
-      data: {
-        id: uuidv4(),
-        clienteId: clienteRecord.id,
-        titulo: datosComparativa.titulo || undefined,
-        
-        // Periodo de Facturación
-        fechaInicialFactura: datosComparativa.fechaInicialFactura ? new Date(datosComparativa.fechaInicialFactura) : undefined,
-        fechaFinalFactura: datosComparativa.fechaFinalFactura ? new Date(datosComparativa.fechaFinalFactura) : undefined,
-        diasPeriodoFactura: datosComparativa.diasPeriodoFactura || 30,
-        
-        // Electricidad
-        contrataElectricidad: datosComparativa.contrataElectricidad,
-        multipuntoElectricidad: datosComparativa.multipuntoElectricidad,
-        tarifaAccesoElectricidad: datosComparativa.tarifaAccesoElectricidad,
-        cupsElectricidad: datosComparativa.cupsElectricidad || undefined,
-        consumoAnualElectricidad: datosComparativa.consumoAnualElectricidad,
-        duracionContratoElectricidad: datosComparativa.duracionContratoElectricidad,
-        comercializadoraActual: datosComparativa.comercializadoraActual || 'No especificada',
-        ahorroMinimo: datosComparativa.ahorroMinimo,
-        distribuidoraElectrica: datosComparativa.distribuidoraElectrica || undefined,
-        
-        // Histórico de consumo (si viene de OCR con gráfico)
-        historicoTieneGrafico: datosComparativa.historicoTieneGrafico || false,
-        historicoMesesDetectados: datosComparativa.historicoMesesDetectados || undefined,
-        historicoConsumosMensuales: datosComparativa.historicoConsumosMensuales || undefined,
-        historicoPeriodoAnalizado: datosComparativa.historicoPeriodoAnalizado || undefined,
-        historicoConsumoCalculado: datosComparativa.historicoConsumoCalculado || undefined,
-        
-        // Gas
-        contrataGas: datosComparativa.contrataGas,
-        multipuntoGas: datosComparativa.multipuntoGas,
-        tarifaAccesoGas: datosComparativa.tarifaAccesoGas || undefined,
-        cupsGas: datosComparativa.cupsGas || undefined,
-        consumoAnualGas: datosComparativa.consumoAnualGas || undefined,
-        duracionContratoGas: datosComparativa.duracionContratoGas || undefined,
-        
-        // FEE
-        feeEnergia: datosComparativa.feeEnergia || 0,
-        feeEnergiaMinimo: datosComparativa.feeEnergiaMinimo || undefined,
-        feeEnergiaMaximo: datosComparativa.feeEnergiaMaximo || undefined,
-        feePotencia: datosComparativa.feePotencia || 0,
-        feePotenciaMinimo: datosComparativa.feePotenciaMinimo || undefined,
-        feePotenciaMaximo: datosComparativa.feePotenciaMaximo || undefined,
-        energiaFijo: datosComparativa.energiaFijo,
-        potenciaFijo: datosComparativa.potenciaFijo,
-        
-        // Potencias
-        potenciaP1: datosComparativa.potenciaP1 || 1.0, // Default mínimo si no se especifica
-        potenciaP2: datosComparativa.potenciaP2 || undefined,
-        potenciaP3: datosComparativa.potenciaP3 || undefined,
-        potenciaP4: datosComparativa.potenciaP4 || undefined,
-        potenciaP5: datosComparativa.potenciaP5 || undefined,
-        potenciaP6: datosComparativa.potenciaP6 || undefined,
-        
-        // Consumos
-        consumoP1: datosComparativa.consumoP1 || datosComparativa.consumoAnualElectricidad || 1000, // Default o total
-        consumoP2: datosComparativa.consumoP2 || undefined,
-        consumoP3: datosComparativa.consumoP3 || undefined,
-        consumoP4: datosComparativa.consumoP4 || undefined,
-        consumoP5: datosComparativa.consumoP5 || undefined,
-        consumoP6: datosComparativa.consumoP6 || undefined,
-        
-        // Factura Electricidad
-        terminoFijoElectricidad: datosComparativa.terminoFijoElectricidad,
-        terminoVariableElectricidad: datosComparativa.terminoVariableElectricidad,
-        excesoPotencia: datosComparativa.excesoPotencia || 0,
-        compensacionExcedentes: datosComparativa.compensacionExcedentes || 0,
-        alquilerEquipos: datosComparativa.alquilerEquipos || 0,
-        impuestoElectricidad: datosComparativa.impuestoElectricidad,
-        ivaElectricidad: datosComparativa.ivaElectricidad,
-        totalFacturaElectricidad: datosComparativa.totalFacturaElectricidad,
-        
-        // Factura Gas
-        terminoFijoGas: datosComparativa.terminoFijoGas || undefined,
-        terminoVariableGas: datosComparativa.terminoVariableGas || undefined,
-        impuestoGas: datosComparativa.impuestoGas || undefined,
-        ivaGas: datosComparativa.ivaGas || undefined,
-        totalFacturaGas: datosComparativa.totalFacturaGas || undefined,
-        
-        notas: datosComparativa.notas || undefined,
-        updatedAt: new Date()
-      }
-    });
-    console.log('Comparativa creada exitosamente:', comparativa);
-    
-    } catch (error) {
-      console.error('Error específico creando comparativa:', error);
-      const errorMessage = error instanceof Error ? error.message : 'Error desconocido';
-      throw new Error(`Error creando comparativa: ${errorMessage}`);
-    }
-
-    // Usar el nuevo motor de cálculo real
-    console.log('🔢 Ejecutando motor de cálculo real...');
-    const resultados = await CalculationEngine.calculateAndSave(comparativa.id);
-    console.log(`✅ Motor de cálculo completado: ${resultados.length} ofertas procesadas`);
-
-    // Devolver la comparativa completa con resultados
-    const comparativaCompleta = await prisma.comparativas.findUnique({
-      where: { id: comparativa.id },
+    const comparativas = await prisma.comparativa_simple.findMany({
+      where: { usuarioId: (session.user as any).id },
+      orderBy: { fechaCreacion: 'desc' },
       include: {
-        clientes: true,
-        comparativa_ofertas: {
+        resultados: {
           include: {
-            tarifas: {
-              include: {
-                comercializadoras: true
-              }
-            }
-          },
-          orderBy: { importeCalculado: 'asc' } // Ordenar por menor coste = mejor oferta
+            comercializadora: true
+          }
         }
       }
     });
 
-    return NextResponse.json({ comparativa: comparativaCompleta });
-
+    return NextResponse.json(comparativas);
+    
   } catch (error) {
-    console.error('Error creating comparativa:', error);
+    console.error('Error en GET /api/comparativas:', error);
     return NextResponse.json(
-      { error: 'Error creating comparativa' },
+      { error: 'Error interno del servidor' },
       { status: 500 }
     );
-  } finally {
-    await prisma.$disconnect();
   }
 }

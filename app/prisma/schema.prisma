@@ -56,6 +56,7 @@ model comercializadoras {
   tarifas    tarifas[]
   comisiones_comercializadora comisiones_comercializadora[]
   comisiones_oferta comisiones_oferta[]
+  resultadosComparativasSimples resultado_comparativa_simple[]
 }
 
 model comisiones {
@@ -294,6 +295,7 @@ model users {
   perfilComision      perfiles_comision?  @relation(fields: [perfilComisionId], references: [id])
   ventas              ventas[]
   comision_ventas     comision_ventas[]
+  comparativasSimples comparativa_simple[]
 }
 
 model perfiles_comision {
@@ -411,4 +413,44 @@ model verification_tokens {
   expires    DateTime
 
   @@unique([identifier, token])
+}
+
+// Modelos para comparativas simples desde el formulario
+model comparativa_simple {
+  id                   String                        @id @default(cuid())
+  titulo               String
+  clienteNombre        String
+  clienteCif           String?
+  clienteDireccion     String?
+  clienteTelefono      String?
+  clienteEmail         String?
+  consumoAnual         Float
+  potenciaContratada   Float
+  tarifaActual         String
+  importeActual        Float
+  notas                String?
+  usuarioId            String
+  fechaCreacion        DateTime                      @default(now())
+  fechaActualizacion   DateTime?
+  estado               String                        @default("CALCULANDO") // CALCULANDO, COMPLETADA, ERROR
+  resultados           resultado_comparativa_simple[]
+  users                users                         @relation(fields: [usuarioId], references: [id], onDelete: Cascade)
+  
+  @@map("comparativas_simples")
+}
+
+model resultado_comparativa_simple {
+  id                   String             @id @default(cuid())
+  comparativaId        String
+  ofertaId             String?
+  comercializadoraId   String
+  costeAnual           Float
+  ahorro               Float
+  porcentajeAhorro     Float
+  detalleCalculo       String?            // JSON con detalles del cálculo
+  fechaCreacion        DateTime           @default(now())
+  comparativa          comparativa_simple @relation(fields: [comparativaId], references: [id], onDelete: Cascade)
+  comercializadora     comercializadoras  @relation(fields: [comercializadoraId], references: [id])
+  
+  @@map("resultados_comparativas_simples")
 }
