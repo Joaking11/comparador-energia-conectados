@@ -81,8 +81,8 @@ export const authOptions: NextAuthOptions = {
         httpOnly: true,
         sameSite: 'lax',
         path: '/',
-        secure: process.env.NODE_ENV === 'production' ? true : false,
-        domain: process.env.NODE_ENV === 'production' ? undefined : 'localhost'
+        secure: process.env.NEXTAUTH_URL?.startsWith('https') || false,
+        domain: process.env.NEXTAUTH_URL?.includes('localhost') ? undefined : undefined
       }
     }
   },
